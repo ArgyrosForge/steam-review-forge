@@ -13,6 +13,20 @@ public sealed class ReviewDraft
     public ReviewDisplayFormat DisplayFormat { get; set; } =
         ReviewDisplayFormat.RatingTable;
     
+    public string Playtime { get; set; } = "35 hours";
+
+    public string WhatWorks { get; set; } =
+        "Satisfying core gameplay\n" +
+        "Lots of content to discover\n" +
+        "Strong visual identity";
+
+    public string WhatCouldBeBetter { get; set; } =
+        "Occasional performance issues\n" +
+        "Some systems need clearer explanations";
+
+    public string FinalThoughts { get; set; } =
+        "Despite its rough edges, the game delivers a memorable and consistently enjoyable experience.";
+    
     public List<ReviewCategory> Categories { get; } = new()
     {
         new ReviewCategory

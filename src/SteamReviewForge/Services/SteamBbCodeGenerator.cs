@@ -22,6 +22,12 @@ public static class SteamBbCodeGenerator
             output.AppendLine($"[i]{draft.Summary.Trim()}[/i]");
         }
 
+        if (!string.IsNullOrWhiteSpace(draft.Playtime))
+        {
+            output.AppendLine();
+            output.AppendLine($"[b]Playtime:[/b] {draft.Playtime.Trim()}");
+        }
+
         if (draft.DisplayFormat != ReviewDisplayFormat.MinimalVerdict &&
             draft.Categories.Count > 0)
         {
@@ -43,6 +49,15 @@ public static class SteamBbCodeGenerator
             }
         }
 
+        if (draft.DisplayFormat == ReviewDisplayFormat.MinimalVerdict)
+        {
+            AppendMinimalDetails(output, draft);
+        }
+        else
+        {
+            AppendQuestionnaire(output, draft);
+        }
+
         AppendDivider(output);
 
         output.AppendLine(
@@ -50,6 +65,102 @@ public static class SteamBbCodeGenerator
             FormatRecommendation(draft.Recommendation));
 
         return output.ToString().Trim();
+    }
+
+    private static void AppendQuestionnaire(
+        StringBuilder output,
+        ReviewDraft draft)
+    {
+        var whatWorks = GetLines(draft.WhatWorks);
+        var whatCouldBeBetter = GetLines(draft.WhatCouldBeBetter);
+        var hasFinalThoughts =
+            !string.IsNullOrWhiteSpace(draft.FinalThoughts);
+
+        if (whatWorks.Length == 0 &&
+            whatCouldBeBetter.Length == 0 &&
+            !hasFinalThoughts)
+        {
+            return;
+        }
+
+        AppendDivider(output);
+
+        AppendListSection(output, "What Works", whatWorks);
+
+        AppendListSection(
+            output,
+            "What Could Be Better",
+            whatCouldBeBetter);
+
+        if (hasFinalThoughts)
+        {
+            AppendTextSection(
+                output,
+                "Final Thoughts",
+                draft.FinalThoughts.Trim());
+        }
+    }
+
+    private static void AppendMinimalDetails(
+        StringBuilder output,
+        ReviewDraft draft)
+    {
+        if (string.IsNullOrWhiteSpace(draft.FinalThoughts))
+        {
+            return;
+        }
+
+        AppendDivider(output);
+
+        AppendTextSection(
+            output,
+            "Why",
+            draft.FinalThoughts.Trim());
+    }
+
+    private static void AppendListSection(
+        StringBuilder output,
+        string heading,
+        IEnumerable<string> items)
+    {
+        var itemList = items.ToArray();
+
+        if (itemList.Length == 0)
+        {
+            return;
+        }
+
+        output.AppendLine($"[h2]{heading}[/h2]");
+
+        foreach (var item in itemList)
+        {
+            output.AppendLine($"• {item}");
+        }
+
+        output.AppendLine();
+    }
+
+    private static void AppendTextSection(
+        StringBuilder output,
+        string heading,
+        string text)
+    {
+        output.AppendLine($"[h2]{heading}[/h2]");
+        output.AppendLine(text);
+        output.AppendLine();
+    }
+
+    private static string[] GetLines(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        return value.Split(
+            ['\r', '\n'],
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
     }
 
     private static void AppendRatingTable(
@@ -62,13 +173,10 @@ public static class SteamBbCodeGenerator
 
         foreach (var category in categories)
         {
-            var name = GetCategoryName(category);
-            var note = category.Note.Trim();
-
             output.AppendLine(
-                $"[tr][td][b]{name}[/b][/td]" +
+                $"[tr][td][b]{GetCategoryName(category)}[/b][/td]" +
                 $"[td]{FormatRating(category.Rating)}[/td]" +
-                $"[td]{note}[/td][/tr]");
+                $"[td]{category.Note.Trim()}[/td][/tr]");
         }
 
         output.AppendLine("[/table]");
@@ -99,6 +207,7 @@ public static class SteamBbCodeGenerator
         foreach (var category in categories)
         {
             var marker = category.Rating >= 4 ? "☑" : "☐";
+
             var note = string.IsNullOrWhiteSpace(category.Note)
                 ? string.Empty
                 : $" — {category.Note.Trim()}";
