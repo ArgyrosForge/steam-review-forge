@@ -1,0 +1,58 @@
+﻿@page "/"
+
+@using SteamReviewForge.Models
+@using SteamReviewForge.Services
+
+<PageTitle>Steam Review Forge</PageTitle>
+
+<h1>Steam Review Forge</h1>
+
+<p>Build a formatted Steam review.</p>
+
+<div>
+    <label for="review-title">Review title</label>
+
+    <input id="review-title"
+           type="text"
+           @bind="Draft.Title"
+           @bind:event="oninput" />
+</div>
+
+<div>
+    <label for="review-summary">Summary</label>
+
+    <input id="review-summary"
+           type="text"
+           @bind="Draft.Summary"
+           @bind:event="oninput" />
+</div>
+
+<div>
+    <label for="recommendation">Recommendation</label>
+
+    <select id="recommendation"
+            @bind="Draft.Recommendation">
+        <option value="@ReviewRecommendation.Recommended">
+            Recommended
+        </option>
+        <option value="@ReviewRecommendation.Mixed">
+            Mixed
+        </option>
+        <option value="@ReviewRecommendation.NotRecommended">
+            Not Recommended
+        </option>
+    </select>
+</div>
+
+<h2>Generated BBCode</h2>
+
+<textarea rows="10"
+          cols="70"
+          readonly>@GeneratedBbCode</textarea>
+
+@code {
+    private ReviewDraft Draft { get; } = new();
+
+    private string GeneratedBbCode =>
+        SteamBbCodeGenerator.Generate(Draft);
+}
