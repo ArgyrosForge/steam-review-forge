@@ -44,6 +44,31 @@
     </select>
 </div>
 
+<div>
+    <label for="display-format">Display format</label>
+
+    <select id="display-format"
+            @bind="Draft.DisplayFormat">
+        <option value="@ReviewDisplayFormat.RatingTable">
+            Rating Table
+        </option>
+
+        <option value="@ReviewDisplayFormat.Sections">
+            Individual Sections
+        </option>
+
+        <option value="@ReviewDisplayFormat.Checklist">
+            Checklist
+        </option>
+
+        <option value="@ReviewDisplayFormat.MinimalVerdict">
+            Minimal Verdict
+        </option>
+    </select>
+
+    <p>@DisplayFormatDescription</p>
+</div>
+
 <h2>Category Ratings</h2>
 
 @foreach (var category in Draft.Categories)
@@ -112,4 +137,22 @@
             Draft.Categories.Remove(category);
         }
     }
+    
+    private string DisplayFormatDescription =>
+        Draft.DisplayFormat switch
+        {
+            ReviewDisplayFormat.RatingTable =>
+                "Displays ratings and notes in a compact table.",
+
+            ReviewDisplayFormat.Sections =>
+                "Displays each category as a separate review section.",
+
+            ReviewDisplayFormat.Checklist =>
+                "Displays categories as checked or unchecked review points.",
+
+            ReviewDisplayFormat.MinimalVerdict =>
+                "Displays only the title, summary, and recommendation.",
+
+            _ => string.Empty
+        };
 }

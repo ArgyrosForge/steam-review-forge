@@ -10,6 +10,9 @@ public sealed class ReviewDraft
     public ReviewRecommendation Recommendation { get; set; } =
         ReviewRecommendation.Recommended;
 
+    public ReviewDisplayFormat DisplayFormat { get; set; } =
+        ReviewDisplayFormat.RatingTable;
+    
     public List<ReviewCategory> Categories { get; } = new()
     {
         new ReviewCategory
