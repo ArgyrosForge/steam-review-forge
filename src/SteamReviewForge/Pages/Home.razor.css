@@ -512,3 +512,26 @@ textarea:focus {
         grid-template-columns: 1fr;
     }
 }
+
+.export-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.copy-status {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+@media (max-width: 500px) {
+    .export-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .copy-status {
+        text-align: center;
+    }
+}

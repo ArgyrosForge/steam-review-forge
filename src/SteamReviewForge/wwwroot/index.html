@@ -61,6 +61,24 @@
             };
         })();
     </script>
+    <script>
+        window.clipboardManager = {
+            copyText: async (text) => {
+                await navigator.clipboard.writeText(text);
+            }
+        };
+    </script>
+    <script>
+        window.clipboardManager = {
+            copyText: async function (text) {
+                if (!navigator.clipboard) {
+                    throw new Error("Clipboard API is unavailable.");
+                }
+
+                await navigator.clipboard.writeText(text);
+            }
+        };
+    </script>
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />

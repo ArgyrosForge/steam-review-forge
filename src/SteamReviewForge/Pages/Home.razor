@@ -335,9 +335,9 @@
                     <section class="editor-section">
                         <div class="section-heading">
                             <h3>Your review is ready</h3>
+
                             <p>
-                                Check the generated output before copying it
-                                into Steam.
+                                Check the generated output before copying it into Steam.
                             </p>
                         </div>
 
@@ -372,9 +372,25 @@
                         </div>
 
                         <div class="export-notice">
-                            Use the BBCode panel on the right to review the
-                            complete generated output. A copy button and
-                            rendered Steam preview can be added next.
+                            Review the complete generated output in the BBCode panel.
+                            Copy it when you are ready to paste the review into Steam.
+                        </div>
+
+                        <div class="export-actions">
+                            <button class="button primary"
+                                    type="button"
+                                    @onclick="CopyBbCode">
+                                Copy BBCode
+                            </button>
+
+                            @if (!string.IsNullOrWhiteSpace(_copyMessage))
+                            {
+                                <span class="copy-status"
+                                      role="status"
+                                      aria-live="polite">
+                                    @_copyMessage
+                                </span>
+                            }
                         </div>
                     </section>
                 }
@@ -433,6 +449,8 @@
     }
 
     private ReviewDraft Draft { get; } = new();
+    
+    private string _copyMessage = string.Empty;
 
     private BuilderStep CurrentStep { get; set; } =
         BuilderStep.Setup;
@@ -613,5 +631,22 @@
     private async Task ToggleTheme()
     {
         _theme = await JS.InvokeAsync<string>("themeManager.toggle");
+    }
+    
+    private async Task CopyBbCode()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "clipboardManager.copyText",
+                GeneratedBbCode);
+
+            _copyMessage = "Copied to clipboard.";
+        }
+        catch
+        {
+            _copyMessage =
+                "Copy failed. Select the BBCode manually.";
+        }
     }
 }
