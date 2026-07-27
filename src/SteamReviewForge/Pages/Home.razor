@@ -44,6 +44,50 @@
     </select>
 </div>
 
+<h2>Category Ratings</h2>
+
+@foreach (var category in Draft.Categories)
+{
+    <div @key="category.Id">
+        <div>
+            <label>Category</label>
+            <input type="text"
+                   @bind="category.Name"
+                   @bind:event="oninput" />
+        </div>
+
+        <div>
+            <label>Rating</label>
+            <select @bind="category.Rating">
+                <option value="5">5 / 5</option>
+                <option value="4">4 / 5</option>
+                <option value="3">3 / 5</option>
+                <option value="2">2 / 5</option>
+                <option value="1">1 / 5</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Note</label>
+            <input type="text"
+                   @bind="category.Note"
+                   @bind:event="oninput" />
+        </div>
+
+        <button type="button"
+                disabled="@(Draft.Categories.Count <= 1)"
+                @onclick="() => RemoveCategory(category)">
+            Remove
+        </button>
+
+        <hr />
+    </div>
+}
+
+<button type="button" @onclick="AddCategory">
+    Add Category
+</button>
+
 <h2>Generated BBCode</h2>
 
 <textarea rows="10"
@@ -55,4 +99,17 @@
 
     private string GeneratedBbCode =>
         SteamBbCodeGenerator.Generate(Draft);
+    
+    private void AddCategory()
+    {
+        Draft.Categories.Add(new ReviewCategory());
+    }
+
+    private void RemoveCategory(ReviewCategory category)
+    {
+        if (Draft.Categories.Count > 1)
+        {
+            Draft.Categories.Remove(category);
+        }
+    }
 }
