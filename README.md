@@ -12,7 +12,7 @@ The core review-building workflow is functional, but the project has not yet rea
 
 ## Features
 
-- Guided four-step review builder with a required recommendation setup
+- Guided five-step review builder with a required recommendation setup
 - Multiple starter templates:
   - Balanced Review
   - Quick Take
@@ -41,7 +41,8 @@ The core review-building workflow is functional, but the project has not yet rea
 3. Select a review template.
 4. Choose a display format and edit categories directly in the Steam preview.
 5. Write the guided responses directly in the Steam preview.
-6. Copy the continuously available BBCode and paste it into Steam.
+6. Inspect the finalized, read-only Steam Review Preview.
+7. Copy the continuously available BBCode and paste it into Steam.
 
 Drafts are stored locally in the browser. Steam Review Forge does not currently require an account or server-side storage.
 

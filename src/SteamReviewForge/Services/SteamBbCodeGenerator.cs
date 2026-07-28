@@ -5,6 +5,16 @@ namespace SteamReviewForge.Services;
 
 public static class SteamBbCodeGenerator
 {
+    public static string GenerateSetupPreview(
+        ReviewDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        return string.IsNullOrWhiteSpace(draft.Summary)
+            ? string.Empty
+            : draft.Summary.Trim();
+    }
+
     public static string Generate(ReviewDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);

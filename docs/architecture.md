@@ -104,8 +104,9 @@ As the application grows, large independent UI areas should be extracted into fo
 - Final thoughts
 - A collection of review categories
 
-New drafts begin in Setup without a selected recommendation or summary. The
-remaining Balanced Review starter content is available after Setup.
+New drafts begin in Setup with Recommended selected, preview-only
+received-for-free metadata unchecked, and placeholder title and summary text.
+The remaining Balanced Review starter content is available after Setup.
 
 ### `ReviewCategory`
 
@@ -197,11 +198,20 @@ User-provided text is HTML encoded before supported formatting tags are converte
 
 The preview is an approximation of Steam rendering, not a complete general-purpose BBCode parser.
 
-The preview is interactive during the Format and Questions steps. Category
-names and notes use inline fields, ratings use accessible star controls, and
-per-category plus/minus controls insert or remove sections. Guided written
-responses are also edited in the preview. These controls are UI-only and never
-enter generated BBCode.
+Setup displays only the basic Steam metadata preview: recommendation, playtime,
+the received-for-free disclosure when selected, and the short summary. Beginning
+with Template, the title, summary, category content, ratings, and guided
+responses remain editable directly in the preview. An external control gutter
+adds, reorders, and removes any category without placing application controls
+on the Steam-colored review surface. Validation is shown outside that surface
+as well. The Final Preview step replaces all editor controls with the rendered,
+read-only BBCode result and removes the editor gutter. Editor controls are
+UI-only and never enter generated BBCode.
+
+The BBCode panel follows the active preview state. During Setup it emits only
+the visible short summary because recommendation, playtime, and free-product
+status are Steam-owned metadata. From Template through Final Preview it emits
+the complete structured review.
 
 ### `ReviewDraftStorageService`
 

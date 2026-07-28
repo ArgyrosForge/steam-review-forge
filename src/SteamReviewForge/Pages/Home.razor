@@ -134,6 +134,22 @@
                     </button>
                 </li>
 
+                <li>
+                    <button class="@GetStepClass(BuilderStep.FinalPreview)"
+                            type="button"
+                            disabled="@(!CanOpenFinalPreview)"
+                            @onclick="() => GoToStep(BuilderStep.FinalPreview)">
+                        <span class="step-number">
+                            @GetStepMarker(BuilderStep.FinalPreview)
+                        </span>
+
+                        <span>
+                            <strong>Final Preview</strong>
+                            <small>Review the finished Steam post</small>
+                        </span>
+                    </button>
+                </li>
+
             </ol>
 
             <div class="workflow-editor">
@@ -409,10 +425,12 @@
                         <div class="format-editing-note">
                             <strong>Edit the Steam preview directly.</strong>
                             Change category names, notes, and star ratings in
-                            the preview below. Use
+                            the preview. Use
                             <span aria-hidden="true">+</span>
-                            to insert a category and
-                            <span aria-hidden="true">−</span> to remove one.
+                            below the last row to add a category. Use the
+                            external arrow and
+                            <span aria-hidden="true">−</span> controls to
+                            reorder or remove any row.
                         </div>
                     }
                     else
@@ -429,6 +447,14 @@
                         <strong>Write directly in the Steam preview.</strong>
                         Enter one item per line for strengths and weaknesses;
                         the BBCode preview updates as you type.
+                    </div>
+                }
+                else if (CurrentStep == BuilderStep.FinalPreview)
+                {
+                    <div class="final-preview-note">
+                        This is the finalized Steam Review Preview. Editing is
+                        disabled here so you can inspect the review exactly as
+                        it will appear before copying the BBCode.
                     </div>
                 }
             </div>
@@ -457,20 +483,46 @@
         <aside class="panel preview-panel">
             <div class="panel-heading">
                 <h2>
-                    @(IsEditingFormatPreview
-                        ? "Format preview"
+                    @(IsFinalPreview
+                        ? "Final Steam Review"
+                        : CurrentStep == BuilderStep.Setup
+                        ? "Steam setup preview"
+                        : HasRecommendation
+                        ? "Editable Steam preview"
                         : "Steam preview")
                 </h2>
 
                 <p>
-                    @(IsEditingFormatPreview
-                        ? "Edit categories directly in the Steam preview."
-                        : "A live Steam-style view of your review.")
+                    @(IsFinalPreview
+                        ? "A read-only preview of the finished review."
+                        : CurrentStep == BuilderStep.Setup
+                        ? "A basic preview of the Steam review metadata."
+                        : HasRecommendation
+                        ? "Edit the review directly at any workflow step."
+                        : "Choose a recommendation to unlock editing.")
                 </p>
             </div>
 
-            <div class="steam-preview"
+            @if (!IsFinalPreview &&
+                 PreviewEditingIssues.Any())
+            {
+                <div class="preview-validation"
+                     role="status"
+                     aria-live="polite">
+                    <strong>Review these editor items:</strong>
+
+                    <ul>
+                        @foreach (var issue in PreviewEditingIssues)
+                        {
+                            <li>@issue.Message</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <div class="@SteamPreviewClass"
                  aria-label="Rendered review preview">
+                <div class="steam-review-page">
                     <article class="steam-review-card">
                         <header class="steam-review-header">
                             <span class="@SteamRecommendationIconClass"
@@ -499,9 +551,31 @@
                                 </div>
                             }
 
-                            @if (IsEditingFormatPreview)
+                            @if (CurrentStep == BuilderStep.Setup)
                             {
-                                @RenderedIntroPreview
+                                <p class="steam-setup-summary">
+                                    @Draft.Summary
+                                </p>
+                            }
+                            else if (HasRecommendation &&
+                                 !IsFinalPreview)
+                            {
+                                <div class="steam-intro-editor">
+                                    <input class="steam-inline-input steam-title-input"
+                                           type="text"
+                                           aria-label="Review title"
+                                           @bind="Draft.Title"
+                                           @bind:event="oninput"
+                                           @bind:after="QueueDraftSaveAsync"/>
+
+                                    <input class="steam-inline-input steam-summary-input"
+                                           type="text"
+                                           aria-label="Short review summary"
+                                           placeholder="Summarize your opinion in one sentence"
+                                           @bind="Draft.Summary"
+                                           @bind:event="oninput"
+                                           @bind:after="QueueDraftSaveAsync"/>
+                                </div>
 
                                 <hr />
 
@@ -515,9 +589,8 @@
                                                     <th>Category</th>
                                                     <th>Rating</th>
                                                     <th>Note</th>
-                                                    <th class="steam-edit-controls-heading">
-                                                        Edit
-                                                    </th>
+                                                    <th class="steam-edit-control-gutter"
+                                                        aria-label="Category controls"></th>
                                                 </tr>
                                             </thead>
 
@@ -535,13 +608,6 @@
                                                                    @bind:event="oninput"
                                                                    @bind:after="QueueDraftSaveAsync"/>
 
-                                                            @foreach (var issue in GetFieldIssues(
-                                                                              $"CategoryName:{category.Id}"))
-                                                            {
-                                                                <span class="@GetSteamEditIssueClass(issue)">
-                                                                    @issue.Message
-                                                                </span>
-                                                            }
                                                         </td>
 
                                                         <td>
@@ -556,21 +622,23 @@
                                                                    @bind:event="oninput"
                                                                    @bind:after="QueueDraftSaveAsync"/>
 
-                                                            @foreach (var issue in GetFieldIssues(
-                                                                              $"CategoryNote:{category.Id}"))
-                                                            {
-                                                                <span class="@GetSteamEditIssueClass(issue)">
-                                                                    @issue.Message
-                                                                </span>
-                                                            }
                                                         </td>
 
-                                                        <td class="steam-edit-controls-cell">
+                                                        <td class="steam-edit-control-gutter">
                                                             @RenderCategoryControls(category)
                                                         </td>
                                                     </tr>
                                                 }
                                             </tbody>
+
+                                            <tfoot>
+                                                <tr class="steam-add-category-row">
+                                                    <td colspan="3"></td>
+                                                    <td class="steam-edit-control-gutter">
+                                                        @RenderAddCategoryControl()
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
                                     </div>
                                 }
@@ -602,14 +670,12 @@
                                                           @bind:event="oninput"
                                                           @bind:after="QueueDraftSaveAsync"></textarea>
 
-                                                @foreach (var issue in GetCategoryIssues(category))
-                                                {
-                                                    <span class="@GetSteamEditIssueClass(issue)">
-                                                        @issue.Message
-                                                    </span>
-                                                }
                                             </section>
                                         }
+
+                                        <div class="steam-add-category-row">
+                                            @RenderAddCategoryControl()
+                                        </div>
                                     </div>
                                 }
                                 else if (Draft.DisplayFormat ==
@@ -644,34 +710,16 @@
                                                            @bind:event="oninput"
                                                            @bind:after="QueueDraftSaveAsync"/>
 
-                                                    @foreach (var issue in GetCategoryIssues(category))
-                                                    {
-                                                        <span class="@GetSteamEditIssueClass(issue)">
-                                                            @issue.Message
-                                                        </span>
-                                                    }
                                                 </div>
 
                                                 @RenderCategoryControls(category)
                                             </section>
                                         }
+
+                                        <div class="steam-add-category-row">
+                                            @RenderAddCategoryControl()
+                                        </div>
                                     </div>
-                                }
-
-                                @if (HasRenderedBodyPreview)
-                                {
-                                    <hr />
-                                    @RenderedBodyPreview
-                                }
-                            }
-                            else if (CurrentStep == BuilderStep.Questions)
-                            {
-                                @RenderedIntroPreview
-
-                                @if (HasRenderedCategoriesPreview)
-                                {
-                                    <hr />
-                                    @RenderedCategoriesPreview
                                 }
 
                                 <hr />
@@ -716,13 +764,6 @@
                                                   @bind:after="QueueDraftSaveAsync"></textarea>
                                     </label>
 
-                                    @foreach (var issue in GetFieldIssues(
-                                                      nameof(Draft.FinalThoughts)))
-                                    {
-                                        <span class="@GetSteamEditIssueClass(issue)">
-                                            @issue.Message
-                                        </span>
-                                    }
                                 </div>
                             }
                             else
@@ -731,6 +772,7 @@
                             }
                         </div>
                     </article>
+                </div>
             </div>
         </aside>
 
@@ -911,7 +953,8 @@
         Setup = 1,
         Template = 2,
         Format = 3,
-        Questions = 4
+        Questions = 4,
+        FinalPreview = 5
     }
 
     private sealed record TemplateOption(
@@ -999,7 +1042,9 @@
     private bool _showFormattingHelp;
 
     private string GeneratedBbCode =>
-        SteamBbCodeGenerator.Generate(Draft);
+        CurrentStep == BuilderStep.Setup
+            ? SteamBbCodeGenerator.GenerateSetupPreview(Draft)
+            : SteamBbCodeGenerator.Generate(Draft);
     
     private ReviewValidationResult CurrentValidation =>
         ReviewDraftValidator.Validate(Draft);
@@ -1010,41 +1055,30 @@
                 issue.Severity ==
                 ReviewValidationSeverity.Error);
 
+    private IEnumerable<ReviewValidationIssue> PreviewEditingIssues =>
+        CurrentStep switch
+        {
+            BuilderStep.Format =>
+                CurrentValidation.Issues.Where(
+                    issue =>
+                        issue.Section ==
+                        ReviewValidationSection.Format &&
+                        issue.Field ==
+                        nameof(Draft.Categories)),
+
+            BuilderStep.Questions =>
+                CurrentValidation.Issues.Where(
+                    issue =>
+                        issue.Section ==
+                        ReviewValidationSection.Questions),
+
+            _ => []
+        };
+
     private MarkupString RenderedPreview =>
         new(
             SteamBbCodePreviewRenderer.Render(
                 GeneratedBbCode));
-
-    private MarkupString RenderedIntroPreview =>
-        new(
-            SteamBbCodePreviewRenderer.Render(
-                SteamBbCodeGenerator.GenerateIntro(Draft)));
-
-    private string GeneratedCategoriesBbCode =>
-        SteamBbCodeGenerator.GenerateCategories(Draft);
-
-    private MarkupString RenderedCategoriesPreview =>
-        new(
-            SteamBbCodePreviewRenderer.Render(
-                GeneratedCategoriesBbCode));
-
-    private bool HasRenderedCategoriesPreview =>
-        !string.IsNullOrWhiteSpace(GeneratedCategoriesBbCode);
-
-    private string GeneratedBodyBbCode =>
-        SteamBbCodeGenerator.GenerateBody(Draft);
-
-    private MarkupString RenderedBodyPreview =>
-        new(
-            SteamBbCodePreviewRenderer.Render(
-                GeneratedBodyBbCode));
-
-    private bool HasRenderedBodyPreview =>
-        !string.IsNullOrWhiteSpace(GeneratedBodyBbCode);
-
-    private bool IsEditingFormatPreview =>
-        CurrentStep == BuilderStep.Format &&
-        ShowCategories;
 
     private bool ShowCategories =>
         Draft.DisplayFormat is
@@ -1062,15 +1096,38 @@
         HasRecommendation &&
         !string.IsNullOrWhiteSpace(Draft.Summary);
 
+    private bool IsFinalPreview =>
+        CurrentStep == BuilderStep.FinalPreview;
+
+    private bool CanOpenFinalPreview =>
+        SetupComplete &&
+        CurrentValidation.IsValid;
+
+    private string SteamPreviewClass =>
+        CurrentStep switch
+        {
+            BuilderStep.Setup =>
+                "steam-preview basic",
+
+            BuilderStep.FinalPreview =>
+                "steam-preview finalized",
+
+            _ => "steam-preview"
+        };
+
     private bool CanGoBack =>
         (int)CurrentStep > (int)BuilderStep.Setup;
 
     private bool CanGoNext =>
-        (int)CurrentStep < (int)BuilderStep.Questions;
+        (int)CurrentStep < (int)BuilderStep.FinalPreview;
 
     private bool CanAdvance =>
-        CurrentStep != BuilderStep.Setup ||
-        SetupComplete;
+        CurrentStep switch
+        {
+            BuilderStep.Setup => SetupComplete,
+            BuilderStep.Questions => CanOpenFinalPreview,
+            _ => true
+        };
 
     private string StepTitle =>
         CurrentStep switch
@@ -1079,6 +1136,7 @@
             BuilderStep.Setup => "Review Setup",
             BuilderStep.Format => "Review Format",
             BuilderStep.Questions => "Review Questionnaire",
+            BuilderStep.FinalPreview => "Final Preview",
             _ => "Review Builder"
         };
 
@@ -1097,6 +1155,9 @@
             BuilderStep.Questions =>
                 "Answer the guided questions that form the review.",
 
+            BuilderStep.FinalPreview =>
+                "Inspect the completed read-only Steam review.",
+
             _ => string.Empty
         };
 
@@ -1111,6 +1172,9 @@
 
             BuilderStep.Format =>
                 "Continue to questions",
+
+            BuilderStep.Questions =>
+                "Open final preview",
 
             _ => "Continue"
         };
@@ -1229,6 +1293,12 @@
     {
         if (step != BuilderStep.Setup &&
             !SetupComplete)
+        {
+            return;
+        }
+
+        if (step == BuilderStep.FinalPreview &&
+            !CanOpenFinalPreview)
         {
             return;
         }
@@ -1412,15 +1482,6 @@
         };
     }
 
-    private static string GetSteamEditIssueClass(
-        ReviewValidationIssue issue)
-    {
-        return issue.Severity ==
-               ReviewValidationSeverity.Warning
-            ? "steam-edit-issue warning"
-            : "steam-edit-issue";
-    }
-
     private string GetTemplateCardClass(
         ReviewTemplate template)
     {
@@ -1474,26 +1535,63 @@
 
     private RenderFragment RenderCategoryControls(
         ReviewCategory category) =>
-        @<div class="steam-category-controls"
-              role="group"
-              aria-label="@($"Edit {category.Name} section")">
-            <button class="steam-category-control add"
-                    type="button"
-                    title="Insert category after this one"
-                    aria-label="@($"Insert category after {category.Name}")"
-                    @onclick="() => InsertCategoryAfterAsync(category)">
-                +
-            </button>
+        @<div class="steam-category-editor-gutter">
+            <div class="steam-category-controls"
+                 role="group"
+                 aria-label="@($"Reorder or remove {category.Name}")">
+                <button class="steam-category-control move"
+                        type="button"
+                        title="Move category up"
+                        aria-label="@($"Move {category.Name} up")"
+                        disabled="@(Draft.Categories.IndexOf(category) == 0)"
+                        @onclick="() => MoveCategoryAsync(category, -1)">
+                    ↑
+                </button>
 
-            <button class="steam-category-control remove"
-                    type="button"
-                    title="Remove this category"
-                    aria-label="@($"Remove {category.Name}")"
-                    disabled="@(Draft.Categories.Count <= 1)"
-                    @onclick="() => RemoveCategory(category)">
-                −
-            </button>
+                <button class="steam-category-control move"
+                        type="button"
+                        title="Move category down"
+                        aria-label="@($"Move {category.Name} down")"
+                        disabled="@(Draft.Categories.IndexOf(category) ==
+                                    Draft.Categories.Count - 1)"
+                        @onclick="() => MoveCategoryAsync(category, 1)">
+                    ↓
+                </button>
+
+                <button class="steam-category-control remove"
+                        type="button"
+                        title="Remove category"
+                        aria-label="@($"Remove category {category.Name}")"
+                        @onclick="() => RemoveCategory(category)">
+                    −
+                </button>
+            </div>
+
+            @foreach (var issue in GetCategoryIssues(category))
+            {
+                <span class="@GetCategoryValidationClass(issue)">
+                    @issue.Message
+                </span>
+            }
         </div>;
+
+    private static string GetCategoryValidationClass(
+        ReviewValidationIssue issue)
+    {
+        return issue.Severity ==
+               ReviewValidationSeverity.Warning
+            ? "category-gutter-validation warning"
+            : "category-gutter-validation error";
+    }
+
+    private RenderFragment RenderAddCategoryControl() =>
+        @<button class="steam-category-control add"
+                 type="button"
+                 title="Add category"
+                 aria-label="Add category after the last category"
+                 @onclick="AddCategoryAsync">
+            +
+        </button>;
 
     private static string GetRatingStarClass(
         int rating,
@@ -1513,19 +1611,29 @@
         await SaveDraftImmediatelyAsync();
     }
 
-    private async Task InsertCategoryAfterAsync(
-        ReviewCategory category)
+    private async Task AddCategoryAsync()
     {
-        var index = Draft.Categories.IndexOf(category);
+        Draft.Categories.Add(new ReviewCategory());
 
-        if (index < 0)
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task MoveCategoryAsync(
+        ReviewCategory category,
+        int offset)
+    {
+        var currentIndex = Draft.Categories.IndexOf(category);
+        var targetIndex = currentIndex + offset;
+
+        if (currentIndex < 0 ||
+            targetIndex < 0 ||
+            targetIndex >= Draft.Categories.Count)
         {
             return;
         }
 
-        Draft.Categories.Insert(
-            index + 1,
-            new ReviewCategory());
+        Draft.Categories.RemoveAt(currentIndex);
+        Draft.Categories.Insert(targetIndex, category);
 
         await SaveDraftImmediatelyAsync();
     }
@@ -1533,11 +1641,6 @@
     private async Task RemoveCategory(
         ReviewCategory category)
     {
-        if (Draft.Categories.Count <= 1)
-        {
-            return;
-        }
-
         Draft.Categories.Remove(category);
 
         await SaveDraftImmediatelyAsync();
