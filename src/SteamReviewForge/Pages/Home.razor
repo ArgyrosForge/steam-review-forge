@@ -8,7 +8,6 @@
 @using Microsoft.AspNetCore.Components
 @using SteamReviewForge.Models
 @using SteamReviewForge.Services
-@using Microsoft.AspNetCore.Components
 
 <PageTitle>Steam Review Forge</PageTitle>
 
@@ -587,7 +586,7 @@
         Questions = 4,
         Export = 5
     }
-
+    
     private sealed record TemplateOption(
         ReviewTemplate Template,
         string Code,
