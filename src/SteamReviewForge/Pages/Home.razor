@@ -71,7 +71,7 @@
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Setup)">
                         <span class="step-number">
-                            @GetStepMarker(BuilderStep.Template)
+                            @GetStepMarker(BuilderStep.Setup)
                         </span>
 
                         <span>
@@ -86,7 +86,7 @@
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Format)">
                         <span class="step-number">
-                            @GetStepMarker(BuilderStep.Template)
+                            @GetStepMarker(BuilderStep.Format)
                         </span>
 
                         <span>
@@ -101,7 +101,7 @@
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Questions)">
                         <span class="step-number">
-                            @GetStepMarker(BuilderStep.Template)
+                            @GetStepMarker(BuilderStep.Questions)
                         </span>
 
                         <span>
@@ -116,7 +116,7 @@
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Export)">
                         <span class="step-number">
-                            @GetStepMarker(BuilderStep.Template)
+                            @GetStepMarker(BuilderStep.Export)
                         </span>
 
                         <span>
@@ -322,7 +322,7 @@
 
                             <select id="display-format"
                                     @bind="Draft.DisplayFormat"
-                                    @bind:after="QueueDraftSaveAsync">>
+                                    @bind:after="QueueDraftSaveAsync">
                                 <option value="@ReviewDisplayFormat.RatingTable">
                                     Rating Table
                                 </option>
@@ -1077,130 +1077,130 @@
 
     private static ReviewValidationSection?
     GetValidationSection(BuilderStep step)
-{
-    return step switch
     {
-        BuilderStep.Setup =>
-            ReviewValidationSection.Setup,
-
-        BuilderStep.Format =>
-            ReviewValidationSection.Format,
-
-        BuilderStep.Questions =>
-            ReviewValidationSection.Questions,
-
-        _ => null
-    };
-}
-
-private string GetStepMarker(BuilderStep step)
-{
-    var section = GetValidationSection(step);
-
-    if (section.HasValue)
-    {
-        if (CurrentValidation.HasErrors(section.Value))
+        return step switch
         {
-            return "!";
+            BuilderStep.Setup =>
+                ReviewValidationSection.Setup,
+
+            BuilderStep.Format =>
+                ReviewValidationSection.Format,
+
+            BuilderStep.Questions =>
+                ReviewValidationSection.Questions,
+
+            _ => null
+        };
+    }
+
+    private string GetStepMarker(BuilderStep step)
+    {
+        var section = GetValidationSection(step);
+
+        if (section.HasValue)
+        {
+            if (CurrentValidation.HasErrors(section.Value))
+            {
+                return "!";
+            }
+
+            if (CurrentValidation.HasWarnings(section.Value))
+            {
+                return "!";
+            }
+
+            return "✓";
         }
 
-        if (CurrentValidation.HasWarnings(section.Value))
+        if (step == BuilderStep.Template)
         {
-            return "!";
+            return step == CurrentStep ? "1" : "✓";
         }
 
-        return "✓";
+        if (step == BuilderStep.Export)
+        {
+            return CurrentValidation.IsValid ? "✓" : "!";
+        }
+
+        return ((int)step).ToString();
     }
 
-    if (step == BuilderStep.Template)
+    private IEnumerable<ReviewValidationIssue>
+        GetFieldIssues(string field)
     {
-        return step == CurrentStep ? "1" : "✓";
+        return CurrentValidation.ForField(field);
     }
 
-    if (step == BuilderStep.Export)
+    private bool HasFieldError(string field)
     {
-        return CurrentValidation.IsValid ? "✓" : "!";
-    }
-
-    return ((int)step).ToString();
-}
-
-private IEnumerable<ReviewValidationIssue>
-    GetFieldIssues(string field)
-{
-    return CurrentValidation.ForField(field);
-}
-
-private bool HasFieldError(string field)
-{
-    return GetFieldIssues(field).Any(
-        issue =>
-            issue.Severity ==
-                ReviewValidationSeverity.Error);
-}
-
-private string GetFieldClass(string field)
-{
-    var issues = GetFieldIssues(field).ToArray();
-
-    if (issues.Any(
+        return GetFieldIssues(field).Any(
             issue =>
                 issue.Severity ==
-                    ReviewValidationSeverity.Error))
-    {
-        return "field full-width has-error";
+                    ReviewValidationSeverity.Error);
     }
 
-    if (issues.Any(
-            issue =>
-                issue.Severity ==
-                    ReviewValidationSeverity.Warning))
+    private string GetFieldClass(string field)
     {
-        return "field full-width has-warning";
+        var issues = GetFieldIssues(field).ToArray();
+
+        if (issues.Any(
+                issue =>
+                    issue.Severity ==
+                        ReviewValidationSeverity.Error))
+        {
+            return "field full-width has-error";
+        }
+
+        if (issues.Any(
+                issue =>
+                    issue.Severity ==
+                        ReviewValidationSeverity.Warning))
+        {
+            return "field full-width has-warning";
+        }
+
+        return "field full-width";
     }
 
-    return "field full-width";
-}
-
-private static string GetIssueClass(
-    ReviewValidationIssue issue)
-{
-    return issue.Severity switch
+    private static string GetIssueClass(
+        ReviewValidationIssue issue)
     {
-        ReviewValidationSeverity.Error =>
-            "field-message error-message",
+        return issue.Severity switch
+        {
+            ReviewValidationSeverity.Error =>
+                "field-message error-message",
 
-        ReviewValidationSeverity.Warning =>
-            "field-message warning-message",
+            ReviewValidationSeverity.Warning =>
+                "field-message warning-message",
 
-        _ => "field-message"
-    };
-}
-
-private void GoToFirstError()
-{
-    var issue = ValidationErrors.FirstOrDefault();
-
-    if (issue is null)
-    {
-        return;
+            _ => "field-message"
+        };
     }
 
-    CurrentStep = issue.Section switch
+    private void GoToFirstError()
     {
-        ReviewValidationSection.Setup =>
-            BuilderStep.Setup,
+        var issue = ValidationErrors.FirstOrDefault();
 
-        ReviewValidationSection.Format =>
-            BuilderStep.Format,
+        if (issue is null)
+        {
+            return;
+        }
 
-        ReviewValidationSection.Questions =>
-            BuilderStep.Questions,
+        CurrentStep = issue.Section switch
+        {
+            ReviewValidationSection.Setup =>
+                BuilderStep.Setup,
 
-        _ => CurrentStep
-    };
-}
-    
+            ReviewValidationSection.Format =>
+                BuilderStep.Format,
+
+            ReviewValidationSection.Questions =>
+                BuilderStep.Questions,
+
+            _ => CurrentStep
+        };
+    }
+
     private string GetTemplateCardClass(
         ReviewTemplate template)
     {

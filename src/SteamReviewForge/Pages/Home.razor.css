@@ -34,16 +34,6 @@
     gap: 0.65rem;
 }
 
-.status-badge {
-    padding: 0.45rem 0.75rem;
-    color: var(--muted);
-    background: var(--surface-muted);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-}
-
 .theme-toggle {
     width: 2.5rem;
     height: 2.5rem;
@@ -121,13 +111,19 @@
 }
 
 .step-item {
+    width: 100%;
     display: grid;
     grid-template-columns: 2rem 1fr;
     gap: 0.75rem;
     align-items: center;
     padding: 0.75rem;
     color: var(--muted);
+    background: transparent;
+    border: 0;
     border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
 }
 
 .step-item.active {
@@ -138,10 +134,6 @@
 .step-item.complete .step-number {
     color: var(--accent);
     border-color: var(--accent);
-}
-
-.step-item.planned {
-    opacity: 0.65;
 }
 
 .step-number {
@@ -303,20 +295,6 @@ textarea:focus {
     opacity: 0.45;
 }
 
-.output-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.85rem 1rem;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-    font-size: 0.78rem;
-}
-
-.output-header strong {
-    color: var(--text);
-}
-
 .code-output {
     display: block;
     width: 100%;
@@ -370,10 +348,6 @@ textarea:focus {
         position: static;
     }
 
-    .status-badge {
-        display: none;
-    }
-
     .builder-layout {
         grid-template-columns: 1fr;
         padding: 0.85rem;
@@ -424,15 +398,6 @@ textarea:focus {
 .step-list li {
     margin: 0;
     padding: 0;
-}
-
-.step-item {
-    width: 100%;
-    text-align: left;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    font: inherit;
 }
 
 .step-item:hover {
@@ -628,8 +593,7 @@ textarea:focus {
     line-height: 1.35;
 }
 
-.template-note,
-.template-warning {
+.template-note {
     margin-top: 1rem;
     padding: 0.9rem 1rem;
     border-radius: 8px;
@@ -641,12 +605,6 @@ textarea:focus {
     color: var(--muted);
     background: var(--surface-muted);
     border: 1px solid var(--border);
-}
-
-.template-warning {
-    color: var(--danger);
-    background: var(--danger-soft);
-    border: 1px solid var(--danger-border);
 }
 
 @media (max-width: 800px) {
@@ -903,11 +861,6 @@ textarea:focus {
     border-color: var(--warning-border);
 }
 
-.step-item.complete .step-number {
-    color: var(--accent);
-    border-color: var(--accent);
-}
-
 .field.has-error input,
 .field.has-error select,
 .field.has-error textarea {
@@ -931,40 +884,4 @@ textarea:focus {
 
 .warning-message {
     color: var(--warning);
-}
-
-.validation-summary {
-    margin-bottom: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.82rem;
-    line-height: 1.5;
-}
-
-.validation-summary strong {
-    display: block;
-}
-
-.validation-summary ul {
-    margin: 0.65rem 0;
-    padding-left: 1.2rem;
-}
-
-.error-summary {
-    color: var(--danger);
-    background: var(--danger-soft);
-    border-color: var(--danger-border);
-}
-
-.warning-summary {
-    color: var(--warning);
-    background: var(--warning-soft);
-    border-color: var(--warning-border);
-}
-
-.success-summary {
-    color: var(--accent);
-    background: var(--accent-soft);
-    border-color: var(--accent);
 }

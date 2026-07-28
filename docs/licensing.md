@@ -1,6 +1,6 @@
 # Licensing Guide
 
-This template intentionally does not include a default license.
+This project does not currently include a license.
 
 ## Before Publishing
 
