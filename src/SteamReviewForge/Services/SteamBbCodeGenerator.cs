@@ -5,7 +5,34 @@ namespace SteamReviewForge.Services;
 
 public static class SteamBbCodeGenerator
 {
+    public static string GenerateSetupPreview(
+        ReviewDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        return string.IsNullOrWhiteSpace(draft.Summary)
+            ? string.Empty
+            : draft.Summary.Trim();
+    }
+
     public static string Generate(ReviewDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        string[] sections =
+        [
+            GenerateIntro(draft),
+            GenerateCategories(draft),
+            GenerateBody(draft)
+        ];
+
+        return string.Join(
+            "\n\n[hr][/hr]\n\n",
+            sections.Where(
+                section => !string.IsNullOrWhiteSpace(section)));
+    }
+
+    public static string GenerateIntro(ReviewDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
@@ -22,26 +49,44 @@ public static class SteamBbCodeGenerator
             output.AppendLine($"[i]{draft.Summary.Trim()}[/i]");
         }
 
-        if (draft.DisplayFormat != ReviewDisplayFormat.MinimalVerdict &&
-            draft.Categories.Count > 0)
+        return output.ToString().Trim();
+    }
+
+    public static string GenerateCategories(ReviewDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (draft.DisplayFormat == ReviewDisplayFormat.MinimalVerdict ||
+            draft.Categories.Count == 0)
         {
-            AppendDivider(output);
-
-            switch (draft.DisplayFormat)
-            {
-                case ReviewDisplayFormat.RatingTable:
-                    AppendRatingTable(output, draft.Categories);
-                    break;
-
-                case ReviewDisplayFormat.Sections:
-                    AppendSections(output, draft.Categories);
-                    break;
-
-                case ReviewDisplayFormat.Checklist:
-                    AppendChecklist(output, draft.Categories);
-                    break;
-            }
+            return string.Empty;
         }
+
+        var output = new StringBuilder();
+
+        switch (draft.DisplayFormat)
+        {
+            case ReviewDisplayFormat.RatingTable:
+                AppendRatingTable(output, draft.Categories);
+                break;
+
+            case ReviewDisplayFormat.Sections:
+                AppendSections(output, draft.Categories);
+                break;
+
+            case ReviewDisplayFormat.Checklist:
+                AppendChecklist(output, draft.Categories);
+                break;
+        }
+
+        return output.ToString().Trim();
+    }
+
+    public static string GenerateBody(ReviewDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var output = new StringBuilder();
 
         if (draft.DisplayFormat == ReviewDisplayFormat.MinimalVerdict)
         {
@@ -71,8 +116,6 @@ public static class SteamBbCodeGenerator
             return;
         }
 
-        AppendDivider(output);
-
         AppendListSection(output, "What Works", whatWorks);
 
         AppendListSection(
@@ -97,8 +140,6 @@ public static class SteamBbCodeGenerator
         {
             return;
         }
-
-        AppendDivider(output);
 
         AppendTextSection(
             output,
@@ -204,13 +245,6 @@ public static class SteamBbCodeGenerator
                 $"{marker} [b]{GetCategoryName(category)}[/b] " +
                 $"— {FormatRating(category.Rating)}{note}");
         }
-    }
-
-    private static void AppendDivider(StringBuilder output)
-    {
-        output.AppendLine();
-        output.AppendLine("[hr][/hr]");
-        output.AppendLine();
     }
 
     private static string GetCategoryName(ReviewCategory category)

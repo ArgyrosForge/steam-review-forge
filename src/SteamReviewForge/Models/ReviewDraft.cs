@@ -2,13 +2,14 @@ namespace SteamReviewForge.Models;
 
 public sealed class ReviewDraft
 {
-    public string Title { get; set; } = "My Review";
+    public string Title { get; set; } = "[Game Title] Review";
 
-    public string Summary { get; set; } =
-        "A strong game with a few rough edges.";
+    public string Summary { get; set; } = "Short Summary";
 
-    public ReviewRecommendation Recommendation { get; set; } =
+    public ReviewRecommendation? Recommendation { get; set; } =
         ReviewRecommendation.Recommended;
+
+    public bool ReceivedProductForFree { get; set; } = false;
 
     public ReviewDisplayFormat DisplayFormat { get; set; } =
         ReviewDisplayFormat.RatingTable;
@@ -16,7 +17,7 @@ public sealed class ReviewDraft
     public ReviewTemplate Template { get; set; } =
         ReviewTemplate.Balanced;
 
-    public string Playtime { get; set; } = "35";
+    public string Playtime { get; set; } = string.Empty;
 
     public string WhatWorks { get; set; } =
         "Satisfying core gameplay\n" +

@@ -75,6 +75,7 @@ It is responsible for:
 - Tracking the selected workflow step
 - Applying templates
 - Adding and removing categories
+- Editing category content directly in the Format-step Steam preview
 - Triggering validation
 - Generating BBCode and rendered previews
 - Saving and restoring drafts
@@ -94,6 +95,7 @@ As the application grows, large independent UI areas should be extracted into fo
 - Review title
 - Summary
 - Recommendation
+- Whether the product was received for free
 - Selected template
 - Selected display format
 - Playtime
@@ -102,7 +104,9 @@ As the application grows, large independent UI areas should be extracted into fo
 - Final thoughts
 - A collection of review categories
 
-The initial property values form the default Balanced Review experience.
+New drafts begin in Setup with Recommended selected, preview-only
+received-for-free metadata unchecked, and placeholder title and summary text.
+The remaining Balanced Review starter content is available after Setup.
 
 ### `ReviewCategory`
 
@@ -126,11 +130,11 @@ The model uses enums rather than free-form strings for bounded choices:
 
 This keeps UI options, service behavior, and generated output aligned through compile-time types.
 
-Recommendation and playtime are saved with the draft and displayed in the
-Steam-style preview. They are intentionally excluded from generated BBCode
-because Steam captures both values as review metadata. Playtime is stored as
-a numeric hours value with at most one decimal place, capped at 999,999,999;
-the preview supplies the Steam-style unit label.
+Recommendation, playtime, and the received-for-free disclosure are saved with
+the draft and displayed in the Steam-style preview. They are intentionally
+excluded from generated BBCode because Steam captures them as review metadata.
+Playtime is stored as a numeric hours value with at most one decimal place,
+capped at 999,999,999; the preview supplies the Steam-style unit label.
 
 ## Service Responsibilities
 
@@ -141,7 +145,6 @@ Applies a selected template to an existing `ReviewDraft`.
 A template can replace:
 
 - Display format
-- Summary text
 - Guided-response text
 - Final thoughts
 - Category collection
@@ -152,7 +155,8 @@ Templates mutate the existing draft rather than replacing the object. This allow
 
 Validates the current draft and returns a `ReviewValidationResult` containing errors and warnings.
 
-Errors block BBCode copying. Warnings provide guidance but do not make the draft invalid.
+Errors mark incomplete required fields but do not hide or block the persistent
+BBCode copy action. Warnings provide additional guidance.
 
 Validation is grouped by the Setup, Format, and Questions workflow sections. Field identifiers allow the UI to show messages beside the relevant input and decorate workflow steps with status indicators.
 
@@ -169,6 +173,11 @@ Generation is deterministic and has no browser dependencies. Output varies accor
 
 The generator also adds the title, optional summary, questionnaire content,
 dividers, and star ratings.
+
+Generation is split into intro, category, and body segments. The complete
+generator joins nonempty segments with Steam dividers. During the Format step,
+the preview renders the intro and body segments normally while replacing the
+category segment with controls bound directly to the draft.
 
 Because this service is pure application logic, it should remain independent from UI state and JavaScript. It is a primary target for unit testing.
 
@@ -188,6 +197,21 @@ The renderer supports the tags and structures produced by `SteamBbCodeGenerator`
 User-provided text is HTML encoded before supported formatting tags are converted. This prevents review text from being treated as arbitrary HTML in the preview.
 
 The preview is an approximation of Steam rendering, not a complete general-purpose BBCode parser.
+
+Setup displays only the basic Steam metadata preview: recommendation, playtime,
+the received-for-free disclosure when selected, and the short summary. Beginning
+with Template, the title, summary, category content, ratings, and guided
+responses remain editable directly in the preview. An external control gutter
+adds, reorders, and removes any category without placing application controls
+on the Steam-colored review surface. Validation is shown outside that surface
+as well. The Final Preview step replaces all editor controls with the rendered,
+read-only BBCode result and removes the editor gutter. Editor controls are
+UI-only and never enter generated BBCode.
+
+The BBCode panel follows the active preview state. During Setup it emits only
+the visible short summary because recommendation, playtime, and free-product
+status are Steam-owned metadata. From Template through Final Preview it emits
+the complete structured review.
 
 ### `ReviewDraftStorageService`
 
@@ -288,7 +312,7 @@ Clear saved draft
 Create a new default ReviewDraft
   |
   v
-Return to the Template step
+Return to the Setup step
 ```
 
 ## State and Persistence Boundaries
@@ -303,7 +327,7 @@ Persistent state:
 Transient state:
 
 - Current workflow step
-- Selected preview tab
+- Formatting-help and new-review dialog visibility
 - Copy-status message
 - Save-status message
 - Confirmation-dialog visibility

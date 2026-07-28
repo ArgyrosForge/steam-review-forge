@@ -42,9 +42,6 @@ public static class ReviewTemplateService
     {
         draft.DisplayFormat = ReviewDisplayFormat.RatingTable;
 
-        draft.Summary =
-            "A strong game with a few rough edges.";
-
         draft.WhatWorks =
             "Satisfying core gameplay\n" +
             "Lots of content to discover\n" +
@@ -84,9 +81,6 @@ public static class ReviewTemplateService
     {
         draft.DisplayFormat = ReviewDisplayFormat.MinimalVerdict;
 
-        draft.Summary =
-            "A concise summary of the overall experience.";
-
         draft.WhatWorks = string.Empty;
         draft.WhatCouldBeBetter = string.Empty;
 
@@ -99,9 +93,6 @@ public static class ReviewTemplateService
     private static void ApplyDeepDiveTemplate(ReviewDraft draft)
     {
         draft.DisplayFormat = ReviewDisplayFormat.Sections;
-
-        draft.Summary =
-            "A detailed review of the game's major strengths and weaknesses.";
 
         draft.WhatWorks =
             "Describe the strongest gameplay systems\n" +
@@ -161,7 +152,6 @@ public static class ReviewTemplateService
     {
         draft.DisplayFormat = ReviewDisplayFormat.RatingTable;
 
-        draft.Summary = string.Empty;
         draft.WhatWorks = string.Empty;
         draft.WhatCouldBeBetter = string.Empty;
         draft.FinalThoughts = string.Empty;
