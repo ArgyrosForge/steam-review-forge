@@ -29,7 +29,7 @@
 
             <button class="button new-review-button"
                     type="button"
-                    @onclick="StartNewReviewAsync">
+                    @onclick="OpenNewReviewDialog">
                 New review
             </button>
 
@@ -575,6 +575,46 @@
         Steam Review Forge is not affiliated with, endorsed by, or sponsored
         by Valve Corporation or Steam.
     </footer>
+    @if (_showNewReviewDialog)
+    {
+        <div class="modal-backdrop"
+             role="presentation"
+             @onclick="CloseNewReviewDialog">
+
+            <section class="confirmation-dialog"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="new-review-dialog-title"
+                     aria-describedby="new-review-dialog-description"
+                     @onclick:stopPropagation>
+
+                <div class="dialog-content">
+                    <h2 id="new-review-dialog-title">
+                        Start a new review?
+                    </h2>
+
+                    <p id="new-review-dialog-description">
+                        Your current saved draft will be permanently cleared.
+                        This cannot be undone.
+                    </p>
+                </div>
+
+                <div class="dialog-actions">
+                    <button class="button secondary"
+                            type="button"
+                            @onclick="CloseNewReviewDialog">
+                        Keep current review
+                    </button>
+
+                    <button class="button danger-solid"
+                            type="button"
+                            @onclick="ConfirmStartNewReviewAsync">
+                        Start new review
+                    </button>
+                </div>
+            </section>
+        </div>
+    }
 </div>
 
 @code {
@@ -664,6 +704,8 @@
     private string _copyMessage = string.Empty;
 
     private string _theme = "light";
+    
+    private bool _showNewReviewDialog;
 
     private string GeneratedBbCode =>
         SteamBbCodeGenerator.Generate(Draft);
@@ -1083,28 +1125,18 @@ private async Task SaveDraftImmediatelyAsync()
     }
 }
 
-private async Task StartNewReviewAsync()
+private void OpenNewReviewDialog()
 {
-    bool confirmed;
+    _showNewReviewDialog = true;
+}
 
-    try
-    {
-        confirmed =
-            await DraftStorage.ConfirmResetAsync();
-    }
-    catch
-    {
-        _saveStatus =
-            "Unable to start a new review";
+private void CloseNewReviewDialog()
+{
+    _showNewReviewDialog = false;
+}
 
-        return;
-    }
-
-    if (!confirmed)
-    {
-        return;
-    }
-
+private async Task ConfirmStartNewReviewAsync()
+{
     try
     {
         _saveDebounce?.Cancel();
@@ -1119,6 +1151,7 @@ private async Task StartNewReviewAsync()
 
         _copyMessage = string.Empty;
         _saveStatus = "Not saved yet";
+        _showNewReviewDialog = false;
     }
     catch
     {

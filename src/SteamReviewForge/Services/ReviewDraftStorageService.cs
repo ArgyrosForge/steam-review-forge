@@ -55,10 +55,4 @@ public sealed class ReviewDraftStorageService
             "reviewDraftStorage.remove",
             StorageKey);
     }
-
-    public ValueTask<bool> ConfirmResetAsync()
-    {
-        return _js.InvokeAsync<bool>(
-            "reviewDraftStorage.confirmReset");
-    }
 }
