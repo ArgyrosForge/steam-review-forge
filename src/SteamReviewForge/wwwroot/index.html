@@ -79,6 +79,28 @@
             }
         };
     </script>
+    <script>
+        window.reviewDraftStorage = {
+            get: function (key) {
+                return localStorage.getItem(key);
+            },
+
+            set: function (key, value) {
+                localStorage.setItem(key, value);
+            },
+
+            remove: function (key) {
+                localStorage.removeItem(key);
+            },
+
+            confirmReset: function () {
+                return window.confirm(
+                    "Start a new review? " +
+                    "Your current saved draft will be permanently cleared."
+                );
+            }
+        };
+    </script>
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
