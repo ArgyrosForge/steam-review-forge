@@ -153,9 +153,7 @@ public static class SteamBbCodePreviewRenderer
                 closingTag,
                 StringComparison.OrdinalIgnoreCase))
         {
-            content = line[
-                openingTag.Length..
-                ^closingTag.Length];
+            content = line[openingTag.Length..^closingTag.Length];
 
             return true;
         }

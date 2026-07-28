@@ -12,10 +12,10 @@ public sealed class ReviewDraft
 
     public ReviewDisplayFormat DisplayFormat { get; set; } =
         ReviewDisplayFormat.RatingTable;
-    
+
     public ReviewTemplate Template { get; set; } =
         ReviewTemplate.Balanced;
-    
+
     public string Playtime { get; set; } = "35 hours";
 
     public string WhatWorks { get; set; } =
@@ -29,7 +29,7 @@ public sealed class ReviewDraft
 
     public string FinalThoughts { get; set; } =
         "Despite its rough edges, the game delivers a memorable and consistently enjoyable experience.";
-    
+
     public List<ReviewCategory> Categories { get; set; } = new()
     {
         new ReviewCategory
