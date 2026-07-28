@@ -1,7 +1,11 @@
-﻿@page "/"
+@page "/"
+
+@implements IAsyncDisposable
 
 @inject Microsoft.JSInterop.IJSRuntime JS
+@inject ReviewDraftStorageService DraftStorage
 
+@using Microsoft.AspNetCore.Components
 @using SteamReviewForge.Models
 @using SteamReviewForge.Services
 @using Microsoft.AspNetCore.Components
@@ -18,7 +22,17 @@
         </div>
 
         <div class="header-actions">
-            <span class="status-badge">Early development</span>
+            <span class="save-status"
+                  role="status"
+                  aria-live="polite">
+                @_saveStatus
+            </span>
+
+            <button class="button new-review-button"
+                    type="button"
+                    @onclick="StartNewReviewAsync">
+                New review
+            </button>
 
             <button class="theme-toggle"
                     type="button"
@@ -192,7 +206,8 @@
                                 <input id="review-title"
                                        type="text"
                                        @bind="Draft.Title"
-                                       @bind:event="oninput" />
+                                       @bind:event="oninput"
+                                       @bind:after="QueueDraftSaveAsync" />
                             </div>
 
                             <div class="field full-width">
@@ -203,7 +218,8 @@
                                 <input id="review-summary"
                                        type="text"
                                        @bind="Draft.Summary"
-                                       @bind:event="oninput" />
+                                       @bind:event="oninput"
+                                       @bind:after="QueueDraftSaveAsync" />
 
                                 <span class="field-help">
                                     A short sentence that summarizes your opinion.
@@ -632,13 +648,25 @@
             ])
     ];
 
-    private ReviewDraft Draft { get; } = new();
+    private ReviewDraft Draft { get; set; } = new();
 
     private BuilderStep CurrentStep { get; set; } =
         BuilderStep.Template;
 
+    private enum OutputView
+    {
+        Preview,
+        BbCode
+    }
+    
     private ReviewTemplate SelectedTemplate { get; set; } =
         ReviewTemplate.Balanced;
+
+    private CancellationTokenSource? _saveDebounce;
+
+    private bool _draftStorageReady;
+
+    private string _saveStatus = "Loading draft…";
 
     private string _copyMessage = string.Empty;
 
@@ -797,7 +825,8 @@
             ? "Switch to light mode"
             : "Switch to dark mode";
 
-    private void SelectTemplate(ReviewTemplate template)
+    private async Task SelectTemplate(
+        ReviewTemplate template)
     {
         SelectedTemplate = template;
 
@@ -806,6 +835,8 @@
             SelectedTemplate);
 
         _copyMessage = string.Empty;
+
+        await SaveDraftImmediatelyAsync();
     }
 
     private void GoToStep(BuilderStep step)
@@ -879,19 +910,25 @@
         };
     }
 
-    private void AddCategory()
+    private async Task AddCategory()
     {
         Draft.Categories.Add(
             new ReviewCategory());
+
+        await SaveDraftImmediatelyAsync();
     }
 
-    private void RemoveCategory(
+    private async Task RemoveCategory(
         ReviewCategory category)
     {
-        if (Draft.Categories.Count > 1)
+        if (Draft.Categories.Count <= 1)
         {
-            Draft.Categories.Remove(category);
+            return;
         }
+
+        Draft.Categories.Remove(category);
+
+        await SaveDraftImmediatelyAsync();
     }
 
     private async Task CopyBbCode()
@@ -923,12 +960,177 @@
         _theme = await JS.InvokeAsync<string>(
             "themeManager.get");
 
+        await RestoreDraftAsync();
+
         StateHasChanged();
     }
 
+    public ValueTask DisposeAsync()
+    {
+        _saveDebounce?.Cancel();
+        _saveDebounce?.Dispose();
+
+        return ValueTask.CompletedTask;
+    }
+    
     private async Task ToggleTheme()
     {
         _theme = await JS.InvokeAsync<string>(
             "themeManager.toggle");
     }
+    
+    private async Task RestoreDraftAsync()
+{
+    try
+    {
+        var restoredDraft =
+            await DraftStorage.LoadAsync();
+
+        if (restoredDraft is null)
+        {
+            _saveStatus = "Not saved yet";
+            return;
+        }
+
+        restoredDraft.Categories ??= [];
+
+        if (restoredDraft.Categories.Count == 0 &&
+            restoredDraft.DisplayFormat !=
+                ReviewDisplayFormat.MinimalVerdict)
+        {
+            restoredDraft.Categories.Add(
+                new ReviewCategory());
+        }
+
+        Draft = restoredDraft;
+        SelectedTemplate = Draft.Template;
+
+        _saveStatus = "Draft restored";
+    }
+    catch
+    {
+        _saveStatus = "Draft storage unavailable";
+    }
+    finally
+    {
+        _draftStorageReady = true;
+    }
+}
+
+private async Task QueueDraftSaveAsync()
+{
+    if (!_draftStorageReady)
+    {
+        return;
+    }
+
+    var previousSave = _saveDebounce;
+
+    _saveDebounce =
+        new CancellationTokenSource();
+
+    previousSave?.Cancel();
+    previousSave?.Dispose();
+
+    var currentSave = _saveDebounce;
+
+    _saveStatus = "Saving…";
+
+    try
+    {
+        await Task.Delay(
+            500,
+            currentSave.Token);
+
+        await DraftStorage.SaveAsync(Draft);
+
+        if (ReferenceEquals(
+                _saveDebounce,
+                currentSave))
+        {
+            _saveStatus = "Saved";
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        // A newer edit restarted the save delay.
+    }
+    catch
+    {
+        if (ReferenceEquals(
+                _saveDebounce,
+                currentSave))
+        {
+            _saveStatus =
+                "Draft storage unavailable";
+        }
+    }
+}
+
+private async Task SaveDraftImmediatelyAsync()
+{
+    if (!_draftStorageReady)
+    {
+        return;
+    }
+
+    _saveDebounce?.Cancel();
+
+    _saveStatus = "Saving…";
+
+    try
+    {
+        await DraftStorage.SaveAsync(Draft);
+        _saveStatus = "Saved";
+    }
+    catch
+    {
+        _saveStatus =
+            "Draft storage unavailable";
+    }
+}
+
+private async Task StartNewReviewAsync()
+{
+    bool confirmed;
+
+    try
+    {
+        confirmed =
+            await DraftStorage.ConfirmResetAsync();
+    }
+    catch
+    {
+        _saveStatus =
+            "Unable to start a new review";
+
+        return;
+    }
+
+    if (!confirmed)
+    {
+        return;
+    }
+
+    try
+    {
+        _saveDebounce?.Cancel();
+
+        await DraftStorage.ClearAsync();
+
+        Draft = new ReviewDraft();
+        SelectedTemplate = Draft.Template;
+
+        CurrentStep = BuilderStep.Template;
+        CurrentOutputView = OutputView.Preview;
+
+        _copyMessage = string.Empty;
+        _saveStatus = "Not saved yet";
+    }
+    catch
+    {
+        _saveStatus =
+            "Unable to clear saved draft";
+    }
+}
 }

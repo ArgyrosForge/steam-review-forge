@@ -30,7 +30,7 @@ public sealed class ReviewDraft
     public string FinalThoughts { get; set; } =
         "Despite its rough edges, the game delivers a memorable and consistently enjoyable experience.";
     
-    public List<ReviewCategory> Categories { get; } = new()
+    public List<ReviewCategory> Categories { get; set; } = new()
     {
         new ReviewCategory
         {

@@ -667,6 +667,30 @@ textarea:focus {
         min-height: auto;
     }
 }
+.save-status {
+    min-width: 6.5rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.new-review-button {
+    min-height: 2.5rem;
+    padding-inline: 0.85rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .save-status {
+        display: none;
+    }
+
+    .new-review-button {
+        padding-inline: 0.65rem;
+        font-size: 0.78rem;
+    }
+}
 
 .output-tabs {
     display: flex;
@@ -805,4 +829,5 @@ textarea:focus {
         min-height: 400px;
         max-height: none;
     }
+}
 }
