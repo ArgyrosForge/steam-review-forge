@@ -1,28 +1,101 @@
 # Roadmap
 
-This roadmap uses [Semantic Versioning](https://semver.org/). Version numbers use the `MAJOR.MINOR.PATCH` format.
+Steam Review Forge uses [Semantic Versioning](https://semver.org/) with version numbers in the `MAJOR.MINOR.PATCH` format.
 
-## v0.1.0 — Initial Usable Release
+The roadmap represents the current direction of the project and may change as development continues.
 
-- [ ] Define the initial project scope
-- [ ] Complete the core functionality or deliverable
-- [ ] Add essential documentation
+## v0.1.0 — Core Review Builder
 
-## v0.2.0 — Next Feature Milestone
+The first usable version of Steam Review Forge.
 
-- [ ] Add the next major set of improvements
-- [ ] Address feedback from the initial release
+### Completed
+
+- [x] Create the guided five-step review workflow
+- [x] Add Balanced, Quick Take, Deep Dive, and Full Custom templates
+- [x] Add Rating Table, Individual Sections, Checklist, and Minimal Verdict layouts
+- [x] Support customizable categories, ratings, and notes
+- [x] Add guided strengths, weaknesses, and final-thought prompts
+- [x] Generate Steam-compatible BBCode
+- [x] Add rendered review and raw BBCode previews
+- [x] Add clipboard export
+- [x] Save and restore review drafts through browser local storage
+- [x] Add review validation, warnings, and step status indicators
+- [x] Add new-review confirmation and draft clearing
+- [x] Add responsive styling and light and dark themes
+- [x] Replace the initial repository documentation templates
+
+### Remaining
+
+- [ ] Complete the initial changelog
+- [ ] Add automated tests for BBCode generation, templates, validation, and draft serialization
+- [ ] Perform a full accessibility and keyboard-navigation review
+- [ ] Test the application across major desktop and mobile browsers
+- [ ] Publish the first usable release
+
+## v0.2.0 — Reliability and Editing Improvements
+
+Improve confidence in generated reviews and make the editing workflow more flexible.
+
+- [ ] Add automated unit tests for core services
+- [ ] Add browser-level tests for the primary review workflow
+- [ ] Allow categories to be reordered
+- [ ] Allow review sections to be enabled or disabled individually
+- [ ] Improve validation messages and navigation to invalid fields
+- [ ] Warn users before leaving with unsaved changes when local storage is unavailable
+- [ ] Improve mobile editing and preview behavior
+- [ ] Add clearer recovery behavior for invalid or outdated saved drafts
+- [ ] Improve BBCode compatibility checks and output sanitization
+
+## v0.3.0 — Import, Export, and Sharing
+
+Make reviews easier to back up, reuse, and move between browsers.
+
+- [ ] Export a review draft as JSON
+- [ ] Import a previously exported review draft
+- [ ] Add plain-text and Markdown export options
+- [ ] Add reusable custom templates
+- [ ] Allow users to duplicate an existing draft
+- [ ] Add a printable review preview
+- [ ] Add optional shareable links without exposing private drafts by default
+
+## v0.4.0 — Expanded Review Tools
+
+Add more control for users who want advanced review formats.
+
+- [ ] Add more built-in review templates
+- [ ] Add optional pros-and-cons sections
+- [ ] Add spoiler formatting controls
+- [ ] Add configurable headings and labels
+- [ ] Add additional rating scales
+- [ ] Add optional game metadata fields
+- [ ] Add BBCode presets for short and long Steam reviews
 
 ## v1.0.0 — Stable Release
 
-- [ ] Finalize the stable feature set
-- [ ] Complete user and contributor documentation
-- [ ] Resolve known release-blocking issues
+Prepare Steam Review Forge for dependable public use.
+
+- [ ] Finalize the supported review formats
+- [ ] Complete automated test coverage for critical workflows
+- [ ] Complete accessibility review
+- [ ] Complete browser compatibility testing
+- [ ] Finalize user and contributor documentation
+- [ ] Resolve all known release-blocking defects
+- [ ] Select and add a project license
+- [ ] Publish a stable hosted version
+- [ ] Publish the first stable release
 
 ## Future Ideas
 
-- Add ideas that are not assigned to a release yet
+Ideas not currently assigned to a release:
 
-## Completed
+- Multiple locally saved reviews
+- Optional cloud synchronization
+- Community-created templates
+- Localization
+- Steam game lookup and metadata import
+- Screenshot or image-assisted review planning
+- Review statistics and rating summaries
 
-Move completed milestones or major roadmap items here.
+## Completed Milestones
+
+Completed releases and major milestones should be moved here after they are published.
