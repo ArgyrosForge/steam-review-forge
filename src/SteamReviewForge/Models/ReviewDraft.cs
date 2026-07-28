@@ -13,6 +13,9 @@ public sealed class ReviewDraft
     public ReviewDisplayFormat DisplayFormat { get; set; } =
         ReviewDisplayFormat.RatingTable;
     
+    public ReviewTemplate Template { get; set; } =
+        ReviewTemplate.Balanced;
+    
     public string Playtime { get; set; } = "35 hours";
 
     public string WhatWorks { get; set; } =
