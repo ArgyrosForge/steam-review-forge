@@ -830,4 +830,63 @@ textarea:focus {
         max-height: none;
     }
 }
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(5, 10, 15, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.confirmation-dialog {
+    width: min(100%, 440px);
+    padding: 1.4rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow:
+            0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+.dialog-content h2 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.dialog-content p {
+    margin: 0.65rem 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.7rem;
+    margin-top: 1.4rem;
+}
+
+.button.danger-solid {
+    color: #ffffff;
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
+.button.danger-solid:hover {
+    filter: brightness(1.08);
+}
+
+@media (max-width: 500px) {
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .dialog-actions .button {
+        width: 100%;
+    }
 }
