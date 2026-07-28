@@ -4,6 +4,7 @@
 
 @using SteamReviewForge.Models
 @using SteamReviewForge.Services
+@using Microsoft.AspNetCore.Components
 
 <PageTitle>Steam Review Forge</PageTitle>
 
@@ -510,17 +511,47 @@
         <aside class="panel preview-panel">
             <div class="panel-heading">
                 <h2>Live output</h2>
-                <p>Steam-compatible BBCode updates as you type.</p>
+
+                <p>
+                    Preview the formatted review or inspect its Steam BBCode.
+                </p>
             </div>
 
-            <div class="output-header">
-                <strong>BBCode</strong>
-                <span>Preview rendering comes later</span>
+            <div class="output-tabs"
+                 role="tablist"
+                 aria-label="Review output view">
+                <button class="@GetOutputTabClass(OutputView.Preview)"
+                        type="button"
+                        role="tab"
+                        aria-selected="@(CurrentOutputView == OutputView.Preview)"
+                        @onclick="() => CurrentOutputView = OutputView.Preview">
+                    Preview
+                </button>
+
+                <button class="@GetOutputTabClass(OutputView.BbCode)"
+                        type="button"
+                        role="tab"
+                        aria-selected="@(CurrentOutputView == OutputView.BbCode)"
+                        @onclick="() => CurrentOutputView = OutputView.BbCode">
+                    BBCode
+                </button>
             </div>
 
-            <textarea class="code-output"
-                      rows="36"
-                      readonly>@GeneratedBbCode</textarea>
+            @if (CurrentOutputView == OutputView.Preview)
+            {
+                <div class="steam-preview"
+                     role="tabpanel"
+                     aria-label="Rendered review preview">
+                    @RenderedPreview
+                </div>
+            }
+            else
+            {
+                <textarea class="code-output"
+                  rows="36"
+                  readonly
+                  aria-label="Generated Steam BBCode">@GeneratedBbCode</textarea>
+            }
         </aside>
     </main>
 
@@ -539,6 +570,12 @@
         Format = 3,
         Questions = 4,
         Export = 5
+    }
+    
+    private enum OutputView
+    {
+        Preview,
+        BbCode
     }
 
     private sealed record TemplateOption(
@@ -610,6 +647,21 @@
     private string GeneratedBbCode =>
         SteamBbCodeGenerator.Generate(Draft);
 
+    private OutputView CurrentOutputView { get; set; } =
+        OutputView.Preview;
+
+    private MarkupString RenderedPreview =>
+        new(
+            SteamBbCodePreviewRenderer.Render(
+                GeneratedBbCode));
+
+    private string GetOutputTabClass(OutputView view)
+    {
+        return CurrentOutputView == view
+            ? "output-tab active"
+            : "output-tab";
+    }
+    
     private bool ShowCategories =>
         Draft.DisplayFormat is
             ReviewDisplayFormat.RatingTable or
