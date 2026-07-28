@@ -16,7 +16,7 @@ public sealed class ReviewDraft
     public ReviewTemplate Template { get; set; } =
         ReviewTemplate.Balanced;
 
-    public string Playtime { get; set; } = "35 hours";
+    public string Playtime { get; set; } = "35";
 
     public string WhatWorks { get; set; } =
         "Satisfying core gameplay\n" +
@@ -55,7 +55,8 @@ public sealed class ReviewDraft
 
 public enum ReviewRecommendation
 {
-    Recommended,
-    Mixed,
-    NotRecommended
+    Recommended = 0,
+
+    // Value 1 was the legacy Mixed option.
+    NotRecommended = 2
 }

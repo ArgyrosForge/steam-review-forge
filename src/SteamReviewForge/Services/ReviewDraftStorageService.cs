@@ -30,9 +30,24 @@ public sealed class ReviewDraftStorageService
             return null;
         }
 
-        return JsonSerializer.Deserialize<ReviewDraft>(
+        var draft = JsonSerializer.Deserialize<ReviewDraft>(
             json,
             JsonOptions);
+
+        if (draft is not null &&
+            !Enum.IsDefined(draft.Recommendation))
+        {
+            draft.Recommendation =
+                ReviewRecommendation.Recommended;
+        }
+
+        if (draft is not null)
+        {
+            draft.Playtime =
+                PlaytimeFormatter.Normalize(draft.Playtime);
+        }
+
+        return draft;
     }
 
     public ValueTask SaveAsync(ReviewDraft draft)
@@ -55,4 +70,5 @@ public sealed class ReviewDraftStorageService
             "reviewDraftStorage.remove",
             StorageKey);
     }
+
 }
