@@ -2,7 +2,7 @@
 
 @implements IAsyncDisposable
 
-@inject Microsoft.JSInterop.IJSRuntime JS
+@inject IJSRuntime JS
 @inject ReviewDraftStorageService DraftStorage
 
 @using Microsoft.AspNetCore.Components
@@ -55,7 +55,9 @@
                     <button class="@GetStepClass(BuilderStep.Template)"
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Template)">
-                        <span class="step-number">1</span>
+                        <span class="step-number">
+                            @GetStepMarker(BuilderStep.Template)
+                        </span>
 
                         <span>
                             <strong>Template</strong>
@@ -68,7 +70,9 @@
                     <button class="@GetStepClass(BuilderStep.Setup)"
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Setup)">
-                        <span class="step-number">2</span>
+                        <span class="step-number">
+                            @GetStepMarker(BuilderStep.Template)
+                        </span>
 
                         <span>
                             <strong>Setup</strong>
@@ -81,7 +85,9 @@
                     <button class="@GetStepClass(BuilderStep.Format)"
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Format)">
-                        <span class="step-number">3</span>
+                        <span class="step-number">
+                            @GetStepMarker(BuilderStep.Template)
+                        </span>
 
                         <span>
                             <strong>Format</strong>
@@ -94,7 +100,9 @@
                     <button class="@GetStepClass(BuilderStep.Questions)"
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Questions)">
-                        <span class="step-number">4</span>
+                        <span class="step-number">
+                            @GetStepMarker(BuilderStep.Template)
+                        </span>
 
                         <span>
                             <strong>Questions</strong>
@@ -107,7 +115,9 @@
                     <button class="@GetStepClass(BuilderStep.Export)"
                             type="button"
                             @onclick="() => GoToStep(BuilderStep.Export)">
-                        <span class="step-number">5</span>
+                        <span class="step-number">
+                            @GetStepMarker(BuilderStep.Template)
+                        </span>
 
                         <span>
                             <strong>Export</strong>
@@ -146,8 +156,8 @@
                                         type="button"
                                         role="radio"
                                         aria-checked="@(SelectedTemplate == option.Template
-                                            ? "true"
-                                            : "false")"
+                                                          ? "true"
+                                                          : "false")"
                                         @onclick="() => SelectTemplate(option.Template)">
                                     <div class="template-card-header">
                                         <span class="template-code"
@@ -197,32 +207,51 @@
                         </div>
 
                         <div class="field-grid">
-                            <div class="field full-width">
+                            <div class="@GetFieldClass(nameof(Draft.Title))">
                                 <label for="review-title">
                                     Review title
                                 </label>
 
                                 <input id="review-title"
                                        type="text"
+                                       aria-invalid="@HasFieldError(nameof(Draft.Title))"
                                        @bind="Draft.Title"
                                        @bind:event="oninput"
-                                       @bind:after="QueueDraftSaveAsync" />
+                                       @bind:after="QueueDraftSaveAsync"/>
+
+                                @foreach (var issue in GetFieldIssues(nameof(Draft.Title)))
+                                {
+                                    <span class="@GetIssueClass(issue)">
+                @issue.Message
+            </span>
+                                }
                             </div>
 
-                            <div class="field full-width">
+                            <div class="@GetFieldClass(nameof(Draft.Summary))">
                                 <label for="review-summary">
                                     Summary
                                 </label>
 
                                 <input id="review-summary"
                                        type="text"
+                                       aria-invalid="@HasFieldError(nameof(Draft.Summary))"
                                        @bind="Draft.Summary"
                                        @bind:event="oninput"
-                                       @bind:after="QueueDraftSaveAsync" />
+                                       @bind:after="QueueDraftSaveAsync"/>
 
-                                <span class="field-help">
-                                    A short sentence that summarizes your opinion.
-                                </span>
+                                @if (!GetFieldIssues(nameof(Draft.Summary)).Any())
+                                {
+                                    <span class="field-help">
+                A short sentence that summarizes your opinion.
+            </span>
+                                }
+
+                                @foreach (var issue in GetFieldIssues(nameof(Draft.Summary)))
+                                {
+                                    <span class="@GetIssueClass(issue)">
+                @issue.Message
+            </span>
+                                }
                             </div>
 
                             <div class="field">
@@ -231,7 +260,8 @@
                                 </label>
 
                                 <select id="recommendation"
-                                        @bind="Draft.Recommendation">
+                                        @bind="Draft.Recommendation"
+                                        @bind:after="QueueDraftSaveAsync">
                                     <option value="@ReviewRecommendation.Recommended">
                                         Recommended
                                     </option>
@@ -246,7 +276,7 @@
                                 </select>
                             </div>
 
-                            <div class="field">
+                            <div class="@GetFieldClass(nameof(Draft.Playtime))">
                                 <label for="playtime">
                                     Playtime
                                 </label>
@@ -254,11 +284,22 @@
                                 <input id="playtime"
                                        type="text"
                                        @bind="Draft.Playtime"
-                                       @bind:event="oninput" />
+                                       @bind:event="oninput"
+                                       @bind:after="QueueDraftSaveAsync"/>
 
-                                <span class="field-help">
-                                    Example: 35 hours
-                                </span>
+                                @if (!GetFieldIssues(nameof(Draft.Playtime)).Any())
+                                {
+                                    <span class="field-help">
+                Example: 35 hours
+            </span>
+                                }
+
+                                @foreach (var issue in GetFieldIssues(nameof(Draft.Playtime)))
+                                {
+                                    <span class="@GetIssueClass(issue)">
+                @issue.Message
+            </span>
+                                }
                             </div>
                         </div>
                     </section>
@@ -280,7 +321,8 @@
                             </label>
 
                             <select id="display-format"
-                                    @bind="Draft.DisplayFormat">
+                                    @bind="Draft.DisplayFormat"
+                                    @bind:after="QueueDraftSaveAsync">>
                                 <option value="@ReviewDisplayFormat.RatingTable">
                                     Rating Table
                                 </option>
@@ -329,18 +371,32 @@
                                     <div class="category-card"
                                          @key="category.Id">
                                         <div class="category-grid">
-                                            <div class="field">
+                                            <div class="@GetFieldClass(
+                                                            $"CategoryName:{category.Id}")">
+
                                                 <label>Category</label>
 
                                                 <input type="text"
+                                                       aria-invalid="@HasFieldError(
+                                                                         $"CategoryName:{category.Id}")"
                                                        @bind="category.Name"
-                                                       @bind:event="oninput" />
+                                                       @bind:event="oninput"
+                                                       @bind:after="QueueDraftSaveAsync"/>
+
+                                                @foreach (var issue in GetFieldIssues(
+                                                                  $"CategoryName:{category.Id}"))
+                                                {
+                                                    <span class="@GetIssueClass(issue)">
+                                                        @issue.Message
+                                                    </span>
+                                                }
                                             </div>
 
                                             <div class="field rating-field">
                                                 <label>Rating</label>
 
-                                                <select @bind="category.Rating">
+                                                <select @bind="category.Rating"
+                                                        @bind:after="QueueDraftSaveAsync">
                                                     <option value="5">5 / 5</option>
                                                     <option value="4">4 / 5</option>
                                                     <option value="3">3 / 5</option>
@@ -349,12 +405,23 @@
                                                 </select>
                                             </div>
 
-                                            <div class="field">
+                                            <div class="@GetFieldClass(
+                                                            $"CategoryNote:{category.Id}")">
+
                                                 <label>Short note</label>
 
                                                 <input type="text"
                                                        @bind="category.Note"
-                                                       @bind:event="oninput" />
+                                                       @bind:event="oninput"
+                                                       @bind:after="QueueDraftSaveAsync"/>
+
+                                                @foreach (var issue in GetFieldIssues(
+                                                                  $"CategoryNote:{category.Id}"))
+                                                {
+                                                    <span class="@GetIssueClass(issue)">
+                                                        @issue.Message
+                                                    </span>
+                                                }
                                             </div>
 
                                             <button class="button danger"
@@ -384,7 +451,7 @@
                         <div class="field-grid">
                             @if (ShowDetailedQuestions)
                             {
-                                <div class="field full-width">
+                                <div class="@GetFieldClass(nameof(Draft.WhatWorks))">
                                     <label for="what-works">
                                         What does the game do well?
                                     </label>
@@ -392,14 +459,28 @@
                                     <textarea id="what-works"
                                               rows="7"
                                               @bind="Draft.WhatWorks"
-                                              @bind:event="oninput"></textarea>
+                                              @bind:event="oninput"
+                                              @bind:after="QueueDraftSaveAsync"></textarea>
 
-                                    <span class="field-help">
-                                        Each nonblank line becomes a separate point.
-                                    </span>
+                                    @if (!GetFieldIssues(nameof(Draft.WhatWorks)).Any())
+                                    {
+                                        <span class="field-help">
+                    Each nonblank line becomes a separate point.
+                </span>
+                                    }
+
+                                    @foreach (var issue in GetFieldIssues(
+                                                      nameof(Draft.WhatWorks)))
+                                    {
+                                        <span class="@GetIssueClass(issue)">
+                    @issue.Message
+                </span>
+                                    }
                                 </div>
 
-                                <div class="field full-width">
+                                <div class="@GetFieldClass(
+                                                nameof(Draft.WhatCouldBeBetter))">
+
                                     <label for="what-could-be-better">
                                         What could be better?
                                     </label>
@@ -407,26 +488,50 @@
                                     <textarea id="what-could-be-better"
                                               rows="7"
                                               @bind="Draft.WhatCouldBeBetter"
-                                              @bind:event="oninput"></textarea>
+                                              @bind:event="oninput"
+                                              @bind:after="QueueDraftSaveAsync"></textarea>
 
-                                    <span class="field-help">
-                                        Each nonblank line becomes a separate point.
-                                    </span>
+                                    @if (!GetFieldIssues(
+                                                 nameof(Draft.WhatCouldBeBetter)).Any())
+                                    {
+                                        <span class="field-help">
+                    Each nonblank line becomes a separate point.
+                </span>
+                                    }
+
+                                    @foreach (var issue in GetFieldIssues(
+                                                      nameof(Draft.WhatCouldBeBetter)))
+                                    {
+                                        <span class="@GetIssueClass(issue)">
+                    @issue.Message
+                </span>
+                                    }
                                 </div>
                             }
 
-                            <div class="field full-width">
+                            <div class="@GetFieldClass(nameof(Draft.FinalThoughts))">
                                 <label for="final-thoughts">
                                     @(Draft.DisplayFormat ==
-                                      ReviewDisplayFormat.MinimalVerdict
+                                    ReviewDisplayFormat.MinimalVerdict
                                         ? "Why?"
                                         : "Final thoughts")
                                 </label>
 
                                 <textarea id="final-thoughts"
                                           rows="7"
+                                          aria-invalid="@HasFieldError(
+                                                            nameof(Draft.FinalThoughts))"
                                           @bind="Draft.FinalThoughts"
-                                          @bind:event="oninput"></textarea>
+                                          @bind:event="oninput"
+                                          @bind:after="QueueDraftSaveAsync"></textarea>
+
+                                @foreach (var issue in GetFieldIssues(
+                                                  nameof(Draft.FinalThoughts)))
+                                {
+                                    <span class="@GetIssueClass(issue)">
+                @issue.Message
+            </span>
+                                }
                             </div>
                         </div>
                     </section>
@@ -487,6 +592,7 @@
                         <div class="export-actions">
                             <button class="button primary"
                                     type="button"
+                                    disabled="@(!CurrentValidation.IsValid)"
                                     @onclick="CopyBbCode">
                                 Copy BBCode
                             </button>
@@ -563,9 +669,9 @@
             else
             {
                 <textarea class="code-output"
-                  rows="36"
-                  readonly
-                  aria-label="Generated Steam BBCode">@GeneratedBbCode</textarea>
+                          rows="36"
+                          readonly
+                          aria-label="Generated Steam BBCode">@GeneratedBbCode</textarea>
             }
         </aside>
     </main>
@@ -618,6 +724,7 @@
 </div>
 
 @code {
+
     private enum BuilderStep
     {
         Template = 1,
@@ -626,7 +733,7 @@
         Questions = 4,
         Export = 5
     }
-    
+
     private sealed record TemplateOption(
         ReviewTemplate Template,
         string Code,
@@ -691,7 +798,7 @@
         Preview,
         BbCode
     }
-    
+
     private ReviewTemplate SelectedTemplate { get; set; } =
         ReviewTemplate.Balanced;
 
@@ -704,11 +811,26 @@
     private string _copyMessage = string.Empty;
 
     private string _theme = "light";
-    
+
     private bool _showNewReviewDialog;
 
     private string GeneratedBbCode =>
         SteamBbCodeGenerator.Generate(Draft);
+    
+    private ReviewValidationResult CurrentValidation =>
+        ReviewDraftValidator.Validate(Draft);
+
+    private IEnumerable<ReviewValidationIssue> ValidationErrors =>
+        CurrentValidation.Issues.Where(
+            issue =>
+                issue.Severity ==
+                ReviewValidationSeverity.Error);
+
+    private IEnumerable<ReviewValidationIssue> ValidationWarnings =>
+        CurrentValidation.Issues.Where(
+            issue =>
+                issue.Severity ==
+                ReviewValidationSeverity.Warning);
 
     private OutputView CurrentOutputView { get; set; } =
         OutputView.Preview;
@@ -724,7 +846,7 @@
             ? "output-tab active"
             : "output-tab";
     }
-    
+
     private bool ShowCategories =>
         Draft.DisplayFormat is
             ReviewDisplayFormat.RatingTable or
@@ -903,19 +1025,182 @@
 
     private string GetStepClass(BuilderStep step)
     {
+        var classes = new List<string>
+        {
+            "step-item"
+        };
+
         if (step == CurrentStep)
         {
-            return "step-item active";
+            classes.Add("active");
         }
-
-        if ((int)step < (int)CurrentStep)
+        else if ((int)step < (int)CurrentStep)
         {
-            return "step-item complete";
+            classes.Add("visited");
+        }
+        else
+        {
+            classes.Add("future");
         }
 
-        return "step-item future";
+        var section = GetValidationSection(step);
+
+        if (section.HasValue)
+        {
+            if (CurrentValidation.HasErrors(section.Value))
+            {
+                classes.Add("has-error");
+            }
+            else if (CurrentValidation.HasWarnings(section.Value))
+            {
+                classes.Add("has-warning");
+            }
+            else
+            {
+                classes.Add("complete");
+            }
+        }
+        else if (step == BuilderStep.Template)
+        {
+            classes.Add("complete");
+        }
+        else if (step == BuilderStep.Export)
+        {
+            classes.Add(
+                CurrentValidation.IsValid
+                    ? "complete"
+                    : "has-error");
+        }
+
+        return string.Join(' ', classes);
     }
 
+    private static ReviewValidationSection?
+    GetValidationSection(BuilderStep step)
+{
+    return step switch
+    {
+        BuilderStep.Setup =>
+            ReviewValidationSection.Setup,
+
+        BuilderStep.Format =>
+            ReviewValidationSection.Format,
+
+        BuilderStep.Questions =>
+            ReviewValidationSection.Questions,
+
+        _ => null
+    };
+}
+
+private string GetStepMarker(BuilderStep step)
+{
+    var section = GetValidationSection(step);
+
+    if (section.HasValue)
+    {
+        if (CurrentValidation.HasErrors(section.Value))
+        {
+            return "!";
+        }
+
+        if (CurrentValidation.HasWarnings(section.Value))
+        {
+            return "!";
+        }
+
+        return "✓";
+    }
+
+    if (step == BuilderStep.Template)
+    {
+        return step == CurrentStep ? "1" : "✓";
+    }
+
+    if (step == BuilderStep.Export)
+    {
+        return CurrentValidation.IsValid ? "✓" : "!";
+    }
+
+    return ((int)step).ToString();
+}
+
+private IEnumerable<ReviewValidationIssue>
+    GetFieldIssues(string field)
+{
+    return CurrentValidation.ForField(field);
+}
+
+private bool HasFieldError(string field)
+{
+    return GetFieldIssues(field).Any(
+        issue =>
+            issue.Severity ==
+                ReviewValidationSeverity.Error);
+}
+
+private string GetFieldClass(string field)
+{
+    var issues = GetFieldIssues(field).ToArray();
+
+    if (issues.Any(
+            issue =>
+                issue.Severity ==
+                    ReviewValidationSeverity.Error))
+    {
+        return "field full-width has-error";
+    }
+
+    if (issues.Any(
+            issue =>
+                issue.Severity ==
+                    ReviewValidationSeverity.Warning))
+    {
+        return "field full-width has-warning";
+    }
+
+    return "field full-width";
+}
+
+private static string GetIssueClass(
+    ReviewValidationIssue issue)
+{
+    return issue.Severity switch
+    {
+        ReviewValidationSeverity.Error =>
+            "field-message error-message",
+
+        ReviewValidationSeverity.Warning =>
+            "field-message warning-message",
+
+        _ => "field-message"
+    };
+}
+
+private void GoToFirstError()
+{
+    var issue = ValidationErrors.FirstOrDefault();
+
+    if (issue is null)
+    {
+        return;
+    }
+
+    CurrentStep = issue.Section switch
+    {
+        ReviewValidationSection.Setup =>
+            BuilderStep.Setup,
+
+        ReviewValidationSection.Format =>
+            BuilderStep.Format,
+
+        ReviewValidationSection.Questions =>
+            BuilderStep.Questions,
+
+        _ => CurrentStep
+    };
+}
+    
     private string GetTemplateCardClass(
         ReviewTemplate template)
     {
@@ -968,6 +1253,14 @@
 
     private async Task CopyBbCode()
     {
+        if (!CurrentValidation.IsValid)
+        {
+            _copyMessage =
+                "Complete the required fields before copying.";
+
+            GoToFirstError();
+            return;
+        }
         try
         {
             await JS.InvokeVoidAsync(
@@ -1007,156 +1300,157 @@
 
         return ValueTask.CompletedTask;
     }
-    
+
     private async Task ToggleTheme()
     {
         _theme = await JS.InvokeAsync<string>(
             "themeManager.toggle");
     }
-    
-    private async Task RestoreDraftAsync()
-{
-    try
-    {
-        var restoredDraft =
-            await DraftStorage.LoadAsync();
 
-        if (restoredDraft is null)
+    private async Task RestoreDraftAsync()
+    {
+        try
         {
-            _saveStatus = "Not saved yet";
+            var restoredDraft =
+                await DraftStorage.LoadAsync();
+
+            if (restoredDraft is null)
+            {
+                _saveStatus = "Not saved yet";
+                return;
+            }
+
+            restoredDraft.Categories ??= [];
+
+            if (restoredDraft.Categories.Count == 0 &&
+                restoredDraft.DisplayFormat !=
+                ReviewDisplayFormat.MinimalVerdict)
+            {
+                restoredDraft.Categories.Add(
+                    new ReviewCategory());
+            }
+
+            Draft = restoredDraft;
+            SelectedTemplate = Draft.Template;
+
+            _saveStatus = "Draft restored";
+        }
+        catch
+        {
+            _saveStatus = "Draft storage unavailable";
+        }
+        finally
+        {
+            _draftStorageReady = true;
+        }
+    }
+
+    private async Task QueueDraftSaveAsync()
+    {
+        if (!_draftStorageReady)
+        {
             return;
         }
 
-        restoredDraft.Categories ??= [];
+        var previousSave = _saveDebounce;
 
-        if (restoredDraft.Categories.Count == 0 &&
-            restoredDraft.DisplayFormat !=
-                ReviewDisplayFormat.MinimalVerdict)
+        _saveDebounce =
+            new CancellationTokenSource();
+
+        previousSave?.Cancel();
+        previousSave?.Dispose();
+
+        var currentSave = _saveDebounce;
+
+        _saveStatus = "Saving…";
+
+        try
         {
-            restoredDraft.Categories.Add(
-                new ReviewCategory());
+            await Task.Delay(
+                500,
+                currentSave.Token);
+
+            await DraftStorage.SaveAsync(Draft);
+
+            if (ReferenceEquals(
+                    _saveDebounce,
+                    currentSave))
+            {
+                _saveStatus = "Saved";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer edit restarted the save delay.
+        }
+        catch
+        {
+            if (ReferenceEquals(
+                    _saveDebounce,
+                    currentSave))
+            {
+                _saveStatus =
+                    "Draft storage unavailable";
+            }
+        }
+    }
+
+    private async Task SaveDraftImmediatelyAsync()
+    {
+        if (!_draftStorageReady)
+        {
+            return;
         }
 
-        Draft = restoredDraft;
-        SelectedTemplate = Draft.Template;
+        _saveDebounce?.Cancel();
 
-        _saveStatus = "Draft restored";
-    }
-    catch
-    {
-        _saveStatus = "Draft storage unavailable";
-    }
-    finally
-    {
-        _draftStorageReady = true;
-    }
-}
+        _saveStatus = "Saving…";
 
-private async Task QueueDraftSaveAsync()
-{
-    if (!_draftStorageReady)
-    {
-        return;
-    }
-
-    var previousSave = _saveDebounce;
-
-    _saveDebounce =
-        new CancellationTokenSource();
-
-    previousSave?.Cancel();
-    previousSave?.Dispose();
-
-    var currentSave = _saveDebounce;
-
-    _saveStatus = "Saving…";
-
-    try
-    {
-        await Task.Delay(
-            500,
-            currentSave.Token);
-
-        await DraftStorage.SaveAsync(Draft);
-
-        if (ReferenceEquals(
-                _saveDebounce,
-                currentSave))
+        try
         {
+            await DraftStorage.SaveAsync(Draft);
             _saveStatus = "Saved";
         }
-    }
-    catch (OperationCanceledException)
-    {
-        // A newer edit restarted the save delay.
-    }
-    catch
-    {
-        if (ReferenceEquals(
-                _saveDebounce,
-                currentSave))
+        catch
         {
             _saveStatus =
                 "Draft storage unavailable";
         }
     }
-}
 
-private async Task SaveDraftImmediatelyAsync()
-{
-    if (!_draftStorageReady)
+    private void OpenNewReviewDialog()
     {
-        return;
+        _showNewReviewDialog = true;
     }
 
-    _saveDebounce?.Cancel();
-
-    _saveStatus = "Saving…";
-
-    try
+    private void CloseNewReviewDialog()
     {
-        await DraftStorage.SaveAsync(Draft);
-        _saveStatus = "Saved";
-    }
-    catch
-    {
-        _saveStatus =
-            "Draft storage unavailable";
-    }
-}
-
-private void OpenNewReviewDialog()
-{
-    _showNewReviewDialog = true;
-}
-
-private void CloseNewReviewDialog()
-{
-    _showNewReviewDialog = false;
-}
-
-private async Task ConfirmStartNewReviewAsync()
-{
-    try
-    {
-        _saveDebounce?.Cancel();
-
-        await DraftStorage.ClearAsync();
-
-        Draft = new ReviewDraft();
-        SelectedTemplate = Draft.Template;
-
-        CurrentStep = BuilderStep.Template;
-        CurrentOutputView = OutputView.Preview;
-
-        _copyMessage = string.Empty;
-        _saveStatus = "Not saved yet";
         _showNewReviewDialog = false;
     }
-    catch
+
+    private async Task ConfirmStartNewReviewAsync()
     {
-        _saveStatus =
-            "Unable to clear saved draft";
+        try
+        {
+            _saveDebounce?.Cancel();
+
+            await DraftStorage.ClearAsync();
+
+            Draft = new ReviewDraft();
+            SelectedTemplate = Draft.Template;
+
+            CurrentStep = BuilderStep.Template;
+            CurrentOutputView = OutputView.Preview;
+
+            _copyMessage = string.Empty;
+            _saveStatus = "Not saved yet";
+            _showNewReviewDialog = false;
+        }
+        catch
+        {
+            _saveStatus =
+                "Unable to clear saved draft";
+        }
     }
-}
+
 }
