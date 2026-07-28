@@ -1043,6 +1043,11 @@
             classes.Add("future");
         }
 
+        if ((int)step >= (int)CurrentStep)
+        {
+            return string.Join(' ', classes);
+        }
+
         var section = GetValidationSection(step);
 
         if (section.HasValue)
@@ -1064,19 +1069,12 @@
         {
             classes.Add("complete");
         }
-        else if (step == BuilderStep.Export)
-        {
-            classes.Add(
-                CurrentValidation.IsValid
-                    ? "complete"
-                    : "has-error");
-        }
 
         return string.Join(' ', classes);
     }
 
     private static ReviewValidationSection?
-    GetValidationSection(BuilderStep step)
+        GetValidationSection(BuilderStep step)
     {
         return step switch
         {
@@ -1095,34 +1093,21 @@
 
     private string GetStepMarker(BuilderStep step)
     {
+        if ((int)step >= (int)CurrentStep)
+        {
+            return ((int)step).ToString();
+        }
+
         var section = GetValidationSection(step);
 
-        if (section.HasValue)
+        if (section.HasValue &&
+            (CurrentValidation.HasErrors(section.Value) ||
+             CurrentValidation.HasWarnings(section.Value)))
         {
-            if (CurrentValidation.HasErrors(section.Value))
-            {
-                return "!";
-            }
-
-            if (CurrentValidation.HasWarnings(section.Value))
-            {
-                return "!";
-            }
-
-            return "✓";
+            return "!";
         }
 
-        if (step == BuilderStep.Template)
-        {
-            return step == CurrentStep ? "1" : "✓";
-        }
-
-        if (step == BuilderStep.Export)
-        {
-            return CurrentValidation.IsValid ? "✓" : "!";
-        }
-
-        return ((int)step).ToString();
+        return "✓";
     }
 
     private IEnumerable<ReviewValidationIssue>
@@ -1200,7 +1185,7 @@
             _ => CurrentStep
         };
     }
-
+    
     private string GetTemplateCardClass(
         ReviewTemplate template)
     {
@@ -1287,7 +1272,6 @@
 
         _theme = await JS.InvokeAsync<string>(
             "themeManager.get");
-
         await RestoreDraftAsync();
 
         StateHasChanged();
