@@ -1,0 +1,121 @@
+@font-face {
+    font-family: "Sora";
+    src: url("../../fonts/Sora-Variable.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 100 800;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("../../fonts/JetBrainsMono-Variable.ttf")
+        format("truetype");
+    font-style: normal;
+    font-weight: 100 800;
+    font-display: swap;
+}
+
+:root,
+:root[data-theme="main-blue"][data-color-mode="dark"] {
+    color-scheme: dark;
+
+    --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+    --brand-graphite: #0d1117;
+    --brand-steel: #1f2328;
+    --brand-silver: #c0c5ce;
+    --brand-off-white: #e6e8eb;
+    --brand-accent: #3a7bd5;
+
+    --page-bg: #0d1117;
+    --surface: #151a21;
+    --surface-raised: #1a2028;
+    --surface-soft: #1f2328;
+    --surface-muted: #282e36;
+
+    --border: #343b45;
+    --border-strong: #4b5562;
+    --control-border: #46505d;
+
+    --text: #e6e8eb;
+    --muted: #aeb5bf;
+    --subtle: #7f8996;
+
+    --accent: #3a7bd5;
+    --accent-strong: #5591e3;
+    --accent-contrast: #f7f9fc;
+    --action-bg: #2f6fc8;
+    --action-bg-hover: #3a7bd5;
+    --accent-soft: rgba(58, 123, 213, 0.16);
+    --accent-grid: rgba(58, 123, 213, 0.46);
+    --focus-ring: rgba(58, 123, 213, 0.3);
+
+    --danger: #ff6b82;
+    --danger-soft: rgba(255, 107, 130, 0.12);
+    --danger-border: rgba(255, 107, 130, 0.52);
+    --danger-contrast: #0d1117;
+
+    --warning: #f5b942;
+    --warning-soft: rgba(245, 185, 66, 0.12);
+    --warning-border: rgba(245, 185, 66, 0.52);
+
+    --code-bg: #090d12;
+    --code-text: #d8dee7;
+
+    --overlay: rgba(5, 8, 12, 0.82);
+    --panel-shadow: 0 14px 34px rgba(0, 0, 0, 0.26);
+    --dialog-shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="main-blue"][data-color-mode="light"] {
+    color-scheme: light;
+
+    --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+    --brand-graphite: #0d1117;
+    --brand-steel: #1f2328;
+    --brand-silver: #c0c5ce;
+    --brand-off-white: #e6e8eb;
+    --brand-accent: #3a7bd5;
+
+    --page-bg: #e6e8eb;
+    --surface: #f8f9fb;
+    --surface-raised: #ffffff;
+    --surface-soft: #eef0f3;
+    --surface-muted: #dce0e5;
+
+    --border: #c0c5ce;
+    --border-strong: #949da9;
+    --control-border: #a8b0bb;
+
+    --text: #0d1117;
+    --muted: #4e5865;
+    --subtle: #6d7784;
+
+    --accent: #2f6fc8;
+    --accent-strong: #245ca9;
+    --accent-contrast: #ffffff;
+    --action-bg: #2f6fc8;
+    --action-bg-hover: #245ca9;
+    --accent-soft: rgba(58, 123, 213, 0.14);
+    --accent-grid: rgba(47, 111, 200, 0.34);
+    --focus-ring: rgba(47, 111, 200, 0.24);
+
+    --danger: #b4233b;
+    --danger-soft: #fce8ec;
+    --danger-border: #d88795;
+    --danger-contrast: #ffffff;
+
+    --warning: #8a5b00;
+    --warning-soft: #fff3d6;
+    --warning-border: #d8aa4f;
+
+    --code-bg: #111720;
+    --code-text: #e6e8eb;
+
+    --overlay: rgba(13, 17, 23, 0.68);
+    --panel-shadow: 0 12px 28px rgba(31, 35, 40, 0.12);
+    --dialog-shadow: 0 26px 70px rgba(31, 35, 40, 0.24);
+}

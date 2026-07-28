@@ -30,7 +30,7 @@ The core review-building workflow is functional, but the project has not yet rea
 - Review validation with errors and recommendations
 - One-click BBCode clipboard export
 - Automatic local draft saving
-- Light and dark themes
+- Main Blue branding with dark and light modes
 - Responsive browser layout
 
 ## How It Works

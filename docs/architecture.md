@@ -198,7 +198,8 @@ The page debounces ordinary input saves and performs immediate saves after struc
 
 ## Browser Interoperability
 
-Browser-specific behavior is exposed through JavaScript objects in `wwwroot/index.html`.
+Browser-specific behavior is exposed through small JavaScript bridges in
+`wwwroot`.
 
 ### Draft storage
 
@@ -212,10 +213,17 @@ Browser-specific behavior is exposed through JavaScript objects in `wwwroot/inde
 
 `window.themeManager`:
 
-- Reads the saved theme
-- Falls back to the operating-system color preference
-- Applies the theme through a document data attribute
-- Persists light or dark selection in local storage when available
+- Registers the available brand themes
+- Treats brand theme and light/dark color mode as independent settings
+- Defaults new users to the Main Blue theme in dark mode
+- Migrates the previous light/dark preference when present
+- Applies both settings before styles load to prevent a theme flash
+- Persists the versioned appearance state in local storage
+
+Theme palettes live under `wwwroot/css/themes`. Each theme defines the shared
+semantic token contract for both `dark` and `light` color modes. Application
+styles consume only semantic tokens, so future themes can be added without
+duplicating component CSS.
 
 JavaScript should remain limited to browser APIs that are not conveniently or reliably available directly through Blazor.
 
