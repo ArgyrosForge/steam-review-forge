@@ -1,188 +1,611 @@
 ﻿@page "/"
 
+@inject Microsoft.JSInterop.IJSRuntime JS
+
 @using SteamReviewForge.Models
 @using SteamReviewForge.Services
 
 <PageTitle>Steam Review Forge</PageTitle>
 
-<h1>Steam Review Forge</h1>
-
-<p>Build a formatted Steam review.</p>
-
-<div>
-    <label for="review-title">Review title</label>
-
-    <input id="review-title"
-           type="text"
-           @bind="Draft.Title"
-           @bind:event="oninput" />
-</div>
-
-<div>
-    <label for="review-summary">Summary</label>
-
-    <input id="review-summary"
-           type="text"
-           @bind="Draft.Summary"
-           @bind:event="oninput" />
-</div>
-
-<div>
-    <label for="recommendation">Recommendation</label>
-
-    <select id="recommendation"
-            @bind="Draft.Recommendation">
-        <option value="@ReviewRecommendation.Recommended">
-            Recommended
-        </option>
-
-        <option value="@ReviewRecommendation.Mixed">
-            Mixed
-        </option>
-
-        <option value="@ReviewRecommendation.NotRecommended">
-            Not Recommended
-        </option>
-    </select>
-</div>
-
-<div>
-    <label for="display-format">Display format</label>
-
-    <select id="display-format"
-            @bind="Draft.DisplayFormat">
-        <option value="@ReviewDisplayFormat.RatingTable">
-            Rating Table
-        </option>
-
-        <option value="@ReviewDisplayFormat.Sections">
-            Individual Sections
-        </option>
-
-        <option value="@ReviewDisplayFormat.Checklist">
-            Checklist
-        </option>
-
-        <option value="@ReviewDisplayFormat.MinimalVerdict">
-            Minimal Verdict
-        </option>
-    </select>
-
-    <p>@DisplayFormatDescription</p>
-</div>
-
-@if (ShowCategories)
-{
-    <h2>Category Ratings</h2>
-
-    @foreach (var category in Draft.Categories)
-    {
-        <div @key="category.Id">
-            <div>
-                <label>Category</label>
-
-                <input type="text"
-                       @bind="category.Name"
-                       @bind:event="oninput" />
-            </div>
-
-            <div>
-                <label>Rating</label>
-
-                <select @bind="category.Rating">
-                    <option value="5">5 / 5</option>
-                    <option value="4">4 / 5</option>
-                    <option value="3">3 / 5</option>
-                    <option value="2">2 / 5</option>
-                    <option value="1">1 / 5</option>
-                </select>
-            </div>
-
-            <div>
-                <label>Note</label>
-
-                <input type="text"
-                       @bind="category.Note"
-                       @bind:event="oninput" />
-            </div>
-
-            <button type="button"
-                    disabled="@(Draft.Categories.Count <= 1)"
-                    @onclick="() => RemoveCategory(category)">
-                Remove
-            </button>
-
-            <hr />
+<div class="app-shell">
+    <header class="app-header">
+        <div>
+            <h1>Steam Review Forge</h1>
+            <p>
+                Build a structured review and copy the generated Steam BBCode.
+            </p>
         </div>
-    }
 
-    <button type="button"
-            @onclick="AddCategory">
-        Add Category
-    </button>
-}
+        <div class="header-actions">
+            <span class="status-badge">Early development</span>
 
-<h2>Review Questionnaire</h2>
+            <button class="theme-toggle"
+                    type="button"
+                    title="@ThemeToggleLabel"
+                    aria-label="@ThemeToggleLabel"
+                    @onclick="ToggleTheme">
+                <span aria-hidden="true">@ThemeToggleIcon</span>
+            </button>
+        </div>
+    </header>
 
-<div>
-    <label for="playtime">Playtime</label>
+    <main class="builder-layout">
+        <aside class="panel workflow-panel">
+            <div class="panel-heading">
+                <h2>Review Builder</h2>
+                <p>Complete each step to create your review.</p>
+            </div>
 
-    <input id="playtime"
-           type="text"
-           @bind="Draft.Playtime"
-           @bind:event="oninput" />
+            <ol class="step-list">
+                <li>
+                    <button class="@GetStepClass(BuilderStep.Template)"
+                            type="button"
+                            @onclick="() => GoToStep(BuilderStep.Template)">
+                        <span class="step-number">1</span>
+
+                        <span>
+                            <strong>Template</strong>
+                            <small>Choose a starting point</small>
+                        </span>
+                    </button>
+                </li>
+
+                <li>
+                    <button class="@GetStepClass(BuilderStep.Setup)"
+                            type="button"
+                            @onclick="() => GoToStep(BuilderStep.Setup)">
+                        <span class="step-number">2</span>
+
+                        <span>
+                            <strong>Setup</strong>
+                            <small>Basic review information</small>
+                        </span>
+                    </button>
+                </li>
+
+                <li>
+                    <button class="@GetStepClass(BuilderStep.Format)"
+                            type="button"
+                            @onclick="() => GoToStep(BuilderStep.Format)">
+                        <span class="step-number">3</span>
+
+                        <span>
+                            <strong>Format</strong>
+                            <small>Layout and category ratings</small>
+                        </span>
+                    </button>
+                </li>
+
+                <li>
+                    <button class="@GetStepClass(BuilderStep.Questions)"
+                            type="button"
+                            @onclick="() => GoToStep(BuilderStep.Questions)">
+                        <span class="step-number">4</span>
+
+                        <span>
+                            <strong>Questions</strong>
+                            <small>Write the review content</small>
+                        </span>
+                    </button>
+                </li>
+
+                <li>
+                    <button class="@GetStepClass(BuilderStep.Export)"
+                            type="button"
+                            @onclick="() => GoToStep(BuilderStep.Export)">
+                        <span class="step-number">5</span>
+
+                        <span>
+                            <strong>Export</strong>
+                            <small>Copy the generated BBCode</small>
+                        </span>
+                    </button>
+                </li>
+            </ol>
+        </aside>
+
+        <section class="panel editor-panel">
+            <div class="panel-heading">
+                <h2>@StepTitle</h2>
+                <p>@StepDescription</p>
+            </div>
+
+            <div class="step-content">
+                @if (CurrentStep == BuilderStep.Template)
+                {
+                    <section class="editor-section">
+                        <div class="section-heading">
+                            <h3>Choose a review template</h3>
+
+                            <p>
+                                Templates provide starter content, categories,
+                                and a recommended display format.
+                            </p>
+                        </div>
+
+                        <div class="template-grid"
+                             role="radiogroup"
+                             aria-label="Review template">
+                            @foreach (var option in TemplateOptions)
+                            {
+                                <button class="@GetTemplateCardClass(option.Template)"
+                                        type="button"
+                                        role="radio"
+                                        aria-checked="@(SelectedTemplate == option.Template
+                                            ? "true"
+                                            : "false")"
+                                        @onclick="() => SelectTemplate(option.Template)">
+                                    <div class="template-card-header">
+                                        <span class="template-code"
+                                              aria-hidden="true">
+                                            @option.Code
+                                        </span>
+
+                                        @if (SelectedTemplate == option.Template)
+                                        {
+                                            <span class="template-selected">
+                                                Selected
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <h4>@option.Name</h4>
+                                    <p>@option.Description</p>
+
+                                    <ul>
+                                        @foreach (var detail in option.Details)
+                                        {
+                                            <li>@detail</li>
+                                        }
+                                    </ul>
+                                </button>
+                            }
+                        </div>
+
+                        <div class="template-note"
+                             role="status"
+                             aria-live="polite">
+                            <strong>@SelectedTemplateName</strong>
+                            is currently applied to this review.
+                        </div>
+                    </section>
+                }
+                else if (CurrentStep == BuilderStep.Setup)
+                {
+                    <section class="editor-section">
+                        <div class="section-heading">
+                            <h3>Review information</h3>
+
+                            <p>
+                                Enter the basic information that identifies
+                                your review.
+                            </p>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field full-width">
+                                <label for="review-title">
+                                    Review title
+                                </label>
+
+                                <input id="review-title"
+                                       type="text"
+                                       @bind="Draft.Title"
+                                       @bind:event="oninput" />
+                            </div>
+
+                            <div class="field full-width">
+                                <label for="review-summary">
+                                    Summary
+                                </label>
+
+                                <input id="review-summary"
+                                       type="text"
+                                       @bind="Draft.Summary"
+                                       @bind:event="oninput" />
+
+                                <span class="field-help">
+                                    A short sentence that summarizes your opinion.
+                                </span>
+                            </div>
+
+                            <div class="field">
+                                <label for="recommendation">
+                                    Recommendation
+                                </label>
+
+                                <select id="recommendation"
+                                        @bind="Draft.Recommendation">
+                                    <option value="@ReviewRecommendation.Recommended">
+                                        Recommended
+                                    </option>
+
+                                    <option value="@ReviewRecommendation.Mixed">
+                                        Mixed
+                                    </option>
+
+                                    <option value="@ReviewRecommendation.NotRecommended">
+                                        Not Recommended
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="field">
+                                <label for="playtime">
+                                    Playtime
+                                </label>
+
+                                <input id="playtime"
+                                       type="text"
+                                       @bind="Draft.Playtime"
+                                       @bind:event="oninput" />
+
+                                <span class="field-help">
+                                    Example: 35 hours
+                                </span>
+                            </div>
+                        </div>
+                    </section>
+                }
+                else if (CurrentStep == BuilderStep.Format)
+                {
+                    <section class="editor-section">
+                        <div class="section-heading">
+                            <h3>Display format</h3>
+
+                            <p>
+                                Choose how the generated review is structured.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label for="display-format">
+                                Review layout
+                            </label>
+
+                            <select id="display-format"
+                                    @bind="Draft.DisplayFormat">
+                                <option value="@ReviewDisplayFormat.RatingTable">
+                                    Rating Table
+                                </option>
+
+                                <option value="@ReviewDisplayFormat.Sections">
+                                    Individual Sections
+                                </option>
+
+                                <option value="@ReviewDisplayFormat.Checklist">
+                                    Checklist
+                                </option>
+
+                                <option value="@ReviewDisplayFormat.MinimalVerdict">
+                                    Minimal Verdict
+                                </option>
+                            </select>
+
+                            <span class="field-help">
+                                @DisplayFormatDescription
+                            </span>
+                        </div>
+                    </section>
+
+                    @if (ShowCategories)
+                    {
+                        <section class="editor-section">
+                            <div class="section-heading section-heading-row">
+                                <div>
+                                    <h3>Category ratings</h3>
+
+                                    <p>
+                                        Customize each category, score, and note.
+                                    </p>
+                                </div>
+
+                                <button class="button secondary"
+                                        type="button"
+                                        @onclick="AddCategory">
+                                    Add category
+                                </button>
+                            </div>
+
+                            <div class="category-list">
+                                @foreach (var category in Draft.Categories)
+                                {
+                                    <div class="category-card"
+                                         @key="category.Id">
+                                        <div class="category-grid">
+                                            <div class="field">
+                                                <label>Category</label>
+
+                                                <input type="text"
+                                                       @bind="category.Name"
+                                                       @bind:event="oninput" />
+                                            </div>
+
+                                            <div class="field rating-field">
+                                                <label>Rating</label>
+
+                                                <select @bind="category.Rating">
+                                                    <option value="5">5 / 5</option>
+                                                    <option value="4">4 / 5</option>
+                                                    <option value="3">3 / 5</option>
+                                                    <option value="2">2 / 5</option>
+                                                    <option value="1">1 / 5</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="field">
+                                                <label>Short note</label>
+
+                                                <input type="text"
+                                                       @bind="category.Note"
+                                                       @bind:event="oninput" />
+                                            </div>
+
+                                            <button class="button danger"
+                                                    type="button"
+                                                    disabled="@(Draft.Categories.Count <= 1)"
+                                                    @onclick="() => RemoveCategory(category)">
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </section>
+                    }
+                }
+                else if (CurrentStep == BuilderStep.Questions)
+                {
+                    <section class="editor-section">
+                        <div class="section-heading">
+                            <h3>Written response</h3>
+
+                            <p>
+                                Enter one item per line for list-based questions.
+                            </p>
+                        </div>
+
+                        <div class="field-grid">
+                            @if (ShowDetailedQuestions)
+                            {
+                                <div class="field full-width">
+                                    <label for="what-works">
+                                        What does the game do well?
+                                    </label>
+
+                                    <textarea id="what-works"
+                                              rows="7"
+                                              @bind="Draft.WhatWorks"
+                                              @bind:event="oninput"></textarea>
+
+                                    <span class="field-help">
+                                        Each nonblank line becomes a separate point.
+                                    </span>
+                                </div>
+
+                                <div class="field full-width">
+                                    <label for="what-could-be-better">
+                                        What could be better?
+                                    </label>
+
+                                    <textarea id="what-could-be-better"
+                                              rows="7"
+                                              @bind="Draft.WhatCouldBeBetter"
+                                              @bind:event="oninput"></textarea>
+
+                                    <span class="field-help">
+                                        Each nonblank line becomes a separate point.
+                                    </span>
+                                </div>
+                            }
+
+                            <div class="field full-width">
+                                <label for="final-thoughts">
+                                    @(Draft.DisplayFormat ==
+                                      ReviewDisplayFormat.MinimalVerdict
+                                        ? "Why?"
+                                        : "Final thoughts")
+                                </label>
+
+                                <textarea id="final-thoughts"
+                                          rows="7"
+                                          @bind="Draft.FinalThoughts"
+                                          @bind:event="oninput"></textarea>
+                            </div>
+                        </div>
+                    </section>
+                }
+                else if (CurrentStep == BuilderStep.Export)
+                {
+                    <section class="editor-section">
+                        <div class="section-heading">
+                            <h3>Your review is ready</h3>
+
+                            <p>
+                                Check the generated output before copying it
+                                into Steam.
+                            </p>
+                        </div>
+
+                        <div class="export-summary">
+                            <div>
+                                <span class="export-label">Title</span>
+                                <strong>@DisplayTitle</strong>
+                            </div>
+
+                            <div>
+                                <span class="export-label">Template</span>
+                                <strong>@DisplayTemplateName</strong>
+                            </div>
+
+                            <div>
+                                <span class="export-label">Format</span>
+                                <strong>@DisplayFormatName</strong>
+                            </div>
+
+                            <div>
+                                <span class="export-label">
+                                    Recommendation
+                                </span>
+
+                                <strong>@RecommendationName</strong>
+                            </div>
+
+                            <div>
+                                <span class="export-label">Categories</span>
+
+                                <strong>
+                                    @(ShowCategories
+                                        ? Draft.Categories.Count
+                                        : 0)
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="export-notice">
+                            Review the complete generated output in the BBCode
+                            panel. Copy it when you are ready to paste the
+                            review into Steam.
+                        </div>
+
+                        <div class="export-actions">
+                            <button class="button primary"
+                                    type="button"
+                                    @onclick="CopyBbCode">
+                                Copy BBCode
+                            </button>
+
+                            @if (!string.IsNullOrWhiteSpace(_copyMessage))
+                            {
+                                <span class="copy-status"
+                                      role="status"
+                                      aria-live="polite">
+                                    @_copyMessage
+                                </span>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+
+            <div class="step-navigation">
+                <button class="button secondary"
+                        type="button"
+                        disabled="@(!CanGoBack)"
+                        @onclick="PreviousStep">
+                    Back
+                </button>
+
+                @if (CanGoNext)
+                {
+                    <button class="button primary"
+                            type="button"
+                            @onclick="NextStep">
+                        @NextButtonLabel
+                    </button>
+                }
+            </div>
+        </section>
+
+        <aside class="panel preview-panel">
+            <div class="panel-heading">
+                <h2>Live output</h2>
+                <p>Steam-compatible BBCode updates as you type.</p>
+            </div>
+
+            <div class="output-header">
+                <strong>BBCode</strong>
+                <span>Preview rendering comes later</span>
+            </div>
+
+            <textarea class="code-output"
+                      rows="36"
+                      readonly>@GeneratedBbCode</textarea>
+        </aside>
+    </main>
+
+    <footer class="app-footer">
+        <strong>Unofficial community project.</strong>
+        Steam Review Forge is not affiliated with, endorsed by, or sponsored
+        by Valve Corporation or Steam.
+    </footer>
 </div>
-
-@if (ShowDetailedQuestions)
-{
-    <div>
-        <label for="what-works">
-            What does the game do well?
-        </label>
-
-        <textarea id="what-works"
-                  rows="5"
-                  @bind="Draft.WhatWorks"
-                  @bind:event="oninput"></textarea>
-
-        <p>Enter one point per line.</p>
-    </div>
-
-    <div>
-        <label for="what-could-be-better">
-            What could be better?
-        </label>
-
-        <textarea id="what-could-be-better"
-                  rows="5"
-                  @bind="Draft.WhatCouldBeBetter"
-                  @bind:event="oninput"></textarea>
-
-        <p>Enter one point per line.</p>
-    </div>
-}
-
-<div>
-    <label for="final-thoughts">
-        @(Draft.DisplayFormat == ReviewDisplayFormat.MinimalVerdict
-            ? "Why?"
-            : "Final thoughts")
-    </label>
-
-    <textarea id="final-thoughts"
-              rows="5"
-              @bind="Draft.FinalThoughts"
-              @bind:event="oninput"></textarea>
-</div>
-
-<h2>Generated BBCode</h2>
-
-<textarea rows="18"
-          cols="80"
-          readonly>@GeneratedBbCode</textarea>
 
 @code {
+    private enum BuilderStep
+    {
+        Template = 1,
+        Setup = 2,
+        Format = 3,
+        Questions = 4,
+        Export = 5
+    }
+
+    private sealed record TemplateOption(
+        ReviewTemplate Template,
+        string Code,
+        string Name,
+        string Description,
+        string[] Details);
+
+    private static readonly TemplateOption[] TemplateOptions =
+    [
+        new(
+            ReviewTemplate.Balanced,
+            "BAL",
+            "Balanced Review",
+            "A standard review with ratings and guided written responses.",
+            [
+                "Rating table layout",
+                "Three starter categories",
+                "Strengths and weaknesses"
+            ]),
+
+        new(
+            ReviewTemplate.QuickTake,
+            "QT",
+            "Quick Take",
+            "A short review focused on the final recommendation.",
+            [
+                "Minimal verdict layout",
+                "No category ratings",
+                "One final explanation"
+            ]),
+
+        new(
+            ReviewTemplate.DeepDive,
+            "DD",
+            "Deep Dive",
+            "A detailed review covering more parts of the game.",
+            [
+                "Individual section layout",
+                "Six starter categories",
+                "Expanded writing prompts"
+            ]),
+
+        new(
+            ReviewTemplate.Custom,
+            "{}",
+            "Full Custom",
+            "A mostly blank starting point for building your own review.",
+            [
+                "One blank category",
+                "Empty written responses",
+                "Complete manual control"
+            ])
+    ];
+
     private ReviewDraft Draft { get; } = new();
+
+    private BuilderStep CurrentStep { get; set; } =
+        BuilderStep.Template;
+
+    private ReviewTemplate SelectedTemplate { get; set; } =
+        ReviewTemplate.Balanced;
+
+    private string _copyMessage = string.Empty;
+
+    private string _theme = "light";
 
     private string GeneratedBbCode =>
         SteamBbCodeGenerator.Generate(Draft);
@@ -195,6 +618,106 @@
 
     private bool ShowDetailedQuestions =>
         Draft.DisplayFormat != ReviewDisplayFormat.MinimalVerdict;
+
+    private bool CanGoBack =>
+        (int)CurrentStep > (int)BuilderStep.Template;
+
+    private bool CanGoNext =>
+        (int)CurrentStep < (int)BuilderStep.Export;
+
+    private string StepTitle =>
+        CurrentStep switch
+        {
+            BuilderStep.Template => "Review Template",
+            BuilderStep.Setup => "Review Setup",
+            BuilderStep.Format => "Review Format",
+            BuilderStep.Questions => "Review Questionnaire",
+            BuilderStep.Export => "Export Review",
+            _ => "Review Builder"
+        };
+
+    private string StepDescription =>
+        CurrentStep switch
+        {
+            BuilderStep.Template =>
+                "Choose a starting point for your review.",
+
+            BuilderStep.Setup =>
+                "Enter the basic information for your review.",
+
+            BuilderStep.Format =>
+                "Choose a layout and configure category ratings.",
+
+            BuilderStep.Questions =>
+                "Answer the guided questions that form the review.",
+
+            BuilderStep.Export =>
+                "Review and copy the generated Steam-compatible BBCode.",
+
+            _ => string.Empty
+        };
+
+    private string NextButtonLabel =>
+        CurrentStep switch
+        {
+            BuilderStep.Template =>
+                "Continue to setup",
+
+            BuilderStep.Setup =>
+                "Continue to format",
+
+            BuilderStep.Format =>
+                "Continue to questions",
+
+            BuilderStep.Questions =>
+                "Generate review",
+
+            _ => "Continue"
+        };
+
+    private string SelectedTemplateName =>
+        GetTemplateName(SelectedTemplate);
+
+    private string DisplayTemplateName =>
+        GetTemplateName(Draft.Template);
+
+    private string DisplayTitle =>
+        string.IsNullOrWhiteSpace(Draft.Title)
+            ? "Untitled Review"
+            : Draft.Title.Trim();
+
+    private string DisplayFormatName =>
+        Draft.DisplayFormat switch
+        {
+            ReviewDisplayFormat.RatingTable =>
+                "Rating Table",
+
+            ReviewDisplayFormat.Sections =>
+                "Individual Sections",
+
+            ReviewDisplayFormat.Checklist =>
+                "Checklist",
+
+            ReviewDisplayFormat.MinimalVerdict =>
+                "Minimal Verdict",
+
+            _ => "Unknown"
+        };
+
+    private string RecommendationName =>
+        Draft.Recommendation switch
+        {
+            ReviewRecommendation.Recommended =>
+                "Recommended",
+
+            ReviewRecommendation.Mixed =>
+                "Mixed",
+
+            ReviewRecommendation.NotRecommended =>
+                "Not Recommended",
+
+            _ => "Unknown"
+        };
 
     private string DisplayFormatDescription =>
         Draft.DisplayFormat switch
@@ -214,16 +737,146 @@
             _ => string.Empty
         };
 
-    private void AddCategory()
+    private string ThemeToggleIcon =>
+        _theme == "dark" ? "☀" : "☾";
+
+    private string ThemeToggleLabel =>
+        _theme == "dark"
+            ? "Switch to light mode"
+            : "Switch to dark mode";
+
+    private void SelectTemplate(ReviewTemplate template)
     {
-        Draft.Categories.Add(new ReviewCategory());
+        SelectedTemplate = template;
+
+        ReviewTemplateService.Apply(
+            Draft,
+            SelectedTemplate);
+
+        _copyMessage = string.Empty;
     }
 
-    private void RemoveCategory(ReviewCategory category)
+    private void GoToStep(BuilderStep step)
+    {
+        CurrentStep = step;
+    }
+
+    private void NextStep()
+    {
+        if (!CanGoNext)
+        {
+            return;
+        }
+
+        CurrentStep =
+            (BuilderStep)((int)CurrentStep + 1);
+    }
+
+    private void PreviousStep()
+    {
+        if (!CanGoBack)
+        {
+            return;
+        }
+
+        CurrentStep =
+            (BuilderStep)((int)CurrentStep - 1);
+    }
+
+    private string GetStepClass(BuilderStep step)
+    {
+        if (step == CurrentStep)
+        {
+            return "step-item active";
+        }
+
+        if ((int)step < (int)CurrentStep)
+        {
+            return "step-item complete";
+        }
+
+        return "step-item future";
+    }
+
+    private string GetTemplateCardClass(
+        ReviewTemplate template)
+    {
+        return SelectedTemplate == template
+            ? "template-card selected"
+            : "template-card";
+    }
+
+    private static string GetTemplateName(
+        ReviewTemplate template)
+    {
+        return template switch
+        {
+            ReviewTemplate.Balanced =>
+                "Balanced Review",
+
+            ReviewTemplate.QuickTake =>
+                "Quick Take",
+
+            ReviewTemplate.DeepDive =>
+                "Deep Dive",
+
+            ReviewTemplate.Custom =>
+                "Full Custom",
+
+            _ => "Unknown"
+        };
+    }
+
+    private void AddCategory()
+    {
+        Draft.Categories.Add(
+            new ReviewCategory());
+    }
+
+    private void RemoveCategory(
+        ReviewCategory category)
     {
         if (Draft.Categories.Count > 1)
         {
             Draft.Categories.Remove(category);
         }
+    }
+
+    private async Task CopyBbCode()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "clipboardManager.copyText",
+                GeneratedBbCode);
+
+            _copyMessage =
+                "Copied to clipboard.";
+        }
+        catch
+        {
+            _copyMessage =
+                "Copy failed. Select the BBCode manually.";
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(
+        bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _theme = await JS.InvokeAsync<string>(
+            "themeManager.get");
+
+        StateHasChanged();
+    }
+
+    private async Task ToggleTheme()
+    {
+        _theme = await JS.InvokeAsync<string>(
+            "themeManager.toggle");
     }
 }
