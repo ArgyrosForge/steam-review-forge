@@ -22,3 +22,9 @@ Choose a license before publicly distributing the project. Without a license, ot
 5. Record major licensing changes in `CHANGELOG.md`.
 
 Changing a license after public releases or outside contributions may require additional permissions. Make the decision early when possible.
+
+## Bundled Fonts
+
+The application bundles Sora and JetBrains Mono under the SIL Open Font
+License 1.1. Their license texts are included beside the font files in
+`src/SteamReviewForge/wwwroot/fonts`.

@@ -13,11 +13,23 @@
 
 <div class="app-shell">
     <header class="app-header">
-        <div>
-            <h1>Steam Review Forge</h1>
-            <p>
-                Build a structured review and copy the generated Steam BBCode.
-            </p>
+        <div class="brand-lockup">
+            <span class="brand-mark"
+                  aria-hidden="true">&gt;_</span>
+
+            <div class="brand-copy">
+                <span class="brand-eyebrow">
+                    ARGYROSDEV // REVIEW TOOL
+                </span>
+
+                <h1>
+                    Steam Review <span>Forge</span>
+                </h1>
+
+                <p>
+                    Build a structured review and copy the generated Steam BBCode.
+                </p>
+            </div>
         </div>
 
         <div class="header-actions">
@@ -38,7 +50,9 @@
                     title="@ThemeToggleLabel"
                     aria-label="@ThemeToggleLabel"
                     @onclick="ToggleTheme">
-                <span aria-hidden="true">@ThemeToggleIcon</span>
+                <span class="theme-toggle-prompt"
+                      aria-hidden="true">&gt;_</span>
+                <span>@ColorModeLabel</span>
             </button>
         </div>
     </header>
@@ -663,7 +677,30 @@
                 <div class="steam-preview"
                      role="tabpanel"
                      aria-label="Rendered review preview">
-                    @RenderedPreview
+                    <article class="steam-review-card">
+                        <header class="steam-review-header">
+                            <span class="@SteamRecommendationIconClass"
+                                  aria-hidden="true">
+                                <svg viewBox="0 0 24 24"
+                                     focusable="false">
+                                    <path d="M8.35 20H4.5A1.5 1.5 0 0 1 3 18.5v-7A1.5 1.5 0 0 1 4.5 10h3.85v10Zm2-10 3.3-6.25c.3-.57.9-.9 1.54-.82a1.5 1.5 0 0 1 1.3 1.67L15.9 9h3.17a2 2 0 0 1 1.95 2.43l-1.47 6.5A2.65 2.65 0 0 1 16.96 20h-6.61V10Z"/>
+                                </svg>
+                            </span>
+
+                            <span class="steam-review-verdict">
+                                <strong>@SteamRecommendationName</strong>
+                                <small>@SteamPlaytimeLabel</small>
+                            </span>
+                        </header>
+
+                        <div class="steam-review-content">
+                            <div class="steam-review-date">
+                                Posted: @SteamPreviewDate
+                            </div>
+
+                            @RenderedPreview
+                        </div>
+                    </article>
                 </div>
             }
             else
@@ -741,6 +778,10 @@
         string Description,
         string[] Details);
 
+    private sealed record AppearanceState(
+        string Theme,
+        string ColorMode);
+
     private static readonly TemplateOption[] TemplateOptions =
     [
         new(
@@ -810,7 +851,8 @@
 
     private string _copyMessage = string.Empty;
 
-    private string _theme = "light";
+    private AppearanceState _appearance =
+        new("main-blue", "dark");
 
     private bool _showNewReviewDialog;
 
@@ -956,6 +998,55 @@
             _ => "Unknown"
         };
 
+    private string SteamRecommendationName =>
+        Draft.Recommendation switch
+        {
+            ReviewRecommendation.Recommended =>
+                "Recommended",
+
+            ReviewRecommendation.Mixed =>
+                "Mixed",
+
+            ReviewRecommendation.NotRecommended =>
+                "Not Recommended",
+
+            _ => "Recommended"
+        };
+
+    private string SteamRecommendationIconClass =>
+        Draft.Recommendation == ReviewRecommendation.Recommended
+            ? "steam-recommendation-icon"
+            : "steam-recommendation-icon negative";
+
+    private string SteamPlaytimeLabel
+    {
+        get
+        {
+            var playtime = string.IsNullOrWhiteSpace(Draft.Playtime)
+                ? "0 hrs"
+                : Draft.Playtime.Trim();
+
+            playtime = playtime
+                .Replace(
+                    " hours",
+                    " hrs",
+                    StringComparison.OrdinalIgnoreCase)
+                .Replace(
+                    " hour",
+                    " hr",
+                    StringComparison.OrdinalIgnoreCase);
+
+            return playtime.Contains(
+                "on record",
+                StringComparison.OrdinalIgnoreCase)
+                    ? playtime
+                    : $"{playtime} on record";
+        }
+    }
+
+    private string SteamPreviewDate =>
+        DateTime.Today.ToString("MMMM d, yyyy");
+
     private string DisplayFormatDescription =>
         Draft.DisplayFormat switch
         {
@@ -974,11 +1065,13 @@
             _ => string.Empty
         };
 
-    private string ThemeToggleIcon =>
-        _theme == "dark" ? "☀" : "☾";
+    private string ColorModeLabel =>
+        _appearance.ColorMode == "dark"
+            ? "DARK"
+            : "LIGHT";
 
     private string ThemeToggleLabel =>
-        _theme == "dark"
+        _appearance.ColorMode == "dark"
             ? "Switch to light mode"
             : "Switch to dark mode";
 
@@ -1270,7 +1363,7 @@
             return;
         }
 
-        _theme = await JS.InvokeAsync<string>(
+        _appearance = await JS.InvokeAsync<AppearanceState>(
             "themeManager.get");
         await RestoreDraftAsync();
 
@@ -1287,8 +1380,8 @@
 
     private async Task ToggleTheme()
     {
-        _theme = await JS.InvokeAsync<string>(
-            "themeManager.toggle");
+        _appearance = await JS.InvokeAsync<AppearanceState>(
+            "themeManager.toggleColorMode");
     }
 
     private async Task RestoreDraftAsync()

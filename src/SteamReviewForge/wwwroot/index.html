@@ -7,60 +7,7 @@
     <title>SteamReviewForge</title>
     <base href="/" />
     <link rel="preload" id="webassembly" />
-    <script>
-        (() => {
-            const storageKey = "steam-review-forge-theme";
-
-            function getStoredTheme() {
-                try {
-                    return localStorage.getItem(storageKey);
-                } catch {
-                    return null;
-                }
-            }
-
-            function getPreferredTheme() {
-                const storedTheme = getStoredTheme();
-
-                if (storedTheme === "light" || storedTheme === "dark") {
-                    return storedTheme;
-                }
-
-                return window.matchMedia("(prefers-color-scheme: dark)").matches
-                    ? "dark"
-                    : "light";
-            }
-
-            function applyTheme(theme) {
-                document.documentElement.dataset.theme = theme;
-                return theme;
-            }
-
-            applyTheme(getPreferredTheme());
-
-            window.themeManager = {
-                get: () =>
-                    document.documentElement.dataset.theme ??
-                    getPreferredTheme(),
-
-                toggle: () => {
-                    const currentTheme =
-                        document.documentElement.dataset.theme;
-
-                    const nextTheme =
-                        currentTheme === "dark" ? "light" : "dark";
-
-                    try {
-                        localStorage.setItem(storageKey, nextTheme);
-                    } catch {
-                        // Continue without persistence if storage is unavailable.
-                    }
-
-                    return applyTheme(nextTheme);
-                }
-            };
-        })();
-    </script>
+    <script src="js/theme-manager.js"></script>
     <script>
         window.clipboardManager = {
             copyText: async function (text) {
@@ -87,6 +34,7 @@
             }
         };
     </script>
+    <link rel="stylesheet" href="css/themes/main-blue.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link href="SteamReviewForge.styles.css" rel="stylesheet" />
     <script type="importmap"></script>
