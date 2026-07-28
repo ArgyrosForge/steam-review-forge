@@ -280,10 +280,6 @@
                                         Recommended
                                     </option>
 
-                                    <option value="@ReviewRecommendation.Mixed">
-                                        Mixed
-                                    </option>
-
                                     <option value="@ReviewRecommendation.NotRecommended">
                                         Not Recommended
                                     </option>
@@ -296,15 +292,18 @@
                                 </label>
 
                                 <input id="playtime"
-                                       type="text"
-                                       @bind="Draft.Playtime"
-                                       @bind:event="oninput"
-                                       @bind:after="QueueDraftSaveAsync"/>
+                                       type="number"
+                                       min="0"
+                                       max="@PlaytimeFormatter.MaximumHours"
+                                       step="0.1"
+                                       inputmode="decimal"
+                                       value="@Draft.Playtime"
+                                       @oninput="UpdatePlaytimeAsync"/>
 
                                 @if (!GetFieldIssues(nameof(Draft.Playtime)).Any())
                                 {
                                     <span class="field-help">
-                Example: 35 hours
+                Enter hours as a number. Preview only; not included in BBCode.
             </span>
                                 }
 
@@ -688,7 +687,7 @@
                             </span>
 
                             <span class="steam-review-verdict">
-                                <strong>@SteamRecommendationName</strong>
+                                <strong>@RecommendationName</strong>
                                 <small>@SteamPlaytimeLabel</small>
                             </span>
                         </header>
@@ -989,24 +988,6 @@
             ReviewRecommendation.Recommended =>
                 "Recommended",
 
-            ReviewRecommendation.Mixed =>
-                "Mixed",
-
-            ReviewRecommendation.NotRecommended =>
-                "Not Recommended",
-
-            _ => "Unknown"
-        };
-
-    private string SteamRecommendationName =>
-        Draft.Recommendation switch
-        {
-            ReviewRecommendation.Recommended =>
-                "Recommended",
-
-            ReviewRecommendation.Mixed =>
-                "Mixed",
-
             ReviewRecommendation.NotRecommended =>
                 "Not Recommended",
 
@@ -1023,25 +1004,20 @@
         get
         {
             var playtime = string.IsNullOrWhiteSpace(Draft.Playtime)
-                ? "0 hrs"
+                ? "0"
                 : Draft.Playtime.Trim();
 
-            playtime = playtime
-                .Replace(
-                    " hours",
-                    " hrs",
-                    StringComparison.OrdinalIgnoreCase)
-                .Replace(
-                    " hour",
-                    " hr",
-                    StringComparison.OrdinalIgnoreCase);
-
-            return playtime.Contains(
-                "on record",
-                StringComparison.OrdinalIgnoreCase)
-                    ? playtime
-                    : $"{playtime} on record";
+            return $"{playtime} hrs on record";
         }
+    }
+
+    private async Task UpdatePlaytimeAsync(
+        ChangeEventArgs eventArgs)
+    {
+        Draft.Playtime = PlaytimeFormatter.Normalize(
+            eventArgs.Value?.ToString());
+
+        await QueueDraftSaveAsync();
     }
 
     private string SteamPreviewDate =>
@@ -1060,7 +1036,7 @@
                 "Displays categories as checked or unchecked review points.",
 
             ReviewDisplayFormat.MinimalVerdict =>
-                "Displays the title, summary, playtime, final thoughts, and recommendation.",
+                "Displays the title, summary, and final thoughts as a compact verdict.",
 
             _ => string.Empty
         };

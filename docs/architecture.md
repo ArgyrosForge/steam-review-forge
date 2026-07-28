@@ -121,10 +121,16 @@ The model uses enums rather than free-form strings for bounded choices:
 
 - `ReviewTemplate`: Balanced, Quick Take, Deep Dive, and Custom
 - `ReviewDisplayFormat`: Rating Table, Sections, Checklist, and Minimal Verdict
-- `ReviewRecommendation`: Recommended, Mixed, and Not Recommended
+- `ReviewRecommendation`: Recommended and Not Recommended
 - Validation section and severity enums
 
 This keeps UI options, service behavior, and generated output aligned through compile-time types.
+
+Recommendation and playtime are saved with the draft and displayed in the
+Steam-style preview. They are intentionally excluded from generated BBCode
+because Steam captures both values as review metadata. Playtime is stored as
+a numeric hours value with at most one decimal place, capped at 999,999,999;
+the preview supplies the Steam-style unit label.
 
 ## Service Responsibilities
 
@@ -161,7 +167,8 @@ Generation is deterministic and has no browser dependencies. Output varies accor
 - Checklist emits checked or unchecked category rows
 - Minimal Verdict omits category output and focuses on the explanation
 
-The generator also adds the title, optional summary and playtime, questionnaire content, dividers, star ratings, and final recommendation.
+The generator also adds the title, optional summary, questionnaire content,
+dividers, and star ratings.
 
 Because this service is pure application logic, it should remain independent from UI state and JavaScript. It is a primary target for unit testing.
 

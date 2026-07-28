@@ -22,12 +22,6 @@ public static class SteamBbCodeGenerator
             output.AppendLine($"[i]{draft.Summary.Trim()}[/i]");
         }
 
-        if (!string.IsNullOrWhiteSpace(draft.Playtime))
-        {
-            output.AppendLine();
-            output.AppendLine($"[b]Playtime:[/b] {draft.Playtime.Trim()}");
-        }
-
         if (draft.DisplayFormat != ReviewDisplayFormat.MinimalVerdict &&
             draft.Categories.Count > 0)
         {
@@ -57,12 +51,6 @@ public static class SteamBbCodeGenerator
         {
             AppendQuestionnaire(output, draft);
         }
-
-        AppendDivider(output);
-
-        output.AppendLine(
-            $"[b]Recommendation:[/b] " +
-            FormatRecommendation(draft.Recommendation));
 
         return output.ToString().Trim();
     }
@@ -238,17 +226,5 @@ public static class SteamBbCodeGenerator
 
         return new string('★', normalizedRating) +
                new string('☆', 5 - normalizedRating);
-    }
-
-    private static string FormatRecommendation(
-        ReviewRecommendation recommendation)
-    {
-        return recommendation switch
-        {
-            ReviewRecommendation.Recommended => "Recommended",
-            ReviewRecommendation.Mixed => "Mixed",
-            ReviewRecommendation.NotRecommended => "Not Recommended",
-            _ => "Unspecified"
-        };
     }
 }

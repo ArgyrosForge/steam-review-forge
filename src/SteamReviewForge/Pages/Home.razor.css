@@ -882,7 +882,9 @@ textarea:focus {
     min-height: 44px;
     display: flex;
     align-items: flex-start;
-    margin-bottom: 13px;
+    margin-bottom: 16px;
+    padding: 5px;
+    background: #1f3042;
 }
 
 .steam-recommendation-icon {
@@ -896,8 +898,8 @@ textarea:focus {
     background:
         linear-gradient(
             135deg,
-            rgba(103, 193, 245, 0.28),
-            rgba(42, 75, 99, 0.62));
+            #315d7c,
+            #20394e);
 }
 
 .steam-recommendation-icon svg {
@@ -911,6 +913,15 @@ textarea:focus {
     transform: rotate(180deg);
 }
 
+.steam-recommendation-icon.negative {
+    color: #e85b61;
+    background:
+        linear-gradient(
+            135deg,
+            #78333c,
+            #44232b);
+}
+
 .steam-review-verdict {
     min-width: 0;
     display: flex;
@@ -918,17 +929,17 @@ textarea:focus {
 }
 
 .steam-review-verdict strong {
-    padding-top: 5px;
+    padding-top: 3px;
     color: var(--steam-heading);
     font-size: 16px;
     font-weight: 400;
-    line-height: 18px;
+    line-height: 20px;
 }
 
 .steam-review-verdict small {
     color: var(--steam-heading);
     font-size: 12px;
-    line-height: 16px;
+    line-height: 18px;
 }
 
 .steam-review-content {
@@ -938,6 +949,7 @@ textarea:focus {
 }
 
 .steam-review-date {
+    margin-bottom: 16px;
     color: var(--steam-meta);
     font-size: 11px;
     line-height: 16px;
