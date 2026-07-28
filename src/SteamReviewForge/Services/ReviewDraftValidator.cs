@@ -22,6 +22,13 @@ public static class ReviewDraftValidator
         ReviewDraft draft,
         ReviewValidationResult result)
     {
+        if (draft.Recommendation is null)
+            AddError(
+                result,
+                ReviewValidationSection.Setup,
+                nameof(draft.Recommendation),
+                "Choose Recommended or Not Recommended.");
+
         if (string.IsNullOrWhiteSpace(draft.Title))
             AddError(
                 result,
@@ -30,11 +37,11 @@ public static class ReviewDraftValidator
                 "Enter a review title.");
 
         if (string.IsNullOrWhiteSpace(draft.Summary))
-            AddWarning(
+            AddError(
                 result,
                 ReviewValidationSection.Setup,
                 nameof(draft.Summary),
-                "A short summary will make the review easier to scan.");
+                "Add a short sentence that summarizes your review.");
 
         if (string.IsNullOrWhiteSpace(draft.Playtime))
             AddWarning(

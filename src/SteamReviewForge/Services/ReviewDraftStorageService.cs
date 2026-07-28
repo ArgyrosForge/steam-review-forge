@@ -34,11 +34,10 @@ public sealed class ReviewDraftStorageService
             json,
             JsonOptions);
 
-        if (draft is not null &&
-            !Enum.IsDefined(draft.Recommendation))
+        if (draft?.Recommendation is not null &&
+            !Enum.IsDefined(draft.Recommendation.Value))
         {
-            draft.Recommendation =
-                ReviewRecommendation.Recommended;
+            draft.Recommendation = null;
         }
 
         if (draft is not null)

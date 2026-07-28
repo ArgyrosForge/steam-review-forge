@@ -45,6 +45,12 @@
                 New review
             </button>
 
+            <button class="button help-button"
+                    type="button"
+                    @onclick="OpenFormattingHelp">
+                Formatting help
+            </button>
+
             <button class="theme-toggle"
                     type="button"
                     title="@ThemeToggleLabel"
@@ -66,8 +72,24 @@
 
             <ol class="step-list">
                 <li>
+                    <button class="@GetStepClass(BuilderStep.Setup)"
+                            type="button"
+                            @onclick="() => GoToStep(BuilderStep.Setup)">
+                        <span class="step-number">
+                            @GetStepMarker(BuilderStep.Setup)
+                        </span>
+
+                        <span>
+                            <strong>Setup</strong>
+                            <small>Recommendation and summary</small>
+                        </span>
+                    </button>
+                </li>
+
+                <li>
                     <button class="@GetStepClass(BuilderStep.Template)"
                             type="button"
+                            disabled="@(!SetupComplete)"
                             @onclick="() => GoToStep(BuilderStep.Template)">
                         <span class="step-number">
                             @GetStepMarker(BuilderStep.Template)
@@ -81,23 +103,9 @@
                 </li>
 
                 <li>
-                    <button class="@GetStepClass(BuilderStep.Setup)"
-                            type="button"
-                            @onclick="() => GoToStep(BuilderStep.Setup)">
-                        <span class="step-number">
-                            @GetStepMarker(BuilderStep.Setup)
-                        </span>
-
-                        <span>
-                            <strong>Setup</strong>
-                            <small>Basic review information</small>
-                        </span>
-                    </button>
-                </li>
-
-                <li>
                     <button class="@GetStepClass(BuilderStep.Format)"
                             type="button"
+                            disabled="@(!SetupComplete)"
                             @onclick="() => GoToStep(BuilderStep.Format)">
                         <span class="step-number">
                             @GetStepMarker(BuilderStep.Format)
@@ -113,6 +121,7 @@
                 <li>
                     <button class="@GetStepClass(BuilderStep.Questions)"
                             type="button"
+                            disabled="@(!SetupComplete)"
                             @onclick="() => GoToStep(BuilderStep.Questions)">
                         <span class="step-number">
                             @GetStepMarker(BuilderStep.Questions)
@@ -125,25 +134,10 @@
                     </button>
                 </li>
 
-                <li>
-                    <button class="@GetStepClass(BuilderStep.Export)"
-                            type="button"
-                            @onclick="() => GoToStep(BuilderStep.Export)">
-                        <span class="step-number">
-                            @GetStepMarker(BuilderStep.Export)
-                        </span>
-
-                        <span>
-                            <strong>Export</strong>
-                            <small>Copy the generated BBCode</small>
-                        </span>
-                    </button>
-                </li>
             </ol>
-        </aside>
 
-        <section class="panel editor-panel">
-            <div class="panel-heading">
+            <div class="workflow-editor">
+            <div class="workflow-editor-heading">
                 <h2>@StepTitle</h2>
                 <p>@StepDescription</p>
             </div>
@@ -212,109 +206,160 @@
                 {
                     <section class="editor-section">
                         <div class="section-heading">
-                            <h3>Review information</h3>
+                            <h3>Would you recommend this game?</h3>
 
                             <p>
-                                Enter the basic information that identifies
-                                your review.
+                                Please describe what you liked or disliked about
+                                this game and whether you recommend it to others.
+                                Please remember to be polite and follow the
+                                Rules and Guidelines.
                             </p>
                         </div>
 
-                        <div class="field-grid">
-                            <div class="@GetFieldClass(nameof(Draft.Title))">
-                                <label for="review-title">
-                                    Review title
-                                </label>
+                        <div class="recommendation-choice"
+                             role="radiogroup"
+                             aria-label="Recommendation">
+                            <button class="@GetRecommendationChoiceClass(
+                                               ReviewRecommendation.Recommended)"
+                                    type="button"
+                                    role="radio"
+                                    aria-checked="@(Draft.Recommendation ==
+                                                      ReviewRecommendation.Recommended)"
+                                    @onclick="() => SelectRecommendationAsync(
+                                                        ReviewRecommendation.Recommended)">
+                                <span class="recommendation-choice-icon positive"
+                                      aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"
+                                         focusable="false">
+                                        <path d="M8.35 20H4.5A1.5 1.5 0 0 1 3 18.5v-7A1.5 1.5 0 0 1 4.5 10h3.85v10Zm2-10 3.3-6.25c.3-.57.9-.9 1.54-.82a1.5 1.5 0 0 1 1.3 1.67L15.9 9h3.17a2 2 0 0 1 1.95 2.43l-1.47 6.5A2.65 2.65 0 0 1 16.96 20h-6.61V10Z"/>
+                                    </svg>
+                                </span>
+                                <span>
+                                    <strong>Yes</strong>
+                                    Recommended
+                                </span>
+                            </button>
 
-                                <input id="review-title"
-                                       type="text"
-                                       aria-invalid="@HasFieldError(nameof(Draft.Title))"
-                                       @bind="Draft.Title"
-                                       @bind:event="oninput"
-                                       @bind:after="QueueDraftSaveAsync"/>
-
-                                @foreach (var issue in GetFieldIssues(nameof(Draft.Title)))
-                                {
-                                    <span class="@GetIssueClass(issue)">
-                @issue.Message
-            </span>
-                                }
-                            </div>
-
-                            <div class="@GetFieldClass(nameof(Draft.Summary))">
-                                <label for="review-summary">
-                                    Summary
-                                </label>
-
-                                <input id="review-summary"
-                                       type="text"
-                                       aria-invalid="@HasFieldError(nameof(Draft.Summary))"
-                                       @bind="Draft.Summary"
-                                       @bind:event="oninput"
-                                       @bind:after="QueueDraftSaveAsync"/>
-
-                                @if (!GetFieldIssues(nameof(Draft.Summary)).Any())
-                                {
-                                    <span class="field-help">
-                A short sentence that summarizes your opinion.
-            </span>
-                                }
-
-                                @foreach (var issue in GetFieldIssues(nameof(Draft.Summary)))
-                                {
-                                    <span class="@GetIssueClass(issue)">
-                @issue.Message
-            </span>
-                                }
-                            </div>
-
-                            <div class="field">
-                                <label for="recommendation">
-                                    Recommendation
-                                </label>
-
-                                <select id="recommendation"
-                                        @bind="Draft.Recommendation"
-                                        @bind:after="QueueDraftSaveAsync">
-                                    <option value="@ReviewRecommendation.Recommended">
-                                        Recommended
-                                    </option>
-
-                                    <option value="@ReviewRecommendation.NotRecommended">
-                                        Not Recommended
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="@GetFieldClass(nameof(Draft.Playtime))">
-                                <label for="playtime">
-                                    Playtime
-                                </label>
-
-                                <input id="playtime"
-                                       type="number"
-                                       min="0"
-                                       max="@PlaytimeFormatter.MaximumHours"
-                                       step="0.1"
-                                       inputmode="decimal"
-                                       value="@Draft.Playtime"
-                                       @oninput="UpdatePlaytimeAsync"/>
-
-                                @if (!GetFieldIssues(nameof(Draft.Playtime)).Any())
-                                {
-                                    <span class="field-help">
-                Enter hours as a number. Preview only; not included in BBCode.
-            </span>
-                                }
-
-                                @foreach (var issue in GetFieldIssues(nameof(Draft.Playtime)))
-                                {
-                                    <span class="@GetIssueClass(issue)">
-                @issue.Message
-            </span>
-                                }
-                            </div>
+                            <button class="@GetRecommendationChoiceClass(
+                                               ReviewRecommendation.NotRecommended)"
+                                    type="button"
+                                    role="radio"
+                                    aria-checked="@(Draft.Recommendation ==
+                                                      ReviewRecommendation.NotRecommended)"
+                                    @onclick="() => SelectRecommendationAsync(
+                                                        ReviewRecommendation.NotRecommended)">
+                                <span class="recommendation-choice-icon negative"
+                                      aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"
+                                         focusable="false">
+                                        <path d="M8.35 20H4.5A1.5 1.5 0 0 1 3 18.5v-7A1.5 1.5 0 0 1 4.5 10h3.85v10Zm2-10 3.3-6.25c.3-.57.9-.9 1.54-.82a1.5 1.5 0 0 1 1.3 1.67L15.9 9h3.17a2 2 0 0 1 1.95 2.43l-1.47 6.5A2.65 2.65 0 0 1 16.96 20h-6.61V10Z"/>
+                                    </svg>
+                                </span>
+                                <span>
+                                    <strong>No</strong>
+                                    Not Recommended
+                                </span>
+                            </button>
                         </div>
+
+                        @foreach (var issue in GetFieldIssues(
+                                          nameof(Draft.Recommendation)))
+                        {
+                            <span class="@GetIssueClass(issue)">
+                                @issue.Message
+                            </span>
+                        }
+
+                        @if (HasRecommendation)
+                        {
+                            <div class="setup-details">
+                                <div class="field-grid">
+                                    <div class="@GetFieldClass(nameof(Draft.Title))">
+                                        <label for="review-title">
+                                            Review title
+                                        </label>
+
+                                        <input id="review-title"
+                                               type="text"
+                                               aria-invalid="@HasFieldError(
+                                                                 nameof(Draft.Title))"
+                                               @bind="Draft.Title"
+                                               @bind:event="oninput"
+                                               @bind:after="QueueDraftSaveAsync"/>
+
+                                        @foreach (var issue in GetFieldIssues(
+                                                          nameof(Draft.Title)))
+                                        {
+                                            <span class="@GetIssueClass(issue)">
+                                                @issue.Message
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <div class="@GetFieldClass(nameof(Draft.Summary))">
+                                        <label for="review-summary">
+                                            Short summary
+                                        </label>
+
+                                        <input id="review-summary"
+                                               type="text"
+                                               required
+                                               aria-invalid="@HasFieldError(
+                                                                 nameof(Draft.Summary))"
+                                               placeholder="Summarize your opinion in one sentence"
+                                               @bind="Draft.Summary"
+                                               @bind:event="oninput"
+                                               @bind:after="QueueDraftSaveAsync"/>
+
+                                        @foreach (var issue in GetFieldIssues(
+                                                          nameof(Draft.Summary)))
+                                        {
+                                            <span class="@GetIssueClass(issue)">
+                                                @issue.Message
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <div class="@GetFieldClass(nameof(Draft.Playtime))">
+                                        <label for="playtime">
+                                            Playtime
+                                        </label>
+
+                                        <input id="playtime"
+                                               type="number"
+                                               min="0"
+                                               max="@PlaytimeFormatter.MaximumHours"
+                                               step="0.1"
+                                               inputmode="decimal"
+                                               value="@Draft.Playtime"
+                                               @oninput="UpdatePlaytimeAsync"/>
+
+                                        <span class="field-help">
+                                            Enter hours as a number. Preview
+                                            only; not included in BBCode.
+                                        </span>
+
+                                        @foreach (var issue in GetFieldIssues(
+                                                          nameof(Draft.Playtime)))
+                                        {
+                                            <span class="@GetIssueClass(issue)">
+                                                @issue.Message
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <label class="steam-checkbox full-width">
+                                        <input type="checkbox"
+                                               @bind="Draft.ReceivedProductForFree"
+                                               @bind:after="QueueDraftSaveAsync"/>
+                                        <span>
+                                            Check this box if you received this
+                                            product for free
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        }
                     </section>
                 }
                 else if (CurrentStep == BuilderStep.Format)
@@ -361,265 +406,30 @@
 
                     @if (ShowCategories)
                     {
-                        <section class="editor-section">
-                            <div class="section-heading section-heading-row">
-                                <div>
-                                    <h3>Category ratings</h3>
-
-                                    <p>
-                                        Customize each category, score, and note.
-                                    </p>
-                                </div>
-
-                                <button class="button secondary"
-                                        type="button"
-                                        @onclick="AddCategory">
-                                    Add category
-                                </button>
-                            </div>
-
-                            <div class="category-list">
-                                @foreach (var category in Draft.Categories)
-                                {
-                                    <div class="category-card"
-                                         @key="category.Id">
-                                        <div class="category-grid">
-                                            <div class="@GetFieldClass(
-                                                            $"CategoryName:{category.Id}")">
-
-                                                <label>Category</label>
-
-                                                <input type="text"
-                                                       aria-invalid="@HasFieldError(
-                                                                         $"CategoryName:{category.Id}")"
-                                                       @bind="category.Name"
-                                                       @bind:event="oninput"
-                                                       @bind:after="QueueDraftSaveAsync"/>
-
-                                                @foreach (var issue in GetFieldIssues(
-                                                                  $"CategoryName:{category.Id}"))
-                                                {
-                                                    <span class="@GetIssueClass(issue)">
-                                                        @issue.Message
-                                                    </span>
-                                                }
-                                            </div>
-
-                                            <div class="field rating-field">
-                                                <label>Rating</label>
-
-                                                <select @bind="category.Rating"
-                                                        @bind:after="QueueDraftSaveAsync">
-                                                    <option value="5">5 / 5</option>
-                                                    <option value="4">4 / 5</option>
-                                                    <option value="3">3 / 5</option>
-                                                    <option value="2">2 / 5</option>
-                                                    <option value="1">1 / 5</option>
-                                                </select>
-                                            </div>
-
-                                            <div class="@GetFieldClass(
-                                                            $"CategoryNote:{category.Id}")">
-
-                                                <label>Short note</label>
-
-                                                <input type="text"
-                                                       @bind="category.Note"
-                                                       @bind:event="oninput"
-                                                       @bind:after="QueueDraftSaveAsync"/>
-
-                                                @foreach (var issue in GetFieldIssues(
-                                                                  $"CategoryNote:{category.Id}"))
-                                                {
-                                                    <span class="@GetIssueClass(issue)">
-                                                        @issue.Message
-                                                    </span>
-                                                }
-                                            </div>
-
-                                            <button class="button danger"
-                                                    type="button"
-                                                    disabled="@(Draft.Categories.Count <= 1)"
-                                                    @onclick="() => RemoveCategory(category)">
-                                                Remove
-                                            </button>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </section>
+                        <div class="format-editing-note">
+                            <strong>Edit the Steam preview directly.</strong>
+                            Change category names, notes, and star ratings in
+                            the preview below. Use
+                            <span aria-hidden="true">+</span>
+                            to insert a category and
+                            <span aria-hidden="true">−</span> to remove one.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="format-editing-note">
+                            Minimal Verdict does not include category sections.
+                            Choose another layout to edit category ratings.
+                        </div>
                     }
                 }
                 else if (CurrentStep == BuilderStep.Questions)
                 {
-                    <section class="editor-section">
-                        <div class="section-heading">
-                            <h3>Written response</h3>
-
-                            <p>
-                                Enter one item per line for list-based questions.
-                            </p>
-                        </div>
-
-                        <div class="field-grid">
-                            @if (ShowDetailedQuestions)
-                            {
-                                <div class="@GetFieldClass(nameof(Draft.WhatWorks))">
-                                    <label for="what-works">
-                                        What does the game do well?
-                                    </label>
-
-                                    <textarea id="what-works"
-                                              rows="7"
-                                              @bind="Draft.WhatWorks"
-                                              @bind:event="oninput"
-                                              @bind:after="QueueDraftSaveAsync"></textarea>
-
-                                    @if (!GetFieldIssues(nameof(Draft.WhatWorks)).Any())
-                                    {
-                                        <span class="field-help">
-                    Each nonblank line becomes a separate point.
-                </span>
-                                    }
-
-                                    @foreach (var issue in GetFieldIssues(
-                                                      nameof(Draft.WhatWorks)))
-                                    {
-                                        <span class="@GetIssueClass(issue)">
-                    @issue.Message
-                </span>
-                                    }
-                                </div>
-
-                                <div class="@GetFieldClass(
-                                                nameof(Draft.WhatCouldBeBetter))">
-
-                                    <label for="what-could-be-better">
-                                        What could be better?
-                                    </label>
-
-                                    <textarea id="what-could-be-better"
-                                              rows="7"
-                                              @bind="Draft.WhatCouldBeBetter"
-                                              @bind:event="oninput"
-                                              @bind:after="QueueDraftSaveAsync"></textarea>
-
-                                    @if (!GetFieldIssues(
-                                                 nameof(Draft.WhatCouldBeBetter)).Any())
-                                    {
-                                        <span class="field-help">
-                    Each nonblank line becomes a separate point.
-                </span>
-                                    }
-
-                                    @foreach (var issue in GetFieldIssues(
-                                                      nameof(Draft.WhatCouldBeBetter)))
-                                    {
-                                        <span class="@GetIssueClass(issue)">
-                    @issue.Message
-                </span>
-                                    }
-                                </div>
-                            }
-
-                            <div class="@GetFieldClass(nameof(Draft.FinalThoughts))">
-                                <label for="final-thoughts">
-                                    @(Draft.DisplayFormat ==
-                                    ReviewDisplayFormat.MinimalVerdict
-                                        ? "Why?"
-                                        : "Final thoughts")
-                                </label>
-
-                                <textarea id="final-thoughts"
-                                          rows="7"
-                                          aria-invalid="@HasFieldError(
-                                                            nameof(Draft.FinalThoughts))"
-                                          @bind="Draft.FinalThoughts"
-                                          @bind:event="oninput"
-                                          @bind:after="QueueDraftSaveAsync"></textarea>
-
-                                @foreach (var issue in GetFieldIssues(
-                                                  nameof(Draft.FinalThoughts)))
-                                {
-                                    <span class="@GetIssueClass(issue)">
-                @issue.Message
-            </span>
-                                }
-                            </div>
-                        </div>
-                    </section>
-                }
-                else if (CurrentStep == BuilderStep.Export)
-                {
-                    <section class="editor-section">
-                        <div class="section-heading">
-                            <h3>Your review is ready</h3>
-
-                            <p>
-                                Check the generated output before copying it
-                                into Steam.
-                            </p>
-                        </div>
-
-                        <div class="export-summary">
-                            <div>
-                                <span class="export-label">Title</span>
-                                <strong>@DisplayTitle</strong>
-                            </div>
-
-                            <div>
-                                <span class="export-label">Template</span>
-                                <strong>@DisplayTemplateName</strong>
-                            </div>
-
-                            <div>
-                                <span class="export-label">Format</span>
-                                <strong>@DisplayFormatName</strong>
-                            </div>
-
-                            <div>
-                                <span class="export-label">
-                                    Recommendation
-                                </span>
-
-                                <strong>@RecommendationName</strong>
-                            </div>
-
-                            <div>
-                                <span class="export-label">Categories</span>
-
-                                <strong>
-                                    @(ShowCategories
-                                        ? Draft.Categories.Count
-                                        : 0)
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div class="export-notice">
-                            Review the complete generated output in the BBCode
-                            panel. Copy it when you are ready to paste the
-                            review into Steam.
-                        </div>
-
-                        <div class="export-actions">
-                            <button class="button primary"
-                                    type="button"
-                                    disabled="@(!CurrentValidation.IsValid)"
-                                    @onclick="CopyBbCode">
-                                Copy BBCode
-                            </button>
-
-                            @if (!string.IsNullOrWhiteSpace(_copyMessage))
-                            {
-                                <span class="copy-status"
-                                      role="status"
-                                      aria-live="polite">
-                                    @_copyMessage
-                                </span>
-                            }
-                        </div>
-                    </section>
+                    <div class="format-editing-note">
+                        <strong>Write directly in the Steam preview.</strong>
+                        Enter one item per line for strengths and weaknesses;
+                        the BBCode preview updates as you type.
+                    </div>
                 }
             </div>
 
@@ -635,47 +445,32 @@
                 {
                     <button class="button primary"
                             type="button"
+                            disabled="@(!CanAdvance)"
                             @onclick="NextStep">
                         @NextButtonLabel
                     </button>
                 }
             </div>
-        </section>
+            </div>
+        </aside>
 
         <aside class="panel preview-panel">
             <div class="panel-heading">
-                <h2>Live output</h2>
+                <h2>
+                    @(IsEditingFormatPreview
+                        ? "Format preview"
+                        : "Steam preview")
+                </h2>
 
                 <p>
-                    Preview the formatted review or inspect its Steam BBCode.
+                    @(IsEditingFormatPreview
+                        ? "Edit categories directly in the Steam preview."
+                        : "A live Steam-style view of your review.")
                 </p>
             </div>
 
-            <div class="output-tabs"
-                 role="tablist"
-                 aria-label="Review output view">
-                <button class="@GetOutputTabClass(OutputView.Preview)"
-                        type="button"
-                        role="tab"
-                        aria-selected="@(CurrentOutputView == OutputView.Preview)"
-                        @onclick="() => CurrentOutputView = OutputView.Preview">
-                    Preview
-                </button>
-
-                <button class="@GetOutputTabClass(OutputView.BbCode)"
-                        type="button"
-                        role="tab"
-                        aria-selected="@(CurrentOutputView == OutputView.BbCode)"
-                        @onclick="() => CurrentOutputView = OutputView.BbCode">
-                    BBCode
-                </button>
-            </div>
-
-            @if (CurrentOutputView == OutputView.Preview)
-            {
-                <div class="steam-preview"
-                     role="tabpanel"
-                     aria-label="Rendered review preview">
+            <div class="steam-preview"
+                 aria-label="Rendered review preview">
                     <article class="steam-review-card">
                         <header class="steam-review-header">
                             <span class="@SteamRecommendationIconClass"
@@ -697,18 +492,287 @@
                                 Posted: @SteamPreviewDate
                             </div>
 
-                            @RenderedPreview
+                            @if (Draft.ReceivedProductForFree)
+                            {
+                                <div class="steam-product-disclosure">
+                                    Product received for free
+                                </div>
+                            }
+
+                            @if (IsEditingFormatPreview)
+                            {
+                                @RenderedIntroPreview
+
+                                <hr />
+
+                                @if (Draft.DisplayFormat ==
+                                     ReviewDisplayFormat.RatingTable)
+                                {
+                                    <div class="preview-table-wrapper steam-editable-table-wrapper">
+                                        <table class="preview-table steam-editable-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Category</th>
+                                                    <th>Rating</th>
+                                                    <th>Note</th>
+                                                    <th class="steam-edit-controls-heading">
+                                                        Edit
+                                                    </th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                @foreach (var category in Draft.Categories)
+                                                {
+                                                    <tr @key="category.Id">
+                                                        <td>
+                                                            <input class="steam-inline-input steam-category-name"
+                                                                   type="text"
+                                                                   aria-label="Category name"
+                                                                   aria-invalid="@HasFieldError(
+                                                                                     $"CategoryName:{category.Id}")"
+                                                                   @bind="category.Name"
+                                                                   @bind:event="oninput"
+                                                                   @bind:after="QueueDraftSaveAsync"/>
+
+                                                            @foreach (var issue in GetFieldIssues(
+                                                                              $"CategoryName:{category.Id}"))
+                                                            {
+                                                                <span class="@GetSteamEditIssueClass(issue)">
+                                                                    @issue.Message
+                                                                </span>
+                                                            }
+                                                        </td>
+
+                                                        <td>
+                                                            @RenderRatingEditor(category)
+                                                        </td>
+
+                                                        <td>
+                                                            <input class="steam-inline-input"
+                                                                   type="text"
+                                                                   aria-label="@($"{category.Name} note")"
+                                                                   @bind="category.Note"
+                                                                   @bind:event="oninput"
+                                                                   @bind:after="QueueDraftSaveAsync"/>
+
+                                                            @foreach (var issue in GetFieldIssues(
+                                                                              $"CategoryNote:{category.Id}"))
+                                                            {
+                                                                <span class="@GetSteamEditIssueClass(issue)">
+                                                                    @issue.Message
+                                                                </span>
+                                                            }
+                                                        </td>
+
+                                                        <td class="steam-edit-controls-cell">
+                                                            @RenderCategoryControls(category)
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else if (Draft.DisplayFormat ==
+                                         ReviewDisplayFormat.Sections)
+                                {
+                                    <div class="steam-editable-sections">
+                                        @foreach (var category in Draft.Categories)
+                                        {
+                                            <section class="steam-editable-section"
+                                                     @key="category.Id">
+                                                @RenderCategoryControls(category)
+
+                                                <input class="steam-inline-input steam-section-heading-input"
+                                                       type="text"
+                                                       aria-label="Section name"
+                                                       aria-invalid="@HasFieldError(
+                                                                         $"CategoryName:{category.Id}")"
+                                                       @bind="category.Name"
+                                                       @bind:event="oninput"
+                                                       @bind:after="QueueDraftSaveAsync"/>
+
+                                                @RenderRatingEditor(category)
+
+                                                <textarea class="steam-inline-input steam-inline-textarea"
+                                                          rows="2"
+                                                          aria-label="@($"{category.Name} note")"
+                                                          @bind="category.Note"
+                                                          @bind:event="oninput"
+                                                          @bind:after="QueueDraftSaveAsync"></textarea>
+
+                                                @foreach (var issue in GetCategoryIssues(category))
+                                                {
+                                                    <span class="@GetSteamEditIssueClass(issue)">
+                                                        @issue.Message
+                                                    </span>
+                                                }
+                                            </section>
+                                        }
+                                    </div>
+                                }
+                                else if (Draft.DisplayFormat ==
+                                         ReviewDisplayFormat.Checklist)
+                                {
+                                    <div class="steam-editable-checklist">
+                                        @foreach (var category in Draft.Categories)
+                                        {
+                                            <section class="steam-editable-check-item"
+                                                     @key="category.Id">
+                                                <span class="steam-check-marker"
+                                                      aria-hidden="true">
+                                                    @(category.Rating >= 4 ? "☑" : "☐")
+                                                </span>
+
+                                                <div class="steam-check-edit-content">
+                                                    <input class="steam-inline-input steam-category-name"
+                                                           type="text"
+                                                           aria-label="Checklist category name"
+                                                           aria-invalid="@HasFieldError(
+                                                                             $"CategoryName:{category.Id}")"
+                                                           @bind="category.Name"
+                                                           @bind:event="oninput"
+                                                           @bind:after="QueueDraftSaveAsync"/>
+
+                                                    @RenderRatingEditor(category)
+
+                                                    <input class="steam-inline-input"
+                                                           type="text"
+                                                           aria-label="@($"{category.Name} note")"
+                                                           @bind="category.Note"
+                                                           @bind:event="oninput"
+                                                           @bind:after="QueueDraftSaveAsync"/>
+
+                                                    @foreach (var issue in GetCategoryIssues(category))
+                                                    {
+                                                        <span class="@GetSteamEditIssueClass(issue)">
+                                                            @issue.Message
+                                                        </span>
+                                                    }
+                                                </div>
+
+                                                @RenderCategoryControls(category)
+                                            </section>
+                                        }
+                                    </div>
+                                }
+
+                                @if (HasRenderedBodyPreview)
+                                {
+                                    <hr />
+                                    @RenderedBodyPreview
+                                }
+                            }
+                            else if (CurrentStep == BuilderStep.Questions)
+                            {
+                                @RenderedIntroPreview
+
+                                @if (HasRenderedCategoriesPreview)
+                                {
+                                    <hr />
+                                    @RenderedCategoriesPreview
+                                }
+
+                                <hr />
+
+                                <div class="steam-writing-editor">
+                                    @if (ShowDetailedQuestions)
+                                    {
+                                        <label>
+                                            <span>What Works</span>
+                                            <textarea class="steam-inline-input steam-writing-textarea"
+                                                      rows="5"
+                                                      placeholder="Enter one strength per line"
+                                                      @bind="Draft.WhatWorks"
+                                                      @bind:event="oninput"
+                                                      @bind:after="QueueDraftSaveAsync"></textarea>
+                                        </label>
+
+                                        <label>
+                                            <span>What Could Be Better</span>
+                                            <textarea class="steam-inline-input steam-writing-textarea"
+                                                      rows="5"
+                                                      placeholder="Enter one weakness per line"
+                                                      @bind="Draft.WhatCouldBeBetter"
+                                                      @bind:event="oninput"
+                                                      @bind:after="QueueDraftSaveAsync"></textarea>
+                                        </label>
+                                    }
+
+                                    <label>
+                                        <span>
+                                            @(Draft.DisplayFormat ==
+                                              ReviewDisplayFormat.MinimalVerdict
+                                                ? "Why?"
+                                                : "Final Thoughts")
+                                        </span>
+                                        <textarea class="steam-inline-input steam-writing-textarea"
+                                                  rows="6"
+                                                  aria-invalid="@HasFieldError(
+                                                                    nameof(Draft.FinalThoughts))"
+                                                  @bind="Draft.FinalThoughts"
+                                                  @bind:event="oninput"
+                                                  @bind:after="QueueDraftSaveAsync"></textarea>
+                                    </label>
+
+                                    @foreach (var issue in GetFieldIssues(
+                                                      nameof(Draft.FinalThoughts)))
+                                    {
+                                        <span class="@GetSteamEditIssueClass(issue)">
+                                            @issue.Message
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                @RenderedPreview
+                            }
                         </div>
                     </article>
+            </div>
+        </aside>
+
+        <aside class="panel bbcode-panel">
+            <div class="panel-heading output-panel-heading">
+                <div>
+                    <h2>BBCode Preview</h2>
+
+                    @if (ValidationErrors.Any())
+                    {
+                        <p class="bbcode-validation-note">
+                            @ValidationErrors.Count() required
+                            @(ValidationErrors.Count() == 1 ? "item" : "items")
+                            still incomplete.
+                        </p>
+                    }
+                    else
+                    {
+                        <p>Generated code updates as you edit.</p>
+                    }
                 </div>
-            }
-            else
+
+                <button class="button primary"
+                        type="button"
+                        @onclick="CopyBbCode">
+                    Copy BBCode
+                </button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_copyMessage))
             {
-                <textarea class="code-output"
-                          rows="36"
-                          readonly
-                          aria-label="Generated Steam BBCode">@GeneratedBbCode</textarea>
+                <span class="copy-status bbcode-copy-status"
+                      role="status"
+                      aria-live="polite">
+                    @_copyMessage
+                </span>
             }
+
+            <textarea class="code-output"
+                      rows="36"
+                      readonly
+                      aria-label="Generated Steam BBCode">@GeneratedBbCode</textarea>
         </aside>
     </main>
 
@@ -757,17 +821,97 @@
             </section>
         </div>
     }
+
+    @if (_showFormattingHelp)
+    {
+        <div class="modal-backdrop help-backdrop"
+             role="presentation"
+             @onclick="CloseFormattingHelp">
+            <section class="formatting-help-drawer"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="formatting-help-title"
+                     @onkeydown="HandleFormattingHelpKeyDown"
+                     @onclick:stopPropagation>
+                <header class="formatting-help-header">
+                    <div>
+                        <span class="help-eyebrow">Steam reference</span>
+                        <h2 id="formatting-help-title">
+                            Formatting help
+                        </h2>
+                    </div>
+
+                    <button class="help-close"
+                            type="button"
+                            aria-label="Close formatting help"
+                            @onclick="CloseFormattingHelp">
+                        ×
+                    </button>
+                </header>
+
+                <div class="formatting-help-content">
+                    <p>
+                        Steam uses BBCode-style tags in reviews. Steam Review
+                        Forge generates and previews the tags used by its
+                        templates; Steam supports additional formatting too.
+                    </p>
+
+                    <dl class="formatting-reference">
+                        <div>
+                            <dt>Headings</dt>
+                            <dd><code>[h1]Heading[/h1]</code></dd>
+                        </div>
+                        <div>
+                            <dt>Emphasis</dt>
+                            <dd>
+                                <code>[b]Bold[/b]</code>
+                                <code>[i]Italic[/i]</code>
+                                <code>[u]Underline[/u]</code>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Lists</dt>
+                            <dd>
+                                <code>[list][*]Item[/list]</code>
+                                <code>[olist][*]Item[/olist]</code>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Links</dt>
+                            <dd>
+                                <code>[url=https://…]Text[/url]</code>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Other useful tags</dt>
+                            <dd>
+                                <code>[spoiler]Text[/spoiler]</code>
+                                <code>[quote]Text[/quote]</code>
+                                <code>[hr][/hr]</code>
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <a class="steam-help-link"
+                       href="https://steamcommunity.com/comment/Recommendation/formattinghelp"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        Open Steam's complete formatting guide
+                    </a>
+                </div>
+            </section>
+        </div>
+    }
 </div>
 
 @code {
 
     private enum BuilderStep
     {
-        Template = 1,
-        Setup = 2,
+        Setup = 1,
+        Template = 2,
         Format = 3,
-        Questions = 4,
-        Export = 5
+        Questions = 4
     }
 
     private sealed record TemplateOption(
@@ -828,16 +972,13 @@
             ])
     ];
 
+    private static readonly int[] RatingOptions =
+        [1, 2, 3, 4, 5];
+
     private ReviewDraft Draft { get; set; } = new();
 
     private BuilderStep CurrentStep { get; set; } =
-        BuilderStep.Template;
-
-    private enum OutputView
-    {
-        Preview,
-        BbCode
-    }
+        BuilderStep.Setup;
 
     private ReviewTemplate SelectedTemplate { get; set; } =
         ReviewTemplate.Balanced;
@@ -855,6 +996,8 @@
 
     private bool _showNewReviewDialog;
 
+    private bool _showFormattingHelp;
+
     private string GeneratedBbCode =>
         SteamBbCodeGenerator.Generate(Draft);
     
@@ -867,26 +1010,41 @@
                 issue.Severity ==
                 ReviewValidationSeverity.Error);
 
-    private IEnumerable<ReviewValidationIssue> ValidationWarnings =>
-        CurrentValidation.Issues.Where(
-            issue =>
-                issue.Severity ==
-                ReviewValidationSeverity.Warning);
-
-    private OutputView CurrentOutputView { get; set; } =
-        OutputView.Preview;
-
     private MarkupString RenderedPreview =>
         new(
             SteamBbCodePreviewRenderer.Render(
                 GeneratedBbCode));
 
-    private string GetOutputTabClass(OutputView view)
-    {
-        return CurrentOutputView == view
-            ? "output-tab active"
-            : "output-tab";
-    }
+    private MarkupString RenderedIntroPreview =>
+        new(
+            SteamBbCodePreviewRenderer.Render(
+                SteamBbCodeGenerator.GenerateIntro(Draft)));
+
+    private string GeneratedCategoriesBbCode =>
+        SteamBbCodeGenerator.GenerateCategories(Draft);
+
+    private MarkupString RenderedCategoriesPreview =>
+        new(
+            SteamBbCodePreviewRenderer.Render(
+                GeneratedCategoriesBbCode));
+
+    private bool HasRenderedCategoriesPreview =>
+        !string.IsNullOrWhiteSpace(GeneratedCategoriesBbCode);
+
+    private string GeneratedBodyBbCode =>
+        SteamBbCodeGenerator.GenerateBody(Draft);
+
+    private MarkupString RenderedBodyPreview =>
+        new(
+            SteamBbCodePreviewRenderer.Render(
+                GeneratedBodyBbCode));
+
+    private bool HasRenderedBodyPreview =>
+        !string.IsNullOrWhiteSpace(GeneratedBodyBbCode);
+
+    private bool IsEditingFormatPreview =>
+        CurrentStep == BuilderStep.Format &&
+        ShowCategories;
 
     private bool ShowCategories =>
         Draft.DisplayFormat is
@@ -897,11 +1055,22 @@
     private bool ShowDetailedQuestions =>
         Draft.DisplayFormat != ReviewDisplayFormat.MinimalVerdict;
 
+    private bool HasRecommendation =>
+        Draft.Recommendation is not null;
+
+    private bool SetupComplete =>
+        HasRecommendation &&
+        !string.IsNullOrWhiteSpace(Draft.Summary);
+
     private bool CanGoBack =>
-        (int)CurrentStep > (int)BuilderStep.Template;
+        (int)CurrentStep > (int)BuilderStep.Setup;
 
     private bool CanGoNext =>
-        (int)CurrentStep < (int)BuilderStep.Export;
+        (int)CurrentStep < (int)BuilderStep.Questions;
+
+    private bool CanAdvance =>
+        CurrentStep != BuilderStep.Setup ||
+        SetupComplete;
 
     private string StepTitle =>
         CurrentStep switch
@@ -910,7 +1079,6 @@
             BuilderStep.Setup => "Review Setup",
             BuilderStep.Format => "Review Format",
             BuilderStep.Questions => "Review Questionnaire",
-            BuilderStep.Export => "Export Review",
             _ => "Review Builder"
         };
 
@@ -921,7 +1089,7 @@
                 "Choose a starting point for your review.",
 
             BuilderStep.Setup =>
-                "Enter the basic information for your review.",
+                "Choose a recommendation, then add the required summary.",
 
             BuilderStep.Format =>
                 "Choose a layout and configure category ratings.",
@@ -929,58 +1097,26 @@
             BuilderStep.Questions =>
                 "Answer the guided questions that form the review.",
 
-            BuilderStep.Export =>
-                "Review and copy the generated Steam-compatible BBCode.",
-
             _ => string.Empty
         };
 
     private string NextButtonLabel =>
         CurrentStep switch
         {
-            BuilderStep.Template =>
-                "Continue to setup",
-
             BuilderStep.Setup =>
+                "Continue to template",
+
+            BuilderStep.Template =>
                 "Continue to format",
 
             BuilderStep.Format =>
                 "Continue to questions",
-
-            BuilderStep.Questions =>
-                "Generate review",
 
             _ => "Continue"
         };
 
     private string SelectedTemplateName =>
         GetTemplateName(SelectedTemplate);
-
-    private string DisplayTemplateName =>
-        GetTemplateName(Draft.Template);
-
-    private string DisplayTitle =>
-        string.IsNullOrWhiteSpace(Draft.Title)
-            ? "Untitled Review"
-            : Draft.Title.Trim();
-
-    private string DisplayFormatName =>
-        Draft.DisplayFormat switch
-        {
-            ReviewDisplayFormat.RatingTable =>
-                "Rating Table",
-
-            ReviewDisplayFormat.Sections =>
-                "Individual Sections",
-
-            ReviewDisplayFormat.Checklist =>
-                "Checklist",
-
-            ReviewDisplayFormat.MinimalVerdict =>
-                "Minimal Verdict",
-
-            _ => "Unknown"
-        };
 
     private string RecommendationName =>
         Draft.Recommendation switch
@@ -991,13 +1127,20 @@
             ReviewRecommendation.NotRecommended =>
                 "Not Recommended",
 
-            _ => "Recommended"
+            _ => "Recommendation not selected"
         };
 
     private string SteamRecommendationIconClass =>
-        Draft.Recommendation == ReviewRecommendation.Recommended
-            ? "steam-recommendation-icon"
-            : "steam-recommendation-icon negative";
+        Draft.Recommendation switch
+        {
+            ReviewRecommendation.Recommended =>
+                "steam-recommendation-icon",
+
+            ReviewRecommendation.NotRecommended =>
+                "steam-recommendation-icon negative",
+
+            _ => "steam-recommendation-icon pending"
+        };
 
     private string SteamPlaytimeLabel
     {
@@ -1018,6 +1161,23 @@
             eventArgs.Value?.ToString());
 
         await QueueDraftSaveAsync();
+    }
+
+    private async Task SelectRecommendationAsync(
+        ReviewRecommendation recommendation)
+    {
+        Draft.Recommendation = recommendation;
+        _copyMessage = string.Empty;
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private string GetRecommendationChoiceClass(
+        ReviewRecommendation recommendation)
+    {
+        return Draft.Recommendation == recommendation
+            ? "recommendation-option selected"
+            : "recommendation-option";
     }
 
     private string SteamPreviewDate =>
@@ -1067,12 +1227,23 @@
 
     private void GoToStep(BuilderStep step)
     {
+        if (step != BuilderStep.Setup &&
+            !SetupComplete)
+        {
+            return;
+        }
+
         CurrentStep = step;
     }
 
     private void NextStep()
     {
         if (!CanGoNext)
+        {
+            return;
+        }
+
+        if (!CanAdvance)
         {
             return;
         }
@@ -1185,6 +1356,16 @@
         return CurrentValidation.ForField(field);
     }
 
+    private IEnumerable<ReviewValidationIssue>
+        GetCategoryIssues(ReviewCategory category)
+    {
+        return GetFieldIssues(
+                $"CategoryName:{category.Id}")
+            .Concat(
+                GetFieldIssues(
+                    $"CategoryNote:{category.Id}"));
+    }
+
     private bool HasFieldError(string field)
     {
         return GetFieldIssues(field).Any(
@@ -1231,30 +1412,15 @@
         };
     }
 
-    private void GoToFirstError()
+    private static string GetSteamEditIssueClass(
+        ReviewValidationIssue issue)
     {
-        var issue = ValidationErrors.FirstOrDefault();
-
-        if (issue is null)
-        {
-            return;
-        }
-
-        CurrentStep = issue.Section switch
-        {
-            ReviewValidationSection.Setup =>
-                BuilderStep.Setup,
-
-            ReviewValidationSection.Format =>
-                BuilderStep.Format,
-
-            ReviewValidationSection.Questions =>
-                BuilderStep.Questions,
-
-            _ => CurrentStep
-        };
+        return issue.Severity ==
+               ReviewValidationSeverity.Warning
+            ? "steam-edit-issue warning"
+            : "steam-edit-issue";
     }
-    
+
     private string GetTemplateCardClass(
         ReviewTemplate template)
     {
@@ -1284,9 +1450,81 @@
         };
     }
 
-    private async Task AddCategory()
+    private RenderFragment RenderRatingEditor(
+        ReviewCategory category) =>
+        @<div class="steam-rating-editor"
+              role="radiogroup"
+              aria-label="@($"{category.Name} rating")">
+            @foreach (var score in RatingOptions)
+            {
+                <button class="@GetRatingStarClass(
+                                   category.Rating,
+                                   score)"
+                        type="button"
+                        role="radio"
+                        aria-checked="@(category.Rating == score)"
+                        aria-label="@($"Set {category.Name} rating to {score} out of 5")"
+                        @onclick="() => SetCategoryRatingAsync(
+                                            category,
+                                            score)">
+                    ★
+                </button>
+            }
+        </div>;
+
+    private RenderFragment RenderCategoryControls(
+        ReviewCategory category) =>
+        @<div class="steam-category-controls"
+              role="group"
+              aria-label="@($"Edit {category.Name} section")">
+            <button class="steam-category-control add"
+                    type="button"
+                    title="Insert category after this one"
+                    aria-label="@($"Insert category after {category.Name}")"
+                    @onclick="() => InsertCategoryAfterAsync(category)">
+                +
+            </button>
+
+            <button class="steam-category-control remove"
+                    type="button"
+                    title="Remove this category"
+                    aria-label="@($"Remove {category.Name}")"
+                    disabled="@(Draft.Categories.Count <= 1)"
+                    @onclick="() => RemoveCategory(category)">
+                −
+            </button>
+        </div>;
+
+    private static string GetRatingStarClass(
+        int rating,
+        int score)
     {
-        Draft.Categories.Add(
+        return score <= rating
+            ? "steam-rating-star selected"
+            : "steam-rating-star";
+    }
+
+    private async Task SetCategoryRatingAsync(
+        ReviewCategory category,
+        int rating)
+    {
+        category.Rating = Math.Clamp(rating, 1, 5);
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task InsertCategoryAfterAsync(
+        ReviewCategory category)
+    {
+        var index = Draft.Categories.IndexOf(category);
+
+        if (index < 0)
+        {
+            return;
+        }
+
+        Draft.Categories.Insert(
+            index + 1,
             new ReviewCategory());
 
         await SaveDraftImmediatelyAsync();
@@ -1307,14 +1545,6 @@
 
     private async Task CopyBbCode()
     {
-        if (!CurrentValidation.IsValid)
-        {
-            _copyMessage =
-                "Complete the required fields before copying.";
-
-            GoToFirstError();
-            return;
-        }
         try
         {
             await JS.InvokeVoidAsync(
@@ -1481,6 +1711,25 @@
         _showNewReviewDialog = false;
     }
 
+    private void OpenFormattingHelp()
+    {
+        _showFormattingHelp = true;
+    }
+
+    private void CloseFormattingHelp()
+    {
+        _showFormattingHelp = false;
+    }
+
+    private void HandleFormattingHelpKeyDown(
+        KeyboardEventArgs eventArgs)
+    {
+        if (eventArgs.Key == "Escape")
+        {
+            CloseFormattingHelp();
+        }
+    }
+
     private async Task ConfirmStartNewReviewAsync()
     {
         try
@@ -1492,12 +1741,12 @@
             Draft = new ReviewDraft();
             SelectedTemplate = Draft.Template;
 
-            CurrentStep = BuilderStep.Template;
-            CurrentOutputView = OutputView.Preview;
+            CurrentStep = BuilderStep.Setup;
 
             _copyMessage = string.Empty;
             _saveStatus = "Not saved yet";
             _showNewReviewDialog = false;
+            _showFormattingHelp = false;
         }
         catch
         {
