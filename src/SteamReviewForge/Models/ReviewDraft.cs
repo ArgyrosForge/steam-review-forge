@@ -14,6 +14,37 @@ public sealed class ReviewDraft
     public ReviewDisplayFormat DisplayFormat { get; set; } =
         ReviewDisplayFormat.RatingTable;
 
+    public ReviewRatingSystem RatingSystem { get; set; } =
+        ReviewRatingSystem.FiveStars;
+
+    public List<ReviewTableColumn> TableColumns { get; set; } =
+    [
+        new()
+        {
+            Heading = "Category",
+            Kind = ReviewTableColumnKind.Category
+        },
+        new()
+        {
+            Heading = "Rating",
+            Kind = ReviewTableColumnKind.Rating
+        },
+        new()
+        {
+            Heading = "Notes",
+            Kind = ReviewTableColumnKind.Note
+        }
+    ];
+
+    public List<string> TextRatingOptions { get; set; } =
+    [
+        "Terrible",
+        "Bad",
+        "Mixed",
+        "Good",
+        "Excellent"
+    ];
+
     public ReviewTemplate Template { get; set; } =
         ReviewTemplate.Balanced;
 

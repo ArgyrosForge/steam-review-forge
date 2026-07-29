@@ -11,6 +11,7 @@ public static class ReviewTemplateService
         ArgumentNullException.ThrowIfNull(draft);
 
         draft.Template = template;
+        ResetTableColumns(draft);
 
         switch (template)
         {
@@ -35,6 +36,33 @@ public static class ReviewTemplateService
                     nameof(template),
                     template,
                     "Unknown review template.");
+        }
+
+        var targetMaximum =
+            draft.RatingSystem switch
+            {
+                ReviewRatingSystem.TenPoint => 10,
+                ReviewRatingSystem.Text =>
+                    Math.Max(
+                        1,
+                        draft.TextRatingOptions.Count),
+                _ => 5
+            };
+
+        if (targetMaximum != 5)
+        {
+            foreach (var category in draft.Categories)
+            {
+                category.Rating = Math.Clamp(
+                    (int)Math.Round(
+                        1d +
+                        (category.Rating - 1d) /
+                        4d *
+                        (targetMaximum - 1d),
+                        MidpointRounding.AwayFromZero),
+                    1,
+                    targetMaximum);
+            }
         }
     }
 
@@ -172,5 +200,31 @@ public static class ReviewTemplateService
     {
         draft.Categories.Clear();
         draft.Categories.AddRange(categories);
+    }
+
+    private static void ResetTableColumns(
+        ReviewDraft draft)
+    {
+        draft.TableColumns =
+        [
+            new ReviewTableColumn
+            {
+                Heading = "Category",
+                Kind =
+                    ReviewTableColumnKind.Category
+            },
+            new ReviewTableColumn
+            {
+                Heading = "Rating",
+                Kind =
+                    ReviewTableColumnKind.Rating
+            },
+            new ReviewTableColumn
+            {
+                Heading = "Notes",
+                Kind =
+                    ReviewTableColumnKind.Note
+            }
+        ];
     }
 }

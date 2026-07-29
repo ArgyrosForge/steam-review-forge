@@ -103,6 +103,7 @@ As the application grows, large independent UI areas should be extracted into fo
 - Weaknesses
 - Final thoughts
 - A collection of review categories
+- An ordered collection of rating-table columns
 
 New drafts begin in Setup with Recommended selected, preview-only
 received-for-free metadata unchecked, and placeholder title and summary text.
@@ -114,10 +115,18 @@ Each category contains:
 
 - A generated `Guid` identifier
 - A display name
-- A rating from 1 through 5
+- A rating value interpreted by the draft's selected rating system
 - An optional note
+- Custom text values keyed by table-column identifier
 
 The identifier is used to preserve UI identity and associate validation messages with a specific category.
+
+### `ReviewTableColumn`
+
+Each rating-table column has a stable identifier, editable heading, and kind.
+Category, Rating, and Note are unique built-in kinds; any number of custom text
+columns can be added. The ordered collection is the source of truth for both
+table visibility and table order.
 
 ### Enumerations
 
@@ -125,6 +134,8 @@ The model uses enums rather than free-form strings for bounded choices:
 
 - `ReviewTemplate`: Balanced, Quick Take, Deep Dive, and Custom
 - `ReviewDisplayFormat`: Rating Table, Sections, Checklist, and Minimal Verdict
+- `ReviewRatingSystem`: 1–10 numbers, 1–5 numbers, 1–5 stars, and text
+  labels configured by the draft
 - `ReviewRecommendation`: Recommended and Not Recommended
 - Validation section and severity enums
 
@@ -158,7 +169,9 @@ Validates the current draft and returns a `ReviewValidationResult` containing er
 Errors mark incomplete required fields but do not hide or block the persistent
 BBCode copy action. Warnings provide additional guidance.
 
-Validation is grouped by the Setup, Format, and Questions workflow sections. Field identifiers allow the UI to show messages beside the relevant input and decorate workflow steps with status indicators.
+Validation is grouped by the Setup, Template, Format, and Questions workflow
+sections. Field identifiers allow the UI to show messages beside the relevant
+input and decorate workflow steps with status indicators.
 
 ### `SteamBbCodeGenerator`
 
@@ -172,7 +185,7 @@ Generation is deterministic and has no browser dependencies. Output varies accor
 - Minimal Verdict omits category output and focuses on the explanation
 
 The generator also adds the title, optional summary, questionnaire content,
-dividers, and star ratings.
+dividers, and ratings formatted with the selected rating system.
 
 Generation is split into intro, category, and body segments. The complete
 generator joins nonempty segments with Steam dividers. During the Format step,
@@ -198,13 +211,23 @@ User-provided text is HTML encoded before supported formatting tags are converte
 
 The preview is an approximation of Steam rendering, not a complete general-purpose BBCode parser.
 
-Setup displays only the basic Steam metadata preview: recommendation, playtime,
-the received-for-free disclosure when selected, and the short summary. Beginning
+Setup configures recommendation, summary, playtime, received-for-free status,
+and the initial rating system. The rating-system control remains available
+above the active step editor throughout the workflow. Text rating systems store
+a customizable ordered list of labels in that persistent control. The Setup
+preview displays only the basic Steam metadata and short summary. Beginning
 with Template, the title, summary, category content, ratings, and guided
 responses remain editable directly in the preview. An external control gutter
-adds, reorders, and removes any category without placing application controls
-on the Steam-colored review surface. Validation is shown outside that surface
-as well. The Final Preview step replaces all editor controls with the rendered,
+adds, reorders, and removes rows without placing application controls on the
+Steam-colored review surface. Column structure is managed in a responsive
+table-configurer dialog outside the Steam surface. The dialog supports heading
+edits, built-in and custom columns, row content, ratings, drag ordering, and
+always-visible accessible move and remove actions. Rating tables are read-only
+inside the Steam preview; all structural and content edits occur in the
+configurer. Template reset restores template-owned layout, columns, rows, and
+guided writing while preserving Setup metadata, title, and rating configuration.
+Validation is shown outside the Steam surface as well.
+The Final Preview step replaces all editor controls with the rendered,
 read-only BBCode result and removes the editor gutter. Editor controls are
 UI-only and never enter generated BBCode.
 

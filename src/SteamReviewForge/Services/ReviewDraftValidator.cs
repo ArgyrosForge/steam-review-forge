@@ -12,6 +12,7 @@ public static class ReviewDraftValidator
         var result = new ReviewValidationResult();
 
         ValidateSetup(draft, result);
+        ValidateTemplate(draft, result);
         ValidateFormat(draft, result);
         ValidateQuestions(draft, result);
 
@@ -29,13 +30,6 @@ public static class ReviewDraftValidator
                 nameof(draft.Recommendation),
                 "Choose Recommended or Not Recommended.");
 
-        if (string.IsNullOrWhiteSpace(draft.Title))
-            AddError(
-                result,
-                ReviewValidationSection.Setup,
-                nameof(draft.Title),
-                "Enter a review title.");
-
         if (string.IsNullOrWhiteSpace(draft.Summary))
             AddError(
                 result,
@@ -43,12 +37,52 @@ public static class ReviewDraftValidator
                 nameof(draft.Summary),
                 "Add a short sentence that summarizes your review.");
 
+        if (draft.RatingSystem ==
+            ReviewRatingSystem.Text)
+        {
+            if (draft.TextRatingOptions.Count == 0)
+            {
+                AddError(
+                    result,
+                    ReviewValidationSection.Setup,
+                    nameof(draft.TextRatingOptions),
+                    "Add at least one text rating option.");
+            }
+
+            for (var index = 0;
+                 index < draft.TextRatingOptions.Count;
+                 index++)
+            {
+                if (string.IsNullOrWhiteSpace(
+                        draft.TextRatingOptions[index]))
+                {
+                    AddError(
+                        result,
+                        ReviewValidationSection.Setup,
+                        $"TextRatingOption:{index}",
+                        $"Text rating option {index + 1} needs a label.");
+                }
+            }
+        }
+
         if (string.IsNullOrWhiteSpace(draft.Playtime))
             AddWarning(
                 result,
                 ReviewValidationSection.Setup,
                 nameof(draft.Playtime),
                 "Consider including your approximate playtime.");
+    }
+
+    private static void ValidateTemplate(
+        ReviewDraft draft,
+        ReviewValidationResult result)
+    {
+        if (string.IsNullOrWhiteSpace(draft.Title))
+            AddError(
+                result,
+                ReviewValidationSection.Template,
+                nameof(draft.Title),
+                "Enter a review title.");
     }
 
     private static void ValidateFormat(
@@ -70,20 +104,64 @@ public static class ReviewDraftValidator
             return;
         }
 
+        if (draft.DisplayFormat ==
+            ReviewDisplayFormat.RatingTable)
+        {
+            for (var columnIndex = 0;
+                 columnIndex <
+                 draft.TableColumns.Count;
+                 columnIndex++)
+            {
+                var column =
+                    draft.TableColumns[columnIndex];
+
+                if (string.IsNullOrWhiteSpace(
+                        column.Heading))
+                {
+                    AddError(
+                        result,
+                        ReviewValidationSection.Format,
+                        $"ColumnHeading:{column.Id}",
+                        $"Column {columnIndex + 1} needs a heading.");
+                }
+            }
+        }
+
+        var hasCategoryColumn =
+            draft.TableColumns.Any(
+                column =>
+                    column.Kind ==
+                    ReviewTableColumnKind.Category);
+        var hasNoteColumn =
+            draft.TableColumns.Any(
+                column =>
+                    column.Kind ==
+                    ReviewTableColumnKind.Note);
+
         for (var index = 0;
              index < draft.Categories.Count;
              index++)
         {
             var category = draft.Categories[index];
+            var validateCategoryName =
+                draft.DisplayFormat !=
+                ReviewDisplayFormat.RatingTable ||
+                hasCategoryColumn;
+            var validateNote =
+                draft.DisplayFormat !=
+                ReviewDisplayFormat.RatingTable ||
+                hasNoteColumn;
 
-            if (string.IsNullOrWhiteSpace(category.Name))
+            if (validateCategoryName &&
+                string.IsNullOrWhiteSpace(category.Name))
                 AddError(
                     result,
                     ReviewValidationSection.Format,
                     $"CategoryName:{category.Id}",
                     $"Category {index + 1} needs a name.");
 
-            if (string.IsNullOrWhiteSpace(category.Note))
+            if (validateNote &&
+                string.IsNullOrWhiteSpace(category.Note))
                 AddWarning(
                     result,
                     ReviewValidationSection.Format,

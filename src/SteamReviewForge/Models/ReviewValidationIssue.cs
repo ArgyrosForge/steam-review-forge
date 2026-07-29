@@ -3,6 +3,7 @@ namespace SteamReviewForge.Models;
 public enum ReviewValidationSection
 {
     Setup,
+    Template,
     Format,
     Questions
 }

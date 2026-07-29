@@ -9,4 +9,6 @@ public sealed class ReviewCategory
     public int Rating { get; set; } = 3;
 
     public string Note { get; set; } = string.Empty;
+
+    public Dictionary<Guid, string> CustomCells { get; set; } = [];
 }
