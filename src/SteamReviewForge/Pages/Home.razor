@@ -158,6 +158,8 @@
                 <p>@StepDescription</p>
             </div>
 
+            @RenderRatingSystemEditor()
+
             <div class="step-content">
                 @if (CurrentStep == BuilderStep.Template)
                 {
@@ -169,6 +171,30 @@
                                 Templates provide starter content, categories,
                                 and a recommended display format.
                             </p>
+                        </div>
+
+                        <div class="template-title-field">
+                            <div class="@GetFieldClass(nameof(Draft.Title))">
+                                <label for="review-title">
+                                    Review title
+                                </label>
+
+                                <input id="review-title"
+                                       type="text"
+                                       aria-invalid="@HasFieldError(
+                                                         nameof(Draft.Title))"
+                                       @bind="Draft.Title"
+                                       @bind:event="oninput"
+                                       @bind:after="QueueDraftSaveAsync"/>
+
+                                @foreach (var issue in GetFieldIssues(
+                                                  nameof(Draft.Title)))
+                                {
+                                    <span class="@GetIssueClass(issue)">
+                                        @issue.Message
+                                    </span>
+                                }
+                            </div>
                         </div>
 
                         <div class="template-grid"
@@ -290,28 +316,6 @@
                         {
                             <div class="setup-details">
                                 <div class="field-grid">
-                                    <div class="@GetFieldClass(nameof(Draft.Title))">
-                                        <label for="review-title">
-                                            Review title
-                                        </label>
-
-                                        <input id="review-title"
-                                               type="text"
-                                               aria-invalid="@HasFieldError(
-                                                                 nameof(Draft.Title))"
-                                               @bind="Draft.Title"
-                                               @bind:event="oninput"
-                                               @bind:after="QueueDraftSaveAsync"/>
-
-                                        @foreach (var issue in GetFieldIssues(
-                                                          nameof(Draft.Title)))
-                                        {
-                                            <span class="@GetIssueClass(issue)">
-                                                @issue.Message
-                                            </span>
-                                        }
-                                    </div>
-
                                     <div class="@GetFieldClass(nameof(Draft.Summary))">
                                         <label for="review-summary">
                                             Short summary
@@ -423,14 +427,10 @@
                     @if (ShowCategories)
                     {
                         <div class="format-editing-note">
-                            <strong>Edit the Steam preview directly.</strong>
-                            Change category names, notes, and star ratings in
-                            the preview. Use
-                            <span aria-hidden="true">+</span>
-                            below the last row to add a category. Use the
-                            external arrow and
-                            <span aria-hidden="true">−</span> controls to
-                            reorder or remove any row.
+                            <strong>Configure the rating table in one place.</strong>
+                            Use <strong>Table Editor</strong> to edit
+                            columns, row content, ratings, order, and structure.
+                            The Steam preview remains read-only for tables.
                         </div>
                     }
                     else
@@ -481,26 +481,51 @@
         </aside>
 
         <aside class="panel preview-panel">
-            <div class="panel-heading">
-                <h2>
-                    @(IsFinalPreview
-                        ? "Final Steam Review"
-                        : CurrentStep == BuilderStep.Setup
-                        ? "Steam setup preview"
-                        : HasRecommendation
-                        ? "Editable Steam preview"
-                        : "Steam preview")
-                </h2>
+            <div class="panel-heading preview-panel-heading">
+                <div>
+                    <h2>
+                        @(IsFinalPreview
+                            ? "Final Steam Review"
+                            : CurrentStep == BuilderStep.Setup
+                            ? "Steam setup preview"
+                            : HasRecommendation
+                            ? "Editable Steam preview"
+                            : "Steam preview")
+                    </h2>
 
-                <p>
-                    @(IsFinalPreview
-                        ? "A read-only preview of the finished review."
-                        : CurrentStep == BuilderStep.Setup
-                        ? "A basic preview of the Steam review metadata."
-                        : HasRecommendation
-                        ? "Edit the review directly at any workflow step."
-                        : "Choose a recommendation to unlock editing.")
-                </p>
+                    <p>
+                        @(IsFinalPreview
+                            ? "A read-only preview of the finished review."
+                            : CurrentStep == BuilderStep.Setup
+                            ? "A basic preview of the Steam review metadata."
+                            : HasRecommendation
+                            ? "Edit the review directly at any workflow step."
+                            : "Choose a recommendation to unlock editing.")
+                    </p>
+                </div>
+
+                @if (!IsFinalPreview &&
+                     CurrentStep != BuilderStep.Setup &&
+                     SetupComplete)
+                {
+                    <div class="preview-editor-actions">
+                        @if (Draft.DisplayFormat ==
+                             ReviewDisplayFormat.RatingTable)
+                        {
+                            <button class="button secondary"
+                                    type="button"
+                                    @onclick="OpenTableConfigurer">
+                                Table Editor
+                            </button>
+                        }
+
+                        <button class="button secondary"
+                                type="button"
+                                @onclick="OpenResetTemplateDialog">
+                            Reset
+                        </button>
+                    </div>
+                }
             </div>
 
             @if (!IsFinalPreview &&
@@ -561,12 +586,14 @@
                                  !IsFinalPreview)
                             {
                                 <div class="steam-intro-editor">
-                                    <input class="steam-inline-input steam-title-input"
-                                           type="text"
-                                           aria-label="Review title"
-                                           @bind="Draft.Title"
-                                           @bind:event="oninput"
-                                           @bind:after="QueueDraftSaveAsync"/>
+                                    <h1 class="steam-editable-title">
+                                        <input class="steam-inline-input steam-title-input"
+                                               type="text"
+                                               aria-label="Review title"
+                                               @bind="Draft.Title"
+                                               @bind:event="oninput"
+                                               @bind:after="QueueDraftSaveAsync"/>
+                                    </h1>
 
                                     <input class="steam-inline-input steam-summary-input"
                                            type="text"
@@ -582,65 +609,7 @@
                                 @if (Draft.DisplayFormat ==
                                      ReviewDisplayFormat.RatingTable)
                                 {
-                                    <div class="preview-table-wrapper steam-editable-table-wrapper">
-                                        <table class="preview-table steam-editable-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Category</th>
-                                                    <th>Rating</th>
-                                                    <th>Note</th>
-                                                    <th class="steam-edit-control-gutter"
-                                                        aria-label="Category controls"></th>
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                @foreach (var category in Draft.Categories)
-                                                {
-                                                    <tr @key="category.Id">
-                                                        <td>
-                                                            <input class="steam-inline-input steam-category-name"
-                                                                   type="text"
-                                                                   aria-label="Category name"
-                                                                   aria-invalid="@HasFieldError(
-                                                                                     $"CategoryName:{category.Id}")"
-                                                                   @bind="category.Name"
-                                                                   @bind:event="oninput"
-                                                                   @bind:after="QueueDraftSaveAsync"/>
-
-                                                        </td>
-
-                                                        <td>
-                                                            @RenderRatingEditor(category)
-                                                        </td>
-
-                                                        <td>
-                                                            <input class="steam-inline-input"
-                                                                   type="text"
-                                                                   aria-label="@($"{category.Name} note")"
-                                                                   @bind="category.Note"
-                                                                   @bind:event="oninput"
-                                                                   @bind:after="QueueDraftSaveAsync"/>
-
-                                                        </td>
-
-                                                        <td class="steam-edit-control-gutter">
-                                                            @RenderCategoryControls(category)
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            </tbody>
-
-                                            <tfoot>
-                                                <tr class="steam-add-category-row">
-                                                    <td colspan="3"></td>
-                                                    <td class="steam-edit-control-gutter">
-                                                        @RenderAddCategoryControl()
-                                                    </td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
+                                    @RenderedCategoriesPreview
                                 }
                                 else if (Draft.DisplayFormat ==
                                          ReviewDisplayFormat.Sections)
@@ -649,7 +618,9 @@
                                         @foreach (var category in Draft.Categories)
                                         {
                                             <section class="steam-editable-section"
-                                                     @key="category.Id">
+                                                     @key="category.Id"
+                                                     @ondragover:preventDefault
+                                                     @ondrop="() => DropRowAsync(category)">
                                                 @RenderCategoryControls(category)
 
                                                 <input class="steam-inline-input steam-section-heading-input"
@@ -685,10 +656,14 @@
                                         @foreach (var category in Draft.Categories)
                                         {
                                             <section class="steam-editable-check-item"
-                                                     @key="category.Id">
+                                                     @key="category.Id"
+                                                     @ondragover:preventDefault
+                                                     @ondrop="() => DropRowAsync(category)">
                                                 <span class="steam-check-marker"
                                                       aria-hidden="true">
-                                                    @(category.Rating >= 4 ? "☑" : "☐")
+                                                    @(IsPositiveCategoryRating(category)
+                                                        ? "☑"
+                                                        : "☐")
                                                 </span>
 
                                                 <div class="steam-check-edit-content">
@@ -864,6 +839,281 @@
         </div>
     }
 
+    @if (_showTableConfigurer)
+    {
+        <div class="modal-backdrop"
+             role="presentation"
+             @onclick="CloseTableConfigurer">
+            <section class="table-configurer-dialog"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="table-configurer-title"
+                     @onclick:stopPropagation>
+                <header class="table-configurer-header">
+                    <div>
+                        <span class="help-eyebrow">Rating table</span>
+                        <h2 id="table-configurer-title">
+                            Table Editor
+                        </h2>
+                    </div>
+
+                    <button class="help-close"
+                            type="button"
+                            aria-label="Close Table Editor"
+                            @onclick="CloseTableConfigurer">
+                        ×
+                    </button>
+                </header>
+
+                <div class="table-configurer-content">
+                    <p>
+                        Manage every part of the rating table here. Drag items
+                        to reorder them, or use the controls on the right.
+                    </p>
+
+                    <div class="table-editor-toolbar">
+                        <label class="table-editor-rating-system">
+                            <span>Rating system</span>
+
+                            <select value="@Draft.RatingSystem"
+                                    @onchange="UpdateRatingSystemAsync">
+                                <option value="@ReviewRatingSystem.TenPoint">
+                                    1–10 Numbers
+                                </option>
+
+                                <option value="@ReviewRatingSystem.FivePoint">
+                                    1–5 Numbers
+                                </option>
+
+                                <option value="@ReviewRatingSystem.FiveStars">
+                                    1–5 Stars
+                                </option>
+
+                                <option value="@ReviewRatingSystem.Text">
+                                    Text Rating
+                                </option>
+                            </select>
+                        </label>
+
+                        <div>
+                            @foreach (var columnKind in MissingBuiltInColumns)
+                            {
+                                <button type="button"
+                                        @onclick="() => AddColumnAsync(columnKind)">
+                                    + @GetDefaultColumnHeading(columnKind)
+                                </button>
+                            }
+
+                        </div>
+                    </div>
+
+                    <div class="steam-preview finalized table-editor-shell"
+                         aria-label="Editable rating table">
+                        <div class="steam-review-page">
+                            <article class="steam-review-card">
+                                <div class="steam-review-content">
+                                    <div class="table-editor-scroll">
+                                        <table class="preview-table table-editor">
+                                            <thead>
+                                                <tr>
+                                                    <th class="table-editor-row-number">
+                                                        #
+                                                    </th>
+
+                                                    @foreach (var column in Draft.TableColumns)
+                                                    {
+                                                        <th class="@GetConfigurerColumnClass(column)"
+                                                            @key="column.Id"
+                                                            draggable="true"
+                                                            data-table-drag-handle
+                                                            title="Drag to reorder column"
+                                                            data-drag-preview="column"
+                                                            @ondragstart="() => BeginColumnDrag(column)"
+                                                            @ondragend="EndColumnDrag"
+                                                            @ondragover:preventDefault
+                                                            @ondragenter="() => SetColumnDropTarget(column)"
+                                                            @ondrop="() => DropColumnAsync(column)">
+                                                            <span class="table-configurer-drag-rail horizontal"
+                                                                  aria-hidden="true">
+                                                            </span>
+
+                                                            <input type="text"
+                                                                   aria-label="@($"{GetColumnKindLabel(column.Kind)} column heading")"
+                                                                   aria-invalid="@HasFieldError(
+                                                                                     $"ColumnHeading:{column.Id}")"
+                                                                   @bind="column.Heading"
+                                                                   @bind:event="oninput"
+                                                                   @bind:after="QueueDraftSaveAsync"/>
+
+                                                            <div class="table-configurer-actions"
+                                                                 role="group"
+                                                                 aria-label="@($"{column.Heading} column actions")">
+                                                                <button type="button"
+                                                                        title="Move column left"
+                                                                        aria-label="@($"Move {column.Heading} column left")"
+                                                                        disabled="@(Draft.TableColumns.IndexOf(column) == 0)"
+                                                                        @onclick="() => MoveColumnAsync(column, -1)">
+                                                                    ←
+                                                                </button>
+
+                                                                <button type="button"
+                                                                        title="Move column right"
+                                                                        aria-label="@($"Move {column.Heading} column right")"
+                                                                        disabled="@(Draft.TableColumns.IndexOf(column) ==
+                                                                                    Draft.TableColumns.Count - 1)"
+                                                                        @onclick="() => MoveColumnAsync(column, 1)">
+                                                                    →
+                                                                </button>
+
+                                                                <button class="remove"
+                                                                        type="button"
+                                                                        title="Remove column"
+                                                                        aria-label="@($"Remove {column.Heading} column")"
+                                                                disabled="@(Draft.TableColumns.Count == 1)"
+                                                                @onclick="() => RemoveColumnAsync(column)">
+                                                                    Remove column
+                                                                </button>
+                                                            </div>
+                                                        </th>
+                                                    }
+
+                                                    <th class="table-editor-actions-heading"
+                                                        aria-label="Table actions">
+                                                        <button type="button"
+                                                                @onclick="() => AddColumnAsync(
+                                                                                    ReviewTableColumnKind.CustomText)">
+                                                            + Column
+                                                        </button>
+
+                                                        <button type="button"
+                                                                @onclick="AddCategoryAsync">
+                                                            + Row
+                                                        </button>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                @foreach (var category in Draft.Categories)
+                                                {
+                                                    <tr @key="category.Id"
+                                                        class="@GetConfigurerRowClass(category)"
+                                                        data-drag-preview="row"
+                                                        @ondragover:preventDefault
+                                                        @ondragenter="() => SetRowDropTarget(category)"
+                                                        @ondrop="() => DropRowAsync(category)">
+                                                        <th class="table-editor-row-number"
+                                                            draggable="true"
+                                                            data-table-drag-handle
+                                                            title="Drag to reorder row"
+                                                            aria-label="@($"Drag row {Draft.Categories.IndexOf(category) + 1}")"
+                                                            @ondragstart="() => BeginRowDrag(category)"
+                                                            @ondragend="EndRowDrag">
+                                                            <span class="table-configurer-drag-rail"
+                                                                  aria-hidden="true">
+                                                            </span>
+
+                                                            @(Draft.Categories.IndexOf(category) + 1)
+                                                        </th>
+
+                                                        @foreach (var column in Draft.TableColumns)
+                                                        {
+                                                            <td @key="column.Id">
+                                                                @RenderConfigurerCell(
+                                                                    category,
+                                                                    column)
+                                                            </td>
+                                                        }
+
+                                                        <td class="table-configurer-actions table-editor-row-actions"
+                                                            aria-label="@($"{category.Name} row actions")">
+                                                            <button type="button"
+                                                                    title="Move row up"
+                                                                    aria-label="@($"Move {category.Name} row up")"
+                                                                    disabled="@(Draft.Categories.IndexOf(category) == 0)"
+                                                                    @onclick="() => MoveCategoryAsync(category, -1)">
+                                                                ↑
+                                                            </button>
+
+                                                            <button type="button"
+                                                                    title="Move row down"
+                                                                    aria-label="@($"Move {category.Name} row down")"
+                                                                    disabled="@(Draft.Categories.IndexOf(category) ==
+                                                                                Draft.Categories.Count - 1)"
+                                                                    @onclick="() => MoveCategoryAsync(category, 1)">
+                                                                ↓
+                                                            </button>
+
+                                                            <button class="remove"
+                                                                    type="button"
+                                                                    title="Remove row"
+                                                                    aria-label="@($"Remove {category.Name} row")"
+                                                                    @onclick="() => RemoveCategory(category)">
+                                                                Remove row
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="dialog-actions">
+                    <button class="button primary"
+                            type="button"
+                            @onclick="CloseTableConfigurer">
+                        Done
+                    </button>
+                </footer>
+            </section>
+        </div>
+    }
+
+    @if (_showResetTemplateDialog)
+    {
+        <div class="modal-backdrop"
+             role="presentation"
+             @onclick="CloseResetTemplateDialog">
+            <section class="confirmation-dialog"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="reset-template-dialog-title"
+                     aria-describedby="reset-template-dialog-description"
+                     @onclick:stopPropagation>
+                <div class="dialog-content">
+                    <h2 id="reset-template-dialog-title">
+                        Reset to @SelectedTemplateName?
+                    </h2>
+
+                    <p id="reset-template-dialog-description">
+                        This restores the template layout, columns, rows, and
+                        guided writing. Your Setup information, review title,
+                        and rating system will be preserved.
+                    </p>
+                </div>
+
+                <div class="dialog-actions">
+                    <button class="button secondary"
+                            type="button"
+                            @onclick="CloseResetTemplateDialog">
+                        Keep current edits
+                    </button>
+
+                    <button class="button danger-solid"
+                            type="button"
+                            @onclick="ConfirmResetTemplateAsync">
+                        Reset template content
+                    </button>
+                </div>
+            </section>
+        </div>
+    }
+
     @if (_showFormattingHelp)
     {
         <div class="modal-backdrop help-backdrop"
@@ -1015,9 +1265,6 @@
             ])
     ];
 
-    private static readonly int[] RatingOptions =
-        [1, 2, 3, 4, 5];
-
     private ReviewDraft Draft { get; set; } = new();
 
     private BuilderStep CurrentStep { get; set; } =
@@ -1041,6 +1288,18 @@
 
     private bool _showFormattingHelp;
 
+    private bool _showTableConfigurer;
+
+    private bool _showResetTemplateDialog;
+
+    private Guid? _draggedRowId;
+
+    private Guid? _draggedColumnId;
+
+    private Guid? _columnDropTargetId;
+
+    private Guid? _rowDropTargetId;
+
     private string GeneratedBbCode =>
         CurrentStep == BuilderStep.Setup
             ? SteamBbCodeGenerator.GenerateSetupPreview(Draft)
@@ -1063,8 +1322,11 @@
                     issue =>
                         issue.Section ==
                         ReviewValidationSection.Format &&
-                        issue.Field ==
-                        nameof(Draft.Categories)),
+                        (issue.Field ==
+                         nameof(Draft.Categories) ||
+                         issue.Field.StartsWith(
+                             "ColumnHeading:",
+                             StringComparison.Ordinal))),
 
             BuilderStep.Questions =>
                 CurrentValidation.Issues.Where(
@@ -1080,6 +1342,12 @@
             SteamBbCodePreviewRenderer.Render(
                 GeneratedBbCode));
 
+    private MarkupString RenderedCategoriesPreview =>
+        new(
+            SteamBbCodePreviewRenderer.Render(
+                SteamBbCodeGenerator.GenerateCategories(
+                    Draft)));
+
     private bool ShowCategories =>
         Draft.DisplayFormat is
             ReviewDisplayFormat.RatingTable or
@@ -1094,7 +1362,8 @@
 
     private bool SetupComplete =>
         HasRecommendation &&
-        !string.IsNullOrWhiteSpace(Draft.Summary);
+        !CurrentValidation.HasErrors(
+            ReviewValidationSection.Setup);
 
     private bool IsFinalPreview =>
         CurrentStep == BuilderStep.FinalPreview;
@@ -1112,6 +1381,10 @@
             BuilderStep.FinalPreview =>
                 "steam-preview finalized",
 
+            _ when Draft.DisplayFormat ==
+                   ReviewDisplayFormat.RatingTable =>
+                "steam-preview table-readonly",
+
             _ => "steam-preview"
         };
 
@@ -1125,6 +1398,9 @@
         CurrentStep switch
         {
             BuilderStep.Setup => SetupComplete,
+            BuilderStep.Template =>
+                !CurrentValidation.HasErrors(
+                    ReviewValidationSection.Template),
             BuilderStep.Questions => CanOpenFinalPreview,
             _ => true
         };
@@ -1147,7 +1423,7 @@
                 "Choose a starting point for your review.",
 
             BuilderStep.Setup =>
-                "Choose a recommendation, then add the required summary.",
+                "Set the Steam metadata and required summary.",
 
             BuilderStep.Format =>
                 "Choose a layout and configure category ratings.",
@@ -1265,6 +1541,146 @@
             _ => string.Empty
         };
 
+    private string RatingSystemDescription =>
+        Draft.RatingSystem switch
+        {
+            ReviewRatingSystem.TenPoint =>
+                "Scores each category from 1 through 10.",
+
+            ReviewRatingSystem.FivePoint =>
+                "Scores each category from 1 through 5.",
+
+            ReviewRatingSystem.FiveStars =>
+                "Displays a five-star rating for each category.",
+
+            ReviewRatingSystem.Text =>
+                "Uses the customizable text options below.",
+
+            _ => string.Empty
+        };
+
+    private int RatingMaximum =>
+        Draft.RatingSystem switch
+        {
+            ReviewRatingSystem.TenPoint => 10,
+            ReviewRatingSystem.Text =>
+                Math.Max(
+                    1,
+                    Draft.TextRatingOptions.Count),
+            _ => 5
+        };
+
+    private IEnumerable<ReviewTableColumnKind>
+        MissingBuiltInColumns =>
+        new[]
+        {
+            ReviewTableColumnKind.Category,
+            ReviewTableColumnKind.Rating,
+            ReviewTableColumnKind.Note
+        }.Where(kind => !HasTableColumn(kind));
+
+    private async Task UpdateRatingSystemAsync(
+        ChangeEventArgs eventArgs)
+    {
+        if (!Enum.TryParse<ReviewRatingSystem>(
+                eventArgs.Value?.ToString(),
+                out var ratingSystem) ||
+            ratingSystem == Draft.RatingSystem)
+        {
+            return;
+        }
+
+        var previousMaximum = RatingMaximum;
+        var nextMaximum =
+            ratingSystem switch
+            {
+                ReviewRatingSystem.TenPoint => 10,
+                ReviewRatingSystem.Text =>
+                    Math.Max(
+                        1,
+                        Draft.TextRatingOptions.Count),
+                _ => 5
+            };
+
+        if (previousMaximum != nextMaximum)
+        {
+            foreach (var category in Draft.Categories)
+            {
+                var normalized =
+                    (category.Rating - 1d) /
+                    (previousMaximum - 1d);
+
+                category.Rating = Math.Clamp(
+                    (int)Math.Round(
+                        1d +
+                        normalized *
+                        (nextMaximum - 1d),
+                        MidpointRounding.AwayFromZero),
+                    1,
+                    nextMaximum);
+            }
+        }
+
+        Draft.RatingSystem = ratingSystem;
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task AddTextRatingOptionAsync()
+    {
+        Draft.TextRatingOptions.Add(
+            $"Rating {Draft.TextRatingOptions.Count + 1}");
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task RemoveTextRatingOptionAsync(
+        int index)
+    {
+        if (Draft.TextRatingOptions.Count <= 1 ||
+            index < 0 ||
+            index >= Draft.TextRatingOptions.Count)
+        {
+            return;
+        }
+
+        Draft.TextRatingOptions.RemoveAt(index);
+
+        foreach (var category in Draft.Categories)
+        {
+            if (category.Rating > index + 1)
+            {
+                category.Rating--;
+            }
+            else if (category.Rating ==
+                     index + 1)
+            {
+                category.Rating = Math.Min(
+                    category.Rating,
+                    Draft.TextRatingOptions.Count);
+            }
+        }
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task UpdateTextRatingOptionAsync(
+        int index,
+        ChangeEventArgs eventArgs)
+    {
+        if (index < 0 ||
+            index >= Draft.TextRatingOptions.Count)
+        {
+            return;
+        }
+
+        Draft.TextRatingOptions[index] =
+            eventArgs.Value?.ToString() ??
+            string.Empty;
+
+        await QueueDraftSaveAsync();
+    }
+
     private string ColorModeLabel =>
         _appearance.ColorMode == "dark"
             ? "DARK"
@@ -1375,11 +1791,6 @@
                 classes.Add("complete");
             }
         }
-        else if (step == BuilderStep.Template)
-        {
-            classes.Add("complete");
-        }
-
         return string.Join(' ', classes);
     }
 
@@ -1390,6 +1801,9 @@
         {
             BuilderStep.Setup =>
                 ReviewValidationSection.Setup,
+
+            BuilderStep.Template =>
+                ReviewValidationSection.Template,
 
             BuilderStep.Format =>
                 ReviewValidationSection.Format,
@@ -1511,31 +1925,205 @@
         };
     }
 
+    private RenderFragment RenderRatingSystemEditor() =>
+        @<section class="persistent-rating-system">
+            <div class="field">
+                <label for="rating-system">
+                    Rating system
+                </label>
+
+                <select id="rating-system"
+                        value="@Draft.RatingSystem"
+                        @onchange="UpdateRatingSystemAsync">
+                    <option value="@ReviewRatingSystem.TenPoint">
+                        1–10 Numbers
+                    </option>
+
+                    <option value="@ReviewRatingSystem.FivePoint">
+                        1–5 Numbers
+                    </option>
+
+                    <option value="@ReviewRatingSystem.FiveStars">
+                        1–5 Stars
+                    </option>
+
+                    <option value="@ReviewRatingSystem.Text">
+                        Text Rating
+                    </option>
+                </select>
+
+                <span class="field-help">
+                    @RatingSystemDescription
+                </span>
+            </div>
+
+            @if (Draft.RatingSystem ==
+                 ReviewRatingSystem.Text)
+            {
+                <div class="text-rating-options">
+                    <div class="text-rating-options-heading">
+                        <strong>Text rating options</strong>
+
+                        <button class="button secondary"
+                                type="button"
+                                @onclick="AddTextRatingOptionAsync">
+                            Add option
+                        </button>
+                    </div>
+
+                    @for (var optionIndex = 0;
+                          optionIndex <
+                          Draft.TextRatingOptions.Count;
+                          optionIndex++)
+                    {
+                        var index = optionIndex;
+
+                        <div class="text-rating-option"
+                             @key="index">
+                            <input type="text"
+                                   aria-label="@($"Text rating option {index + 1}")"
+                                   aria-invalid="@HasFieldError(
+                                                     $"TextRatingOption:{index}")"
+                                   value="@Draft.TextRatingOptions[index]"
+                                   @oninput="eventArgs =>
+                                       UpdateTextRatingOptionAsync(
+                                           index,
+                                           eventArgs)"/>
+
+                            <button class="button danger"
+                                    type="button"
+                                    disabled="@(Draft.TextRatingOptions.Count <= 1)"
+                                    aria-label="@($"Remove text rating option {index + 1}")"
+                                    @onclick="() =>
+                                        RemoveTextRatingOptionAsync(index)">
+                                −
+                            </button>
+
+                            @foreach (var issue in GetFieldIssues(
+                                              $"TextRatingOption:{index}"))
+                            {
+                                <span class="@GetIssueClass(issue)">
+                                    @issue.Message
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </section>;
+
+    private RenderFragment RenderConfigurerCell(
+        ReviewCategory category,
+        ReviewTableColumn column) =>
+        @<div class="table-configurer-cell">
+            @switch (column.Kind)
+            {
+                case ReviewTableColumnKind.Category:
+                    <input type="text"
+                           aria-label="Category name"
+                           aria-invalid="@HasFieldError(
+                                             $"CategoryName:{category.Id}")"
+                           @bind="category.Name"
+                           @bind:event="oninput"
+                           @bind:after="QueueDraftSaveAsync"/>
+                    break;
+
+                case ReviewTableColumnKind.Rating:
+                    @RenderRatingEditor(category)
+                    break;
+
+                case ReviewTableColumnKind.Note:
+                    <input type="text"
+                           aria-label="@($"{category.Name} note")"
+                           @bind="category.Note"
+                           @bind:event="oninput"
+                           @bind:after="QueueDraftSaveAsync"/>
+                    break;
+
+                case ReviewTableColumnKind.CustomText:
+                    <input type="text"
+                           aria-label="@($"{column.Heading} for {category.Name}")"
+                           value="@GetCustomCellValue(category, column)"
+                           @oninput="eventArgs =>
+                               UpdateCustomCellAsync(
+                                   category,
+                                   column,
+                                   eventArgs)"/>
+                    break;
+            }
+        </div>;
+
     private RenderFragment RenderRatingEditor(
         ReviewCategory category) =>
         @<div class="steam-rating-editor"
-              role="radiogroup"
               aria-label="@($"{category.Name} rating")">
-            @foreach (var score in RatingOptions)
+            @if (Draft.RatingSystem ==
+                 ReviewRatingSystem.Text)
             {
-                <button class="@GetRatingStarClass(
-                                   category.Rating,
-                                   score)"
-                        type="button"
-                        role="radio"
-                        aria-checked="@(category.Rating == score)"
-                        aria-label="@($"Set {category.Name} rating to {score} out of 5")"
-                        @onclick="() => SetCategoryRatingAsync(
-                                            category,
-                                            score)">
-                    ★
-                </button>
+                <select class="steam-rating-select"
+                        aria-label="@($"{category.Name} text rating")"
+                        value="@category.Rating"
+                        @onchange="eventArgs =>
+                            SetCategoryRatingFromEventAsync(
+                                category,
+                                eventArgs)">
+                    @foreach (var score in Enumerable.Range(
+                                      1,
+                                      RatingMaximum))
+                    {
+                        <option value="@score">
+                            @GetTextRating(score)
+                        </option>
+                    }
+                </select>
+            }
+            else if (Draft.RatingSystem ==
+                     ReviewRatingSystem.FiveStars)
+            {
+                <div class="steam-rating-choices"
+                     role="radiogroup"
+                     aria-label="@($"{category.Name} rating")">
+                    @foreach (var score in Enumerable.Range(1, 5))
+                    {
+                        <button class="@GetRatingChoiceClass(
+                                           category.Rating,
+                                           score)"
+                                type="button"
+                                role="radio"
+                                aria-checked="@(category.Rating == score)"
+                                aria-label="@($"Set {category.Name} rating to {score} out of 5")"
+                                @onclick="() => SetCategoryRatingAsync(
+                                                    category,
+                                                    score)">
+                            ★
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <input class="steam-rating-number-input"
+                       type="number"
+                       min="1"
+                       max="@RatingMaximum"
+                       step="1"
+                       inputmode="numeric"
+                       aria-label="@($"{category.Name} rating from 1 to {RatingMaximum}")"
+                       value="@category.Rating"
+                       @oninput="eventArgs =>
+                           SetCategoryRatingFromEventAsync(
+                               category,
+                               eventArgs)"/>
             }
         </div>;
 
     private RenderFragment RenderCategoryControls(
-        ReviewCategory category) =>
-        @<div class="steam-category-editor-gutter">
+        ReviewCategory category,
+        bool isTableRow = false) =>
+        @<div class="steam-category-editor-gutter"
+              draggable="@isTableRow"
+              @ondragstart="() => BeginRowDrag(category)"
+              @ondragend="EndRowDrag">
             <div class="steam-category-controls"
                  role="group"
                  aria-label="@($"Reorder or remove {category.Name}")">
@@ -1575,6 +2163,17 @@
             }
         </div>;
 
+    private RenderFragment RenderRowInsertControl(
+        ReviewCategory category) =>
+        @<button class="steam-row-insert"
+                 type="button"
+                 title="Insert row above"
+                 aria-label="@($"Insert row above {category.Name}")"
+                 @onclick="() => AddCategoryAtAsync(
+                                     Draft.Categories.IndexOf(category))">
+            +
+        </button>;
+
     private static string GetCategoryValidationClass(
         ReviewValidationIssue issue)
     {
@@ -1593,7 +2192,7 @@
             +
         </button>;
 
-    private static string GetRatingStarClass(
+    private static string GetRatingChoiceClass(
         int rating,
         int score)
     {
@@ -1606,16 +2205,372 @@
         ReviewCategory category,
         int rating)
     {
-        category.Rating = Math.Clamp(rating, 1, 5);
+        category.Rating = Math.Clamp(
+            rating,
+            1,
+            RatingMaximum);
 
         await SaveDraftImmediatelyAsync();
     }
 
+    private async Task SetCategoryRatingFromEventAsync(
+        ReviewCategory category,
+        ChangeEventArgs eventArgs)
+    {
+        if (int.TryParse(
+                eventArgs.Value?.ToString(),
+                out var rating))
+        {
+            await SetCategoryRatingAsync(
+                category,
+                rating);
+        }
+    }
+
+    private string GetTextRating(int rating)
+    {
+        var normalizedRating = Math.Clamp(
+            rating,
+            1,
+            Math.Max(
+                1,
+                Draft.TextRatingOptions.Count));
+
+        return Draft.TextRatingOptions.Count == 0
+            ? "Rating"
+            : Draft.TextRatingOptions[
+                normalizedRating - 1];
+    }
+
+    private bool IsPositiveCategoryRating(
+        ReviewCategory category)
+    {
+        var threshold =
+            Draft.RatingSystem switch
+            {
+                ReviewRatingSystem.TenPoint => 8,
+                ReviewRatingSystem.Text =>
+                    Math.Max(
+                        1,
+                        (int)Math.Ceiling(
+                            RatingMaximum *
+                            0.7d)),
+                _ => 4
+            };
+
+        return category.Rating >= threshold;
+    }
+
     private async Task AddCategoryAsync()
     {
-        Draft.Categories.Add(new ReviewCategory());
+        await AddCategoryAtAsync(
+            Draft.Categories.Count);
+    }
+
+    private async Task AddCategoryAtAsync(
+        int index)
+    {
+        var category = new ReviewCategory
+        {
+            Rating =
+                RatingMaximum == 10
+                    ? 6
+                    : 3
+        };
+
+        Draft.Categories.Insert(
+            Math.Clamp(
+                index,
+                0,
+                Draft.Categories.Count),
+            category);
 
         await SaveDraftImmediatelyAsync();
+    }
+
+    private bool HasTableColumn(
+        ReviewTableColumnKind kind)
+    {
+        return Draft.TableColumns.Any(
+            column => column.Kind == kind);
+    }
+
+    private static string GetDefaultColumnHeading(
+        ReviewTableColumnKind kind)
+    {
+        return kind switch
+        {
+            ReviewTableColumnKind.Category =>
+                "Category",
+            ReviewTableColumnKind.Rating =>
+                "Rating",
+            ReviewTableColumnKind.Note =>
+                "Notes",
+            _ => "New Column"
+        };
+    }
+
+    private string GetConfigurerColumnClass(
+        ReviewTableColumn column)
+    {
+        var classes = new List<string>
+        {
+            "table-editor-column"
+        };
+
+        if (_draggedColumnId == column.Id)
+            classes.Add("dragging");
+
+        if (_columnDropTargetId == column.Id &&
+            _draggedColumnId != column.Id)
+        {
+            classes.Add("drag-target");
+        }
+
+        return string.Join(' ', classes);
+    }
+
+    private string GetConfigurerRowClass(
+        ReviewCategory category)
+    {
+        var classes = new List<string>
+        {
+            "table-editor-row"
+        };
+
+        if (_draggedRowId == category.Id)
+            classes.Add("dragging");
+
+        if (_rowDropTargetId == category.Id &&
+            _draggedRowId != category.Id)
+        {
+            classes.Add("drag-target");
+        }
+
+        return string.Join(' ', classes);
+    }
+
+    private static string GetColumnKindLabel(
+        ReviewTableColumnKind kind)
+    {
+        return kind switch
+        {
+            ReviewTableColumnKind.Category =>
+                "Category data",
+            ReviewTableColumnKind.Rating =>
+                "Rating data",
+            ReviewTableColumnKind.Note =>
+                "Notes data",
+            _ => "Custom text"
+        };
+    }
+
+    private string GetRowDragClass(
+        ReviewCategory category)
+    {
+        return _draggedRowId == category.Id
+            ? "steam-row-dragging"
+            : string.Empty;
+    }
+
+    private string GetCustomCellValue(
+        ReviewCategory category,
+        ReviewTableColumn column)
+    {
+        return category.CustomCells.TryGetValue(
+            column.Id,
+            out var value)
+            ? value
+            : string.Empty;
+    }
+
+    private async Task UpdateCustomCellAsync(
+        ReviewCategory category,
+        ReviewTableColumn column,
+        ChangeEventArgs eventArgs)
+    {
+        category.CustomCells[column.Id] =
+            eventArgs.Value?.ToString() ??
+            string.Empty;
+
+        await QueueDraftSaveAsync();
+    }
+
+    private async Task AddColumnAsync(
+        ReviewTableColumnKind kind)
+    {
+        if (kind != ReviewTableColumnKind.CustomText &&
+            HasTableColumn(kind))
+        {
+            return;
+        }
+
+        var column = new ReviewTableColumn
+        {
+            Heading = GetDefaultColumnHeading(kind),
+            Kind = kind
+        };
+
+        Draft.TableColumns.Add(column);
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task RemoveColumnAsync(
+        ReviewTableColumn column)
+    {
+        if (Draft.TableColumns.Count == 1)
+        {
+            return;
+        }
+
+        Draft.TableColumns.Remove(column);
+
+        if (column.Kind ==
+            ReviewTableColumnKind.CustomText)
+        {
+            foreach (var category in Draft.Categories)
+                category.CustomCells.Remove(column.Id);
+        }
+
+        _draggedColumnId = null;
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task MoveColumnAsync(
+        ReviewTableColumn column,
+        int offset)
+    {
+        var currentIndex =
+            Draft.TableColumns.IndexOf(column);
+        var targetIndex = currentIndex + offset;
+
+        if (currentIndex < 0 ||
+            targetIndex < 0 ||
+            targetIndex >= Draft.TableColumns.Count)
+        {
+            return;
+        }
+
+        Draft.TableColumns.RemoveAt(currentIndex);
+        Draft.TableColumns.Insert(targetIndex, column);
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private void BeginColumnDrag(
+        ReviewTableColumn column)
+    {
+        _draggedColumnId = column.Id;
+        _columnDropTargetId = null;
+    }
+
+    private void SetColumnDropTarget(
+        ReviewTableColumn column)
+    {
+        if (_draggedColumnId is not null)
+            _columnDropTargetId = column.Id;
+    }
+
+    private void EndColumnDrag()
+    {
+        _draggedColumnId = null;
+        _columnDropTargetId = null;
+    }
+
+    private async Task DropColumnAsync(
+        ReviewTableColumn target)
+    {
+        if (_draggedColumnId is null ||
+            _draggedColumnId == target.Id)
+        {
+            return;
+        }
+
+        var source = Draft.TableColumns.FirstOrDefault(
+            column =>
+                column.Id == _draggedColumnId);
+
+        if (source is null)
+        {
+            _draggedColumnId = null;
+            return;
+        }
+
+        MoveItemToTarget(
+            Draft.TableColumns,
+            source,
+            target);
+
+        _draggedColumnId = null;
+        _columnDropTargetId = null;
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private void BeginRowDrag(
+        ReviewCategory category)
+    {
+        _draggedRowId = category.Id;
+        _rowDropTargetId = null;
+    }
+
+    private void SetRowDropTarget(
+        ReviewCategory category)
+    {
+        if (_draggedRowId is not null)
+            _rowDropTargetId = category.Id;
+    }
+
+    private void EndRowDrag()
+    {
+        _draggedRowId = null;
+        _rowDropTargetId = null;
+    }
+
+    private async Task DropRowAsync(
+        ReviewCategory target)
+    {
+        if (_draggedRowId is null ||
+            _draggedRowId == target.Id)
+        {
+            return;
+        }
+
+        var source = Draft.Categories.FirstOrDefault(
+            category =>
+                category.Id == _draggedRowId);
+
+        if (source is null)
+        {
+            _draggedRowId = null;
+            return;
+        }
+
+        MoveItemToTarget(
+            Draft.Categories,
+            source,
+            target);
+
+        _draggedRowId = null;
+        _rowDropTargetId = null;
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private static void MoveItemToTarget<T>(
+        List<T> items,
+        T source,
+        T target)
+    {
+        var sourceIndex = items.IndexOf(source);
+        var targetIndex = items.IndexOf(target);
+
+        if (sourceIndex < 0 ||
+            targetIndex < 0)
+        {
+            return;
+        }
+
+        items.RemoveAt(sourceIndex);
+        items.Insert(targetIndex, source);
     }
 
     private async Task MoveCategoryAsync(
@@ -1814,6 +2769,43 @@
         _showNewReviewDialog = false;
     }
 
+    private void OpenTableConfigurer()
+    {
+        _showTableConfigurer = true;
+    }
+
+    private void CloseTableConfigurer()
+    {
+        _showTableConfigurer = false;
+        _draggedColumnId = null;
+        _draggedRowId = null;
+        _columnDropTargetId = null;
+        _rowDropTargetId = null;
+    }
+
+    private void OpenResetTemplateDialog()
+    {
+        _showResetTemplateDialog = true;
+    }
+
+    private void CloseResetTemplateDialog()
+    {
+        _showResetTemplateDialog = false;
+    }
+
+    private async Task ConfirmResetTemplateAsync()
+    {
+        ReviewTemplateService.Apply(
+            Draft,
+            SelectedTemplate);
+
+        _showResetTemplateDialog = false;
+        _showTableConfigurer = false;
+        _copyMessage = string.Empty;
+
+        await SaveDraftImmediatelyAsync();
+    }
+
     private void OpenFormattingHelp()
     {
         _showFormattingHelp = true;
@@ -1850,6 +2842,8 @@
             _saveStatus = "Not saved yet";
             _showNewReviewDialog = false;
             _showFormattingHelp = false;
+            _showTableConfigurer = false;
+            _showResetTemplateDialog = false;
         }
         catch
         {

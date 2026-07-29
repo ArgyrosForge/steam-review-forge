@@ -23,7 +23,14 @@ The core review-building workflow is functional, but the project has not yet rea
   - Individual Sections
   - Checklist
   - Minimal Verdict
-- Customizable review categories and ratings
+- Customizable, reorderable table rows and columns
+- Custom text columns with editable per-row values
+- Drag-and-drop and keyboard-accessible reorder controls
+- Rating systems:
+  - 1–10 numbers
+  - 1–5 numbers
+  - 1–5 stars
+  - Customizable text ratings
 - Guided strengths, weaknesses, and final-thought prompts
 - Centered Steam-style editor with inline category and response editing
 - Persistent Steam BBCode preview and copy action
@@ -38,7 +45,7 @@ The core review-building workflow is functional, but the project has not yet rea
 
 1. Choose Recommended or Not Recommended and enter a short summary.
 2. Optionally add preview-only playtime and product-received-free metadata.
-3. Select a review template.
+3. Enter the review title and select a review template.
 4. Choose a display format and edit categories directly in the Steam preview.
 5. Write the guided responses directly in the Steam preview.
 6. Inspect the finalized, read-only Steam Review Preview.

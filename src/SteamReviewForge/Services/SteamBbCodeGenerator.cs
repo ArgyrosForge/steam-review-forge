@@ -67,15 +67,28 @@ public static class SteamBbCodeGenerator
         switch (draft.DisplayFormat)
         {
             case ReviewDisplayFormat.RatingTable:
-                AppendRatingTable(output, draft.Categories);
+                AppendRatingTable(
+                    output,
+                    draft.Categories,
+                    draft.TableColumns,
+                    draft.RatingSystem,
+                    draft.TextRatingOptions);
                 break;
 
             case ReviewDisplayFormat.Sections:
-                AppendSections(output, draft.Categories);
+                AppendSections(
+                    output,
+                    draft.Categories,
+                    draft.RatingSystem,
+                    draft.TextRatingOptions);
                 break;
 
             case ReviewDisplayFormat.Checklist:
-                AppendChecklist(output, draft.Categories);
+                AppendChecklist(
+                    output,
+                    draft.Categories,
+                    draft.RatingSystem,
+                    draft.TextRatingOptions);
                 break;
         }
 
@@ -194,31 +207,103 @@ public static class SteamBbCodeGenerator
 
     private static void AppendRatingTable(
         StringBuilder output,
-        IEnumerable<ReviewCategory> categories)
+        IEnumerable<ReviewCategory> categories,
+        IReadOnlyList<ReviewTableColumn> columns,
+        ReviewRatingSystem ratingSystem,
+        IReadOnlyList<string> textRatingOptions)
     {
+        if (columns.Count == 0)
+        {
+            return;
+        }
+
         output.AppendLine("[table equalcells=1]");
-        output.AppendLine(
-            "[tr][th]Category[/th][th]Rating[/th][th]Note[/th][/tr]");
+
+        var headings = new StringBuilder("[tr]");
+
+        foreach (var column in columns)
+            headings.Append(
+                $"[th]{GetColumnHeading(column)}[/th]");
+
+        headings.Append("[/tr]");
+        output.AppendLine(headings.ToString());
 
         foreach (var category in categories)
         {
-            output.AppendLine(
-                $"[tr][td][b]{GetCategoryName(category)}[/b][/td]" +
-                $"[td]{FormatRating(category.Rating)}[/td]" +
-                $"[td]{category.Note.Trim()}[/td][/tr]");
+            var row = new StringBuilder("[tr]");
+
+            foreach (var column in columns)
+            {
+                row.Append("[td]");
+                row.Append(
+                    GetCellValue(
+                        category,
+                        column,
+                        ratingSystem,
+                        textRatingOptions));
+                row.Append("[/td]");
+            }
+
+            row.Append("[/tr]");
+            output.AppendLine(row.ToString());
         }
 
         output.AppendLine("[/table]");
     }
 
+    private static string GetColumnHeading(
+        ReviewTableColumn column)
+    {
+        return string.IsNullOrWhiteSpace(column.Heading)
+            ? "Column"
+            : column.Heading.Trim();
+    }
+
+    private static string GetCellValue(
+        ReviewCategory category,
+        ReviewTableColumn column,
+        ReviewRatingSystem ratingSystem,
+        IReadOnlyList<string> textRatingOptions)
+    {
+        return column.Kind switch
+        {
+            ReviewTableColumnKind.Category =>
+                $"[b]{GetCategoryName(category)}[/b]",
+
+            ReviewTableColumnKind.Rating =>
+                FormatRating(
+                    category.Rating,
+                    ratingSystem,
+                    textRatingOptions),
+
+            ReviewTableColumnKind.Note =>
+                category.Note.Trim(),
+
+            ReviewTableColumnKind.CustomText =>
+                category.CustomCells.TryGetValue(
+                    column.Id,
+                    out var value)
+                    ? value.Trim()
+                    : string.Empty,
+
+            _ => string.Empty
+        };
+    }
+
     private static void AppendSections(
         StringBuilder output,
-        IEnumerable<ReviewCategory> categories)
+        IEnumerable<ReviewCategory> categories,
+        ReviewRatingSystem ratingSystem,
+        IReadOnlyList<string> textRatingOptions)
     {
         foreach (var category in categories)
         {
             output.AppendLine($"[h2]{GetCategoryName(category)}[/h2]");
-            output.AppendLine(FormatRating(category.Rating));
+            output.AppendLine(
+                FormatRating(
+                    category.Rating,
+                    ratingSystem,
+                    textRatingOptions));
 
             if (!string.IsNullOrWhiteSpace(category.Note))
             {
@@ -231,11 +316,19 @@ public static class SteamBbCodeGenerator
 
     private static void AppendChecklist(
         StringBuilder output,
-        IEnumerable<ReviewCategory> categories)
+        IEnumerable<ReviewCategory> categories,
+        ReviewRatingSystem ratingSystem,
+        IReadOnlyList<string> textRatingOptions)
     {
         foreach (var category in categories)
         {
-            var marker = category.Rating >= 4 ? "☑" : "☐";
+            var marker =
+                IsPositiveRating(
+                    category.Rating,
+                    ratingSystem,
+                    textRatingOptions.Count)
+                    ? "☑"
+                    : "☐";
 
             var note = string.IsNullOrWhiteSpace(category.Note)
                 ? string.Empty
@@ -243,7 +336,7 @@ public static class SteamBbCodeGenerator
 
             output.AppendLine(
                 $"{marker} [b]{GetCategoryName(category)}[/b] " +
-                $"— {FormatRating(category.Rating)}{note}");
+                $"— {FormatRating(category.Rating, ratingSystem, textRatingOptions)}{note}");
         }
     }
 
@@ -254,11 +347,76 @@ public static class SteamBbCodeGenerator
             : category.Name.Trim();
     }
 
-    private static string FormatRating(int rating)
+    private static string FormatRating(
+        int rating,
+        ReviewRatingSystem ratingSystem,
+        IReadOnlyList<string> textRatingOptions)
     {
+        if (ratingSystem == ReviewRatingSystem.TenPoint)
+        {
+            return $"{Math.Clamp(rating, 1, 10)}/10";
+        }
+
         var normalizedRating = Math.Clamp(rating, 1, 5);
 
-        return new string('★', normalizedRating) +
-               new string('☆', 5 - normalizedRating);
+        return ratingSystem switch
+        {
+            ReviewRatingSystem.FivePoint =>
+                $"{normalizedRating}/5",
+
+            ReviewRatingSystem.Text =>
+                GetTextRating(
+                    rating,
+                    textRatingOptions),
+
+            _ =>
+                new string('★', normalizedRating) +
+                new string('☆', 5 - normalizedRating)
+        };
+    }
+
+    private static bool IsPositiveRating(
+        int rating,
+        ReviewRatingSystem ratingSystem,
+        int textRatingCount)
+    {
+        var threshold =
+            ratingSystem switch
+            {
+                ReviewRatingSystem.TenPoint => 8,
+                ReviewRatingSystem.Text =>
+                    Math.Max(
+                        1,
+                        (int)Math.Ceiling(
+                            Math.Max(
+                                1,
+                                textRatingCount) *
+                            0.7d)),
+                _ => 4
+            };
+
+        return rating >= threshold;
+    }
+
+    private static string GetTextRating(
+        int rating,
+        IReadOnlyList<string> textRatingOptions)
+    {
+        if (textRatingOptions.Count == 0)
+        {
+            return "Rating";
+        }
+
+        var index =
+            Math.Clamp(
+                rating,
+                1,
+                textRatingOptions.Count) -
+            1;
+
+        return string.IsNullOrWhiteSpace(
+            textRatingOptions[index])
+                ? $"Rating {index + 1}"
+                : textRatingOptions[index].Trim();
     }
 }
