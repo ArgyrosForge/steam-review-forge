@@ -23,10 +23,12 @@ The first usable version of Steam Review Forge.
 - [x] Add new-review confirmation and draft clearing
 - [x] Add responsive styling and light and dark themes
 - [x] Replace the initial repository documentation templates
+- [x] Complete the initial changelog
+- [x] Allow categories to be reordered
+- [x] Improve validation messages and navigation to invalid fields
 
 ### Remaining
 
-- [ ] Complete the initial changelog
 - [ ] Add automated tests for BBCode generation, templates, validation, and draft serialization
 - [ ] Perform a full accessibility and keyboard-navigation review
 - [ ] Test the application across major desktop and mobile browsers
@@ -36,11 +38,9 @@ The first usable version of Steam Review Forge.
 
 Improve confidence in generated reviews and make the editing workflow more flexible.
 
-- [ ] Add automated unit tests for core services
+- [ ] Expand unit-test coverage for reliability and editing features added in this release
 - [ ] Add browser-level tests for the primary review workflow
-- [ ] Allow categories to be reordered
 - [ ] Allow review sections to be enabled or disabled individually
-- [ ] Improve validation messages and navigation to invalid fields
 - [ ] Warn users before leaving with unsaved changes when local storage is unavailable
 - [ ] Improve mobile editing and preview behavior
 - [ ] Add clearer recovery behavior for invalid or outdated saved drafts

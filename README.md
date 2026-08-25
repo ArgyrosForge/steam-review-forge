@@ -35,7 +35,7 @@ The core review-building workflow is functional, but the project has not yet rea
 - Centered Steam-style editor with inline category and response editing
 - Persistent Steam BBCode preview and copy action
 - Built-in Steam formatting reference
-- Review validation with errors and recommendations
+- Actionable review validation with errors, recommendations, and field navigation
 - One-click BBCode clipboard export
 - Automatic local draft saving
 - Main Blue branding with dark and light modes

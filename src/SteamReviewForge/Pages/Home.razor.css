@@ -696,9 +696,16 @@ textarea:focus {
 }
 
 .bbcode-validation-note {
+    padding: 0;
     color: var(--warning) !important;
+    background: transparent;
+    border: 0;
     font-size: 0.72rem;
     line-height: 1.35;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
 }
 
 .bbcode-copy-status {
@@ -726,6 +733,36 @@ textarea:focus {
     gap: 0.2rem;
     margin: 0.4rem 0 0;
     padding-left: 1.1rem;
+}
+
+.validation-link {
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+.validation-link:hover,
+.validation-link:focus-visible,
+.bbcode-validation-note:hover,
+.bbcode-validation-note:focus-visible {
+    color: var(--text) !important;
+}
+
+.validation-link:focus-visible,
+.bbcode-validation-note:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+}
+
+.validation-focus-target {
+    outline: 3px solid var(--focus-ring) !important;
+    outline-offset: 4px;
 }
 
 .code-output:focus {
@@ -1591,6 +1628,9 @@ div.steam-add-category-row {
 .category-gutter-validation {
     display: block;
     max-width: 120px;
+    padding: 0;
+    background: transparent;
+    border: 0;
     text-align: left;
     font-size: 10px;
     line-height: 13px;

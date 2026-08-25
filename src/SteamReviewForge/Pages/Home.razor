@@ -181,6 +181,7 @@
 
                                 <input id="review-title"
                                        type="text"
+                                       data-validation-field="@nameof(Draft.Title)"
                                        aria-invalid="@HasFieldError(
                                                          nameof(Draft.Title))"
                                        @bind="Draft.Title"
@@ -260,7 +261,8 @@
 
                         <div class="recommendation-choice"
                              role="radiogroup"
-                             aria-label="Recommendation">
+                             aria-label="Recommendation"
+                             data-validation-field="@nameof(Draft.Recommendation)">
                             <button class="@GetRecommendationChoiceClass(
                                                ReviewRecommendation.Recommended)"
                                     type="button"
@@ -324,6 +326,7 @@
                                         <input id="review-summary"
                                                type="text"
                                                required
+                                               data-validation-field="@nameof(Draft.Summary)"
                                                aria-invalid="@HasFieldError(
                                                                  nameof(Draft.Summary))"
                                                placeholder="Summarize your opinion in one sentence"
@@ -347,6 +350,7 @@
 
                                         <input id="playtime"
                                                type="number"
+                                               data-validation-field="@nameof(Draft.Playtime)"
                                                min="0"
                                                max="@PlaytimeFormatter.MaximumHours"
                                                step="0.1"
@@ -532,14 +536,23 @@
                  PreviewEditingIssues.Any())
             {
                 <div class="preview-validation"
-                     role="status"
+                     role="region"
+                     aria-labelledby="preview-validation-title"
                      aria-live="polite">
-                    <strong>Review these editor items:</strong>
+                    <strong id="preview-validation-title">
+                        Review these editor items:
+                    </strong>
 
                     <ul>
                         @foreach (var issue in PreviewEditingIssues)
                         {
-                            <li>@issue.Message</li>
+                            <li>
+                                <button class="validation-link"
+                                        type="button"
+                                        @onclick="() => NavigateToValidationIssue(issue)">
+                                    @issue.Message
+                                </button>
+                            </li>
                         }
                     </ul>
                 </div>
@@ -589,6 +602,7 @@
                                     <h1 class="steam-editable-title">
                                         <input class="steam-inline-input steam-title-input"
                                                type="text"
+                                               data-validation-field="@nameof(Draft.Title)"
                                                aria-label="Review title"
                                                @bind="Draft.Title"
                                                @bind:event="oninput"
@@ -597,6 +611,7 @@
 
                                     <input class="steam-inline-input steam-summary-input"
                                            type="text"
+                                           data-validation-field="@nameof(Draft.Summary)"
                                            aria-label="Short review summary"
                                            placeholder="Summarize your opinion in one sentence"
                                            @bind="Draft.Summary"
@@ -625,6 +640,7 @@
 
                                                 <input class="steam-inline-input steam-section-heading-input"
                                                        type="text"
+                                                       data-validation-field="@($"CategoryName:{category.Id}")"
                                                        aria-label="Section name"
                                                        aria-invalid="@HasFieldError(
                                                                          $"CategoryName:{category.Id}")"
@@ -636,6 +652,7 @@
 
                                                 <textarea class="steam-inline-input steam-inline-textarea"
                                                           rows="2"
+                                                          data-validation-field="@($"CategoryNote:{category.Id}")"
                                                           aria-label="@($"{category.Name} note")"
                                                           @bind="category.Note"
                                                           @bind:event="oninput"
@@ -669,6 +686,7 @@
                                                 <div class="steam-check-edit-content">
                                                     <input class="steam-inline-input steam-category-name"
                                                            type="text"
+                                                           data-validation-field="@($"CategoryName:{category.Id}")"
                                                            aria-label="Checklist category name"
                                                            aria-invalid="@HasFieldError(
                                                                              $"CategoryName:{category.Id}")"
@@ -680,6 +698,7 @@
 
                                                     <input class="steam-inline-input"
                                                            type="text"
+                                                           data-validation-field="@($"CategoryNote:{category.Id}")"
                                                            aria-label="@($"{category.Name} note")"
                                                            @bind="category.Note"
                                                            @bind:event="oninput"
@@ -706,6 +725,7 @@
                                             <span>What Works</span>
                                             <textarea class="steam-inline-input steam-writing-textarea"
                                                       rows="5"
+                                                      data-validation-field="@nameof(Draft.WhatWorks)"
                                                       placeholder="Enter one strength per line"
                                                       @bind="Draft.WhatWorks"
                                                       @bind:event="oninput"
@@ -716,6 +736,7 @@
                                             <span>What Could Be Better</span>
                                             <textarea class="steam-inline-input steam-writing-textarea"
                                                       rows="5"
+                                                      data-validation-field="@nameof(Draft.WhatCouldBeBetter)"
                                                       placeholder="Enter one weakness per line"
                                                       @bind="Draft.WhatCouldBeBetter"
                                                       @bind:event="oninput"
@@ -732,6 +753,7 @@
                                         </span>
                                         <textarea class="steam-inline-input steam-writing-textarea"
                                                   rows="6"
+                                                  data-validation-field="@nameof(Draft.FinalThoughts)"
                                                   aria-invalid="@HasFieldError(
                                                                     nameof(Draft.FinalThoughts))"
                                                   @bind="Draft.FinalThoughts"
@@ -758,11 +780,15 @@
 
                     @if (ValidationErrors.Any())
                     {
-                        <p class="bbcode-validation-note">
+                        var firstError = ValidationErrors.First();
+
+                        <button class="bbcode-validation-note"
+                                type="button"
+                                @onclick="() => NavigateToValidationIssue(firstError)">
                             @ValidationErrors.Count() required
                             @(ValidationErrors.Count() == 1 ? "item" : "items")
-                            still incomplete.
-                        </p>
+                            still incomplete. Go to the first issue.
+                        </button>
                     }
                     else
                     {
@@ -938,6 +964,7 @@
                                                             </span>
 
                                                             <input type="text"
+                                                                   data-validation-field="@($"ColumnHeading:{column.Id}")"
                                                                    aria-label="@($"{GetColumnKindLabel(column.Kind)} column heading")"
                                                                    aria-invalid="@HasFieldError(
                                                                                      $"ColumnHeading:{column.Id}")"
@@ -986,6 +1013,7 @@
                                                         </button>
 
                                                         <button type="button"
+                                                                data-validation-field="@nameof(Draft.Categories)"
                                                                 @onclick="AddCategoryAsync">
                                                             + Row
                                                         </button>
@@ -1291,6 +1319,8 @@
     private bool _showTableConfigurer;
 
     private bool _showResetTemplateDialog;
+
+    private string? _pendingValidationField;
 
     private Guid? _draggedRowId;
 
@@ -1722,6 +1752,47 @@
         CurrentStep = step;
     }
 
+    private void NavigateToValidationIssue(
+        ReviewValidationIssue issue)
+    {
+        CurrentStep = issue.Section switch
+        {
+            ReviewValidationSection.Setup =>
+                BuilderStep.Setup,
+
+            ReviewValidationSection.Template =>
+                BuilderStep.Template,
+
+            ReviewValidationSection.Format =>
+                BuilderStep.Format,
+
+            ReviewValidationSection.Questions =>
+                BuilderStep.Questions,
+
+            _ => CurrentStep
+        };
+
+        _showTableConfigurer =
+            issue.Section == ReviewValidationSection.Format &&
+            Draft.DisplayFormat == ReviewDisplayFormat.RatingTable &&
+            (issue.Field == nameof(Draft.Categories) ||
+             issue.Field.StartsWith(
+                 "ColumnHeading:",
+                 StringComparison.Ordinal) ||
+             issue.Field.StartsWith(
+                 "CategoryName:",
+                 StringComparison.Ordinal) ||
+             issue.Field.StartsWith(
+                 "CategoryNote:",
+                 StringComparison.Ordinal));
+
+        _pendingValidationField =
+            issue.Field == nameof(Draft.Summary) &&
+            !HasRecommendation
+                ? nameof(Draft.Recommendation)
+                : issue.Field;
+    }
+
     private void NextStep()
     {
         if (!CanGoNext)
@@ -1966,6 +2037,7 @@
 
                         <button class="button secondary"
                                 type="button"
+                                data-validation-field="@nameof(Draft.TextRatingOptions)"
                                 @onclick="AddTextRatingOptionAsync">
                             Add option
                         </button>
@@ -1981,6 +2053,7 @@
                         <div class="text-rating-option"
                              @key="index">
                             <input type="text"
+                                   data-validation-field="@($"TextRatingOption:{index}")"
                                    aria-label="@($"Text rating option {index + 1}")"
                                    aria-invalid="@HasFieldError(
                                                      $"TextRatingOption:{index}")"
@@ -2020,6 +2093,7 @@
             {
                 case ReviewTableColumnKind.Category:
                     <input type="text"
+                           data-validation-field="@($"CategoryName:{category.Id}")"
                            aria-label="Category name"
                            aria-invalid="@HasFieldError(
                                              $"CategoryName:{category.Id}")"
@@ -2034,6 +2108,7 @@
 
                 case ReviewTableColumnKind.Note:
                     <input type="text"
+                           data-validation-field="@($"CategoryNote:{category.Id}")"
                            aria-label="@($"{category.Name} note")"
                            @bind="category.Note"
                            @bind:event="oninput"
@@ -2157,9 +2232,11 @@
 
             @foreach (var issue in GetCategoryIssues(category))
             {
-                <span class="@GetCategoryValidationClass(issue)">
+                <button class="@($"{GetCategoryValidationClass(issue)} validation-link")"
+                        type="button"
+                        @onclick="() => NavigateToValidationIssue(issue)">
                     @issue.Message
-                </span>
+                </button>
             }
         </div>;
 
@@ -2186,6 +2263,7 @@
     private RenderFragment RenderAddCategoryControl() =>
         @<button class="steam-category-control add"
                  type="button"
+                 data-validation-field="@nameof(Draft.Categories)"
                  title="Add category"
                  aria-label="Add category after the last category"
                  @onclick="AddCategoryAsync">
@@ -2622,16 +2700,26 @@
     protected override async Task OnAfterRenderAsync(
         bool firstRender)
     {
-        if (!firstRender)
+        if (firstRender)
+        {
+            _appearance = await JS.InvokeAsync<AppearanceState>(
+                "themeManager.get");
+            await RestoreDraftAsync();
+
+            StateHasChanged();
+        }
+
+        if (_pendingValidationField is null)
         {
             return;
         }
 
-        _appearance = await JS.InvokeAsync<AppearanceState>(
-            "themeManager.get");
-        await RestoreDraftAsync();
+        var field = _pendingValidationField;
+        _pendingValidationField = null;
 
-        StateHasChanged();
+        await JS.InvokeVoidAsync(
+            "validationNavigator.focus",
+            field);
     }
 
     public ValueTask DisposeAsync()
