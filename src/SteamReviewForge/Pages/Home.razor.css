@@ -892,9 +892,6 @@ textarea:focus {
     border-color: var(--action-bg-hover);
 }
 
-@media (max-width: 800px) {
-}
-
 .copy-status {
     color: var(--muted);
     font-size: 0.82rem;
@@ -2687,4 +2684,127 @@ div.steam-add-category-row {
 
 .warning-message {
     color: var(--warning);
+}
+
+@media (max-width: 600px) {
+    .builder-layout {
+        padding: 0.65rem;
+        gap: 0.8rem;
+    }
+
+    .panel-heading,
+    .workflow-editor-heading {
+        min-height: auto;
+        padding: 0.9rem;
+    }
+
+    .step-list {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.15rem;
+        padding: 0.5rem;
+    }
+
+    .step-item {
+        min-width: 0;
+        gap: 0.3rem;
+        padding: 0.5rem 0.1rem;
+    }
+
+    .step-item strong {
+        font-size: 0.68rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .step-number {
+        width: 1.65rem;
+        height: 1.65rem;
+        font-size: 0.72rem;
+    }
+
+    .editor-section,
+    .persistent-rating-system,
+    .step-navigation {
+        padding-inline: 0.9rem;
+    }
+
+    .steam-review-page {
+        margin-right: 0;
+        padding: 10px;
+    }
+
+    .steam-editable-section > .steam-category-editor-gutter {
+        position: static;
+        width: 100%;
+        max-width: none;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+        margin-bottom: 6px;
+    }
+
+    .steam-editable-check-item > .steam-category-editor-gutter {
+        position: static;
+        width: 100%;
+        max-width: none;
+        grid-column: 1 / -1;
+        grid-row: 1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+    }
+
+    .steam-editable-check-item > .steam-check-marker,
+    .steam-editable-check-item > .steam-check-edit-content {
+        grid-row: 2;
+    }
+
+    .category-gutter-validation {
+        max-width: min(220px, 100%);
+    }
+
+    .steam-category-control {
+        width: 32px;
+        min-height: 32px;
+    }
+
+    div.steam-add-category-row {
+        right: 0;
+    }
+
+    .code-output {
+        height: 18rem;
+        min-height: 18rem;
+    }
+
+    .modal-backdrop {
+        padding: 0.4rem;
+    }
+
+    .table-configurer-dialog {
+        max-height: calc(100dvh - 0.8rem);
+    }
+
+    .table-configurer-header,
+    .table-configurer-dialog > .dialog-actions {
+        padding: 0.75rem;
+    }
+
+    .table-configurer-content {
+        padding: 0.65rem;
+    }
+
+    .table-editor th,
+    .table-editor td {
+        min-width: 150px;
+    }
+
+    .table-editor .table-editor-actions-heading,
+    .table-editor .table-editor-row-actions {
+        min-width: 132px;
+    }
 }

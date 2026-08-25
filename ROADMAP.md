@@ -26,6 +26,7 @@ The first usable version of Steam Review Forge.
 - [x] Complete the initial changelog
 - [x] Allow categories to be reordered
 - [x] Improve validation messages and navigation to invalid fields
+- [x] Improve mobile editing and preview behavior
 
 ### Remaining
 
@@ -42,7 +43,6 @@ Improve confidence in generated reviews and make the editing workflow more flexi
 - [ ] Add browser-level tests for the primary review workflow
 - [ ] Allow review sections to be enabled or disabled individually
 - [ ] Warn users before leaving with unsaved changes when local storage is unavailable
-- [ ] Improve mobile editing and preview behavior
 - [ ] Add clearer recovery behavior for invalid or outdated saved drafts
 - [ ] Improve BBCode compatibility checks and output sanitization
 

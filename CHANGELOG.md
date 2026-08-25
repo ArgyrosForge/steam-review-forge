@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Replaced the initial repository-template README with documentation specific to Steam Review Forge
 - Improved review-builder navigation with completion, warning, and error states
 - Made validation summaries actionable with navigation and focus for the relevant editor field
+- Improved mobile editing with compact workflow navigation, in-flow category controls, and viewport-sized output and table-editor panels
 - Updated review fields to save changes automatically
 - Kept BBCode output and copying available throughout the workflow while surfacing validation guidance
 - Improved editable and final review previews to more closely match Steam's presentation

@@ -39,7 +39,7 @@ The core review-building workflow is functional, but the project has not yet rea
 - One-click BBCode clipboard export
 - Automatic local draft saving
 - Main Blue branding with dark and light modes
-- Responsive browser layout
+- Responsive desktop and mobile editing layout
 
 ## How It Works
 
