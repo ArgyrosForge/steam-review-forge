@@ -23,6 +23,7 @@ public static class SteamBbCodeGenerator
         [
             GenerateIntro(draft),
             GenerateCategories(draft),
+            GenerateComponents(draft),
             GenerateBody(draft)
         ];
 
@@ -108,6 +109,67 @@ public static class SteamBbCodeGenerator
         else
         {
             AppendQuestionnaire(output, draft);
+        }
+
+        return output.ToString().Trim();
+    }
+
+    public static string GenerateComponents(ReviewDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var components = draft.Components
+            .Select(component => GenerateComponent(draft, component))
+            .Where(component => !string.IsNullOrWhiteSpace(component));
+
+        return string.Join(
+            "\n\n[hr][/hr]\n\n",
+            components);
+    }
+
+    private static string GenerateComponent(
+        ReviewDraft draft,
+        ReviewContentComponent component)
+    {
+        var heading = string.IsNullOrWhiteSpace(component.Heading)
+            ? "New Section"
+            : component.Heading.Trim();
+        var content = component.Content?.Trim() ?? string.Empty;
+        var output = new StringBuilder();
+
+        output.AppendLine($"[h2]{heading}[/h2]");
+
+        switch (component.Kind)
+        {
+            case ReviewContentComponentKind.Rating:
+                output.AppendLine(
+                    FormatRating(
+                        component.Rating,
+                        draft.RatingSystem,
+                        draft.TextRatingOptions));
+
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    output.AppendLine(content);
+                }
+
+                break;
+
+            case ReviewContentComponentKind.BulletedList:
+                foreach (var item in GetLines(content))
+                {
+                    output.AppendLine($"• {item}");
+                }
+
+                break;
+
+            case ReviewContentComponentKind.Text:
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    output.AppendLine(content);
+                }
+
+                break;
         }
 
         return output.ToString().Trim();

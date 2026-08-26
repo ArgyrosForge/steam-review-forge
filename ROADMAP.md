@@ -27,6 +27,7 @@ The first usable version of Steam Review Forge.
 - [x] Allow categories to be reordered
 - [x] Improve validation messages and navigation to invalid fields
 - [x] Improve mobile editing and preview behavior
+- [x] Add guided and unguided structured and BBCode editing modes
 
 ### Remaining
 

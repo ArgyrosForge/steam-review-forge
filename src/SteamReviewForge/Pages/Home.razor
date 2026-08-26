@@ -63,13 +63,57 @@
         </div>
     </header>
 
-    <main class="builder-layout">
+    <main class="@BuilderLayoutClass">
         <aside class="panel workflow-panel">
             <div class="panel-heading">
                 <h2>Review Builder</h2>
                 <p>Complete each step to create your review.</p>
             </div>
 
+            <section class="editor-mode-switcher"
+                     aria-label="Review editor mode">
+                <div class="editor-mode-summary">
+                    <span>Editing mode</span>
+                    <strong>@EditingModeName</strong>
+                </div>
+
+                <div class="editor-mode-axis"
+                     role="group"
+                     aria-label="Editor type">
+                    <button class="@GetModeButtonClass(IsStructuredMode)"
+                            type="button"
+                            aria-pressed="@IsStructuredMode"
+                            @onclick="() => RequestEditorTypeSwitch(true)">
+                        Structured
+                    </button>
+                    <button class="@GetModeButtonClass(IsBbCodeMode)"
+                            type="button"
+                            aria-pressed="@IsBbCodeMode"
+                            @onclick="() => RequestEditorTypeSwitch(false)">
+                        BBCode
+                    </button>
+                </div>
+
+                <div class="editor-mode-axis"
+                     role="group"
+                     aria-label="Guidance level">
+                    <button class="@GetModeButtonClass(IsGuidedMode)"
+                            type="button"
+                            aria-pressed="@IsGuidedMode"
+                            @onclick="() => SelectGuidanceModeAsync(true)">
+                        Guided
+                    </button>
+                    <button class="@GetModeButtonClass(!IsGuidedMode)"
+                            type="button"
+                            aria-pressed="@(!IsGuidedMode)"
+                            @onclick="() => SelectGuidanceModeAsync(false)">
+                        Unguided
+                    </button>
+                </div>
+            </section>
+
+            @if (Draft.EditingMode == ReviewEditingMode.GuidedStructured)
+            {
             <ol class="step-list">
                 <li>
                     <button class="@GetStepClass(BuilderStep.Setup)"
@@ -482,15 +526,144 @@
                 }
             </div>
             </div>
+            }
+            else if (IsUnguidedStructured)
+            {
+                <div class="workflow-editor unguided-structured-editor">
+                    <div class="workflow-editor-heading">
+                        <h2>Complete Review Editor</h2>
+                        <p>
+                            Configure the review here, then write directly in
+                            the Steam preview without step gates.
+                        </p>
+                    </div>
+
+                    @RenderRatingSystemEditor()
+
+                    <section class="editor-section unguided-controls">
+                        <div class="field">
+                            <label>Recommendation</label>
+                            <div class="compact-choice-row"
+                                 role="radiogroup"
+                                 aria-label="Recommendation">
+                                <button class="@GetRecommendationChoiceClass(
+                                                   ReviewRecommendation.Recommended)"
+                                        type="button"
+                                        role="radio"
+                                        aria-checked="@(Draft.Recommendation ==
+                                                          ReviewRecommendation.Recommended)"
+                                        @onclick="() => SelectRecommendationAsync(
+                                                            ReviewRecommendation.Recommended)">
+                                    Recommended
+                                </button>
+                                <button class="@GetRecommendationChoiceClass(
+                                                   ReviewRecommendation.NotRecommended)"
+                                        type="button"
+                                        role="radio"
+                                        aria-checked="@(Draft.Recommendation ==
+                                                          ReviewRecommendation.NotRecommended)"
+                                        @onclick="() => SelectRecommendationAsync(
+                                                            ReviewRecommendation.NotRecommended)">
+                                    Not Recommended
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="unguided-summary">Short summary</label>
+                            <input id="unguided-summary"
+                                   type="text"
+                                   @bind="Draft.Summary"
+                                   @bind:event="oninput"
+                                   @bind:after="QueueDraftSaveAsync"/>
+                        </div>
+
+                        <div class="field">
+                            <label for="unguided-template">Starter template</label>
+                            <select id="unguided-template"
+                                    value="@SelectedTemplate"
+                                    @onchange="UpdateTemplateFromEventAsync">
+                                @foreach (var option in TemplateOptions)
+                                {
+                                    <option value="@option.Template">
+                                        @option.Name
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="unguided-format">Review layout</label>
+                            <select id="unguided-format"
+                                    @bind="Draft.DisplayFormat"
+                                    @bind:after="QueueDraftSaveAsync">
+                                <option value="@ReviewDisplayFormat.RatingTable">Rating Table</option>
+                                <option value="@ReviewDisplayFormat.Sections">Individual Sections</option>
+                                <option value="@ReviewDisplayFormat.Checklist">Checklist</option>
+                                <option value="@ReviewDisplayFormat.MinimalVerdict">Minimal Verdict</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="unguided-playtime">Playtime</label>
+                            <input id="unguided-playtime"
+                                   type="number"
+                                   min="0"
+                                   max="@PlaytimeFormatter.MaximumHours"
+                                   step="0.1"
+                                   inputmode="decimal"
+                                   value="@Draft.Playtime"
+                                   @oninput="UpdatePlaytimeAsync"/>
+                        </div>
+
+                        <label class="steam-checkbox">
+                            <input type="checkbox"
+                                   @bind="Draft.ReceivedProductForFree"
+                                   @bind:after="QueueDraftSaveAsync"/>
+                            <span>Product received for free</span>
+                        </label>
+                    </section>
+
+                    <section class="editor-section structured-component-section">
+                        <div class="section-heading">
+                            <h3>Review components</h3>
+                            <p>
+                                Drag a component into the Steam preview, or
+                                select it to add with touch or keyboard.
+                            </p>
+                        </div>
+
+                        <div class="structured-component-grid">
+                            @foreach (var component in StructuredComponents)
+                            {
+                                <button type="button"
+                                        draggable="true"
+                                        data-structured-component-card
+                                        @onclick="() => AddStructuredComponentAsync(component)">
+                                    <strong>@component.Name</strong>
+                                    <span>@component.Description</span>
+                                </button>
+                            }
+                        </div>
+                    </section>
+                </div>
+            }
+            else
+            {
+                @RenderBbCodeWorkflow()
+            }
         </aside>
 
         <aside class="panel preview-panel">
             <div class="panel-heading preview-panel-heading">
                 <div>
                     <h2>
-                        @(IsFinalPreview
+                        @(IsBbCodeMode && !IsFinalPreview
+                            ? "Live BBCode Preview"
+                            : IsFinalPreview
                             ? "Final Steam Review"
-                            : CurrentStep == BuilderStep.Setup
+                            : !IsUnguidedStructured &&
+                              CurrentStep == BuilderStep.Setup
                             ? "Steam setup preview"
                             : HasRecommendation
                             ? "Editable Steam preview"
@@ -498,9 +671,12 @@
                     </h2>
 
                     <p>
-                        @(IsFinalPreview
+                        @(IsBbCodeMode && !IsFinalPreview
+                            ? "See each BBCode change rendered as you write."
+                            : IsFinalPreview
                             ? "A read-only preview of the finished review."
-                            : CurrentStep == BuilderStep.Setup
+                            : !IsUnguidedStructured &&
+                              CurrentStep == BuilderStep.Setup
                             ? "A basic preview of the Steam review metadata."
                             : HasRecommendation
                             ? "Edit the review directly at any workflow step."
@@ -508,31 +684,53 @@
                     </p>
                 </div>
 
-                @if (!IsFinalPreview &&
-                     CurrentStep != BuilderStep.Setup &&
-                     SetupComplete)
+                @if (IsStructuredMode || IsFinalPreview)
                 {
                     <div class="preview-editor-actions">
-                        @if (Draft.DisplayFormat ==
-                             ReviewDisplayFormat.RatingTable)
+                        @if (IsStructuredMode &&
+                             !IsFinalPreview &&
+                             (IsUnguidedStructured ||
+                              CurrentStep != BuilderStep.Setup) &&
+                             SetupComplete)
                         {
+                            @if (Draft.DisplayFormat ==
+                                 ReviewDisplayFormat.RatingTable)
+                            {
+                                <button class="button secondary"
+                                        type="button"
+                                        @onclick="OpenTableConfigurer">
+                                    Table Editor
+                                </button>
+                            }
+
                             <button class="button secondary"
                                     type="button"
-                                    @onclick="OpenTableConfigurer">
-                                Table Editor
+                                    @onclick="OpenResetTemplateDialog">
+                                Reset
                             </button>
                         }
 
-                        <button class="button secondary"
+                        <button class="button primary"
                                 type="button"
-                                @onclick="OpenResetTemplateDialog">
-                            Reset
+                                @onclick="CopyBbCode">
+                            Copy BBCode
                         </button>
                     </div>
                 }
             </div>
 
-            @if (!IsFinalPreview &&
+            @if ((IsStructuredMode || IsFinalPreview) &&
+                 !string.IsNullOrWhiteSpace(_copyMessage))
+            {
+                <span class="copy-status preview-copy-status"
+                      role="status"
+                      aria-live="polite">
+                    @_copyMessage
+                </span>
+            }
+
+            @if (IsStructuredMode &&
+                 !IsFinalPreview &&
                  PreviewEditingIssues.Any())
             {
                 <div class="preview-validation"
@@ -560,6 +758,15 @@
 
             <div class="@SteamPreviewClass"
                  aria-label="Rendered review preview">
+                @if (IsUnguidedStructured)
+                {
+                    <div class="structured-component-drop-zone"
+                         data-structured-component-drop-zone
+                         aria-hidden="true">
+                        <span>Drop component to create it in the review</span>
+                    </div>
+                }
+
                 <div class="steam-review-page">
                     <article class="steam-review-card">
                         <header class="steam-review-header">
@@ -589,7 +796,24 @@
                                 </div>
                             }
 
-                            @if (CurrentStep == BuilderStep.Setup)
+                            @if (IsBbCodeMode)
+                            {
+                                @if (IsGuidedBbCode &&
+                                     CurrentBbCodeStep is
+                                         BbCodeStep.Setup or
+                                         BbCodeStep.StartingPoint)
+                                {
+                                    <p class="steam-setup-summary">
+                                        @Draft.Summary
+                                    </p>
+                                }
+                                else
+                                {
+                                    @RenderedPreview
+                                }
+                            }
+                            else if (!IsUnguidedStructured &&
+                                     CurrentStep == BuilderStep.Setup)
                             {
                                 <p class="steam-setup-summary">
                                     @Draft.Summary
@@ -716,6 +940,68 @@
                                     </div>
                                 }
 
+                                @if (IsUnguidedStructured &&
+                                     Draft.Components.Count > 0)
+                                {
+                                    <div class="structured-review-components">
+                                        @foreach (var component in Draft.Components)
+                                        {
+                                            <section class="@GetReviewComponentClass(component)"
+                                                     @key="component.Id"
+                                                     @ondragover:preventDefault
+                                                     @ondrop="() => DropReviewComponentAsync(component)">
+                                                <div class="structured-review-component-controls"
+                                                     draggable="true"
+                                                     @ondragstart="() => BeginReviewComponentDrag(component)"
+                                                     @ondragend="EndReviewComponentDrag">
+                                                    <span aria-hidden="true">⋮⋮</span>
+                                                    <button type="button"
+                                                            title="Move component up"
+                                                            aria-label="Move component up"
+                                                            disabled="@(Draft.Components.IndexOf(component) == 0)"
+                                                            @onclick="() => MoveReviewComponentAsync(component, -1)">
+                                                        ↑
+                                                    </button>
+                                                    <button type="button"
+                                                            title="Move component down"
+                                                            aria-label="Move component down"
+                                                            disabled="@(Draft.Components.IndexOf(component) == Draft.Components.Count - 1)"
+                                                            @onclick="() => MoveReviewComponentAsync(component, 1)">
+                                                        ↓
+                                                    </button>
+                                                    <button type="button"
+                                                            title="Remove component"
+                                                            aria-label="Remove component"
+                                                            @onclick="() => RemoveReviewComponentAsync(component)">
+                                                        −
+                                                    </button>
+                                                </div>
+
+                                                <input class="steam-inline-input steam-section-heading-input"
+                                                       type="text"
+                                                       aria-label="Component heading"
+                                                       @bind="component.Heading"
+                                                       @bind:event="oninput"
+                                                       @bind:after="QueueDraftSaveAsync"/>
+
+                                                @if (component.Kind ==
+                                                     ReviewContentComponentKind.Rating)
+                                                {
+                                                    @RenderComponentRatingEditor(component)
+                                                }
+
+                                                <textarea class="steam-inline-input steam-writing-textarea"
+                                                          rows="@(component.Kind == ReviewContentComponentKind.Text ? 5 : 3)"
+                                                          aria-label="@($"{component.Heading} content")"
+                                                          placeholder="@(component.Kind == ReviewContentComponentKind.BulletedList ? "Enter one item per line" : "Write this component")"
+                                                          @bind="component.Content"
+                                                          @bind:event="oninput"
+                                                          @bind:after="QueueDraftSaveAsync"></textarea>
+                                            </section>
+                                        }
+                                    </div>
+                                }
+
                                 <hr />
 
                                 <div class="steam-writing-editor">
@@ -773,50 +1059,57 @@
             </div>
         </aside>
 
-        <aside class="panel bbcode-panel">
-            <div class="panel-heading output-panel-heading">
-                <div>
-                    <h2>BBCode Preview</h2>
+        @if (IsBbCodeMode && !IsFinalPreview)
+        {
+            <aside class="panel bbcode-panel">
+                <div class="panel-heading output-panel-heading">
+                    <div>
+                        <h2>BBCode Editor</h2>
+                        <p>Write or insert Steam BBCode here.</p>
+                    </div>
 
-                    @if (ValidationErrors.Any())
-                    {
-                        var firstError = ValidationErrors.First();
-
-                        <button class="bbcode-validation-note"
+                    <div class="output-panel-actions">
+                        <button class="button secondary"
                                 type="button"
-                                @onclick="() => NavigateToValidationIssue(firstError)">
-                            @ValidationErrors.Count() required
-                            @(ValidationErrors.Count() == 1 ? "item" : "items")
-                            still incomplete. Go to the first issue.
+                                disabled="@(!IsBbCodeEditorEditable)"
+                                @onclick="UndoBbCodeAsync">
+                            Undo
                         </button>
-                    }
-                    else
-                    {
-                        <p>Generated code updates as you edit.</p>
-                    }
+                        <button class="button danger"
+                                type="button"
+                                disabled="@(!IsBbCodeEditorEditable || string.IsNullOrEmpty(Draft.RawBbCode))"
+                                @onclick="ClearBbCodeAsync">
+                            Clear Code
+                        </button>
+                        <button class="button primary"
+                                type="button"
+                                @onclick="CopyBbCode">
+                            Copy BBCode
+                        </button>
+                    </div>
                 </div>
 
-                <button class="button primary"
-                        type="button"
-                        @onclick="CopyBbCode">
-                    Copy BBCode
-                </button>
-            </div>
+                @if (!string.IsNullOrWhiteSpace(_copyMessage))
+                {
+                    <span class="copy-status bbcode-copy-status"
+                          role="status"
+                          aria-live="polite">
+                        @_copyMessage
+                    </span>
+                }
 
-            @if (!string.IsNullOrWhiteSpace(_copyMessage))
-            {
-                <span class="copy-status bbcode-copy-status"
-                      role="status"
-                      aria-live="polite">
-                    @_copyMessage
-                </span>
-            }
-
-            <textarea class="code-output"
-                      rows="36"
-                      readonly
-                      aria-label="Generated Steam BBCode">@GeneratedBbCode</textarea>
-        </aside>
+                <textarea id="raw-bbcode-editor"
+                          class="code-output bbcode-editor"
+                          rows="36"
+                          readonly="@(!IsBbCodeEditorEditable)"
+                          aria-label="Steam BBCode editor"
+                          placeholder="Write or paste Steam BBCode here…"
+                          @onfocus="InitializeBbCodeUndoAsync"
+                          @bind="Draft.RawBbCode"
+                          @bind:event="oninput"
+                          @bind:after="QueueDraftSaveAsync"></textarea>
+            </aside>
+        }
     </main>
 
     <footer class="app-footer">
@@ -824,6 +1117,44 @@
         Steam Review Forge is not affiliated with, endorsed by, or sponsored
         by Valve Corporation or Steam.
     </footer>
+    @if (_showModeSwitchDialog)
+    {
+        <div class="modal-backdrop"
+             role="presentation"
+             @onclick="CancelEditorTypeSwitch">
+            <section class="confirmation-dialog"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="mode-switch-dialog-title"
+                     aria-describedby="mode-switch-dialog-description"
+                     @onclick:stopPropagation>
+                <div class="dialog-content">
+                    <h2 id="mode-switch-dialog-title">
+                        Start over in the other editor?
+                    </h2>
+                    <p id="mode-switch-dialog-description">
+                        Structured review fields and freeform BBCode cannot be
+                        converted back and forth safely. Switching editor type
+                        starts a fresh review. Your current guidance choice is
+                        preserved.
+                    </p>
+                </div>
+
+                <div class="dialog-actions">
+                    <button class="button secondary"
+                            type="button"
+                            @onclick="CancelEditorTypeSwitch">
+                        Keep current review
+                    </button>
+                    <button class="button danger-solid"
+                            type="button"
+                            @onclick="ConfirmEditorTypeSwitchAsync">
+                        Start fresh
+                    </button>
+                </div>
+            </section>
+        </div>
+    }
     @if (_showNewReviewDialog)
     {
         <div class="modal-backdrop"
@@ -1235,6 +1566,20 @@
         FinalPreview = 5
     }
 
+    private enum BbCodeStep
+    {
+        Setup = 1,
+        StartingPoint = 2,
+        Compose = 3,
+        FinalPreview = 4
+    }
+
+    private enum BbCodeStartChoice
+    {
+        Blank,
+        ReviewStarter
+    }
+
     private sealed record TemplateOption(
         ReviewTemplate Template,
         string Code,
@@ -1245,6 +1590,146 @@
     private sealed record AppearanceState(
         string Theme,
         string ColorMode);
+
+    private sealed record BbCodeBlock(
+        string Name,
+        string Description,
+        string Template);
+
+    private sealed record StructuredComponent(
+        ReviewContentComponentKind Kind,
+        string Name,
+        string Description,
+        string Heading,
+        string Content);
+
+    private static readonly StructuredComponent[] StructuredComponents =
+    [
+        new(
+            ReviewContentComponentKind.Rating,
+            "Rating category",
+            "Create an independent rating and note block.",
+            "New Rating",
+            "Add your notes"),
+        new(
+            ReviewContentComponentKind.BulletedList,
+            "Strengths list",
+            "Create a separate bulleted review section.",
+            "What Works",
+            "Add a new strength"),
+        new(
+            ReviewContentComponentKind.BulletedList,
+            "Improvements list",
+            "Create a separate bulleted review section.",
+            "What Could Be Better",
+            "Add an improvement"),
+        new(
+            ReviewContentComponentKind.Text,
+            "Final thoughts",
+            "Create a separate heading and text block.",
+            "Final Thoughts",
+            "Add another closing thought")
+    ];
+
+    private static readonly BbCodeBlock[] BbCodeBlocks =
+    [
+        new(
+            "Heading 1",
+            "Add the largest heading.",
+            "[h1]Main Heading[/h1]"),
+        new(
+            "Heading 2",
+            "Add a section heading.",
+            "[h2]Section Heading[/h2]"),
+        new(
+            "Heading 3",
+            "Add a smaller heading.",
+            "[h3]Subheading[/h3]"),
+        new(
+            "Bold",
+            "Add emphasized text.",
+            "[b]Bold text[/b]"),
+        new(
+            "Underline",
+            "Underline text.",
+            "[u]Underlined text[/u]"),
+        new(
+            "Italic",
+            "Add italic text.",
+            "[i]Italic text[/i]"),
+        new(
+            "Strikethrough",
+            "Strike through text.",
+            "[strike]Strikethrough text[/strike]"),
+        new(
+            "Spoiler",
+            "Hide spoiler-sensitive text.",
+            "[spoiler]Spoiler text[/spoiler]"),
+        new(
+            "No parse",
+            "Show BBCode tags as plain text.",
+            "[noparse]Doesn't parse [b]tags[/b][/noparse]"),
+        new(
+            "Divider",
+            "Separate major sections.",
+            "[hr][/hr]"),
+        new(
+            "Link",
+            "Add a labeled website link.",
+            "[url=https://store.steampowered.com]Website link[/url]"),
+        new(
+            "YouTube widget",
+            "Paste a YouTube URL for Steam to embed.",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+        new(
+            "Steam Store widget",
+            "Paste a store URL for Steam to embed.",
+            "https://store.steampowered.com/app/323190/"),
+        new(
+            "Workshop widget",
+            "Paste a Steam Community item for Steam to embed.",
+            "https://steamcommunity.com/sharedfiles/filedetails/?id=157328145"),
+        new(
+            "Bullets",
+            "Add an unordered list.",
+            "[list]\n[*]First item\n[*]Second item\n[/list]"),
+        new(
+            "Numbered list",
+            "Add an ordered list.",
+            "[olist]\n[*]First item\n[*]Second item\n[/olist]"),
+        new(
+            "Quote",
+            "Add a quote attributed to an author.",
+            "[quote=author]Quoted text[/quote]"),
+        new(
+            "Code",
+            "Preserve fixed-width text and spaces.",
+            "[code]Fixed-width text    preserves spaces[/code]"),
+        new(
+            "Table",
+            "Add a standard two-column table.",
+            "[table]\n" +
+            "[tr][th]Name[/th][th]Value[/th][/tr]\n" +
+            "[tr][td]First row[/td][td]1[/td][/tr]\n" +
+            "[tr][td]Second row[/td][td]2[/td][/tr]\n" +
+            "[/table]"),
+        new(
+            "Borderless table",
+            "Add a table without cell borders.",
+            "[table noborder=1]\n" +
+            "[tr][th]Name[/th][th]Value[/th][/tr]\n" +
+            "[tr][td]First row[/td][td]1[/td][/tr]\n" +
+            "[tr][td]Second row[/td][td]2[/td][/tr]\n" +
+            "[/table]"),
+        new(
+            "Equal-width table",
+            "Fill the width with equal columns.",
+            "[table equalcells=1]\n" +
+            "[tr][th]Category[/th][th]Rating[/th][/tr]\n" +
+            "[tr][td]Gameplay[/td][td]8/10[/td][/tr]\n" +
+            "[tr][td]Visuals[/td][td]9/10[/td][/tr]\n" +
+            "[/table]")
+    ];
 
     private static readonly TemplateOption[] TemplateOptions =
     [
@@ -1298,6 +1783,12 @@
     private BuilderStep CurrentStep { get; set; } =
         BuilderStep.Setup;
 
+    private BbCodeStep CurrentBbCodeStep { get; set; } =
+        BbCodeStep.Setup;
+
+    private BbCodeStartChoice SelectedBbCodeStart { get; set; } =
+        BbCodeStartChoice.Blank;
+
     private ReviewTemplate SelectedTemplate { get; set; } =
         ReviewTemplate.Balanced;
 
@@ -1320,6 +1811,10 @@
 
     private bool _showResetTemplateDialog;
 
+    private bool _showModeSwitchDialog;
+
+    private ReviewEditingMode? _pendingEditingMode;
+
     private string? _pendingValidationField;
 
     private Guid? _draggedRowId;
@@ -1330,22 +1825,60 @@
 
     private Guid? _rowDropTargetId;
 
+    private Guid? _draggedReviewComponentId;
+
     private string GeneratedBbCode =>
-        CurrentStep == BuilderStep.Setup
+        IsBbCodeMode
+            ? Draft.RawBbCode
+            : !IsUnguidedStructured &&
+              CurrentStep == BuilderStep.Setup
             ? SteamBbCodeGenerator.GenerateSetupPreview(Draft)
             : SteamBbCodeGenerator.Generate(Draft);
+
+    private string BuilderLayoutClass =>
+        IsFinalPreview
+            ? "builder-layout final-preview-layout"
+            : Draft.EditingMode == ReviewEditingMode.GuidedStructured
+            ? "builder-layout guided-structured-layout"
+            : IsStructuredMode
+            ? "builder-layout structured-layout"
+            : "builder-layout";
     
     private ReviewValidationResult CurrentValidation =>
         ReviewDraftValidator.Validate(Draft);
 
-    private IEnumerable<ReviewValidationIssue> ValidationErrors =>
-        CurrentValidation.Issues.Where(
-            issue =>
-                issue.Severity ==
-                ReviewValidationSeverity.Error);
+    private bool IsStructuredMode =>
+        Draft.EditingMode is
+            ReviewEditingMode.GuidedStructured or
+            ReviewEditingMode.UnguidedStructured;
+
+    private bool IsBbCodeMode => !IsStructuredMode;
+
+    private bool IsGuidedMode =>
+        Draft.EditingMode is
+            ReviewEditingMode.GuidedStructured or
+            ReviewEditingMode.GuidedBbCode;
+
+    private bool IsUnguidedStructured =>
+        Draft.EditingMode ==
+        ReviewEditingMode.UnguidedStructured;
+
+    private bool IsGuidedBbCode =>
+        Draft.EditingMode ==
+        ReviewEditingMode.GuidedBbCode;
+
+    private bool IsBbCodeEditorEditable =>
+        !IsGuidedBbCode ||
+        CurrentBbCodeStep == BbCodeStep.Compose;
+
+    private bool IsBbCodeFinalPreview =>
+        IsGuidedBbCode &&
+        CurrentBbCodeStep == BbCodeStep.FinalPreview;
 
     private IEnumerable<ReviewValidationIssue> PreviewEditingIssues =>
-        CurrentStep switch
+        IsUnguidedStructured
+            ? CurrentValidation.Issues
+            : CurrentStep switch
         {
             BuilderStep.Format =>
                 CurrentValidation.Issues.Where(
@@ -1396,14 +1929,26 @@
             ReviewValidationSection.Setup);
 
     private bool IsFinalPreview =>
-        CurrentStep == BuilderStep.FinalPreview;
+        (Draft.EditingMode ==
+             ReviewEditingMode.GuidedStructured &&
+         CurrentStep == BuilderStep.FinalPreview) ||
+        IsBbCodeFinalPreview;
 
     private bool CanOpenFinalPreview =>
         SetupComplete &&
         CurrentValidation.IsValid;
 
     private string SteamPreviewClass =>
-        CurrentStep switch
+        IsBbCodeMode
+            ? IsBbCodeFinalPreview
+                ? "steam-preview finalized"
+                : "steam-preview finalized bbcode-live-preview"
+            : IsUnguidedStructured
+                ? Draft.DisplayFormat ==
+                  ReviewDisplayFormat.RatingTable
+                    ? "steam-preview table-readonly"
+                    : "steam-preview"
+            : CurrentStep switch
         {
             BuilderStep.Setup =>
                 "steam-preview basic",
@@ -1416,6 +1961,20 @@
                 "steam-preview table-readonly",
 
             _ => "steam-preview"
+        };
+
+    private string EditingModeName =>
+        Draft.EditingMode switch
+        {
+            ReviewEditingMode.GuidedStructured =>
+                "Guided Structured",
+            ReviewEditingMode.UnguidedStructured =>
+                "Unguided Structured",
+            ReviewEditingMode.GuidedBbCode =>
+                "Guided BBCode",
+            ReviewEditingMode.UnguidedBbCode =>
+                "Unguided BBCode",
+            _ => "Review Editor"
         };
 
     private bool CanGoBack =>
@@ -1735,6 +2294,146 @@
         await SaveDraftImmediatelyAsync();
     }
 
+    private async Task SelectGuidanceModeAsync(
+        bool guided)
+    {
+        Draft.EditingMode =
+            IsStructuredMode
+                ? guided
+                    ? ReviewEditingMode.GuidedStructured
+                    : ReviewEditingMode.UnguidedStructured
+                : guided
+                    ? ReviewEditingMode.GuidedBbCode
+                    : ReviewEditingMode.UnguidedBbCode;
+
+        if (Draft.EditingMode ==
+            ReviewEditingMode.GuidedBbCode)
+        {
+            CurrentBbCodeStep =
+                string.IsNullOrWhiteSpace(Draft.RawBbCode)
+                    ? BbCodeStep.Setup
+                    : BbCodeStep.Compose;
+        }
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private void RequestEditorTypeSwitch(
+        bool structured)
+    {
+        if (structured == IsStructuredMode)
+        {
+            return;
+        }
+
+        _pendingEditingMode =
+            structured
+                ? IsGuidedMode
+                    ? ReviewEditingMode.GuidedStructured
+                    : ReviewEditingMode.UnguidedStructured
+                : IsGuidedMode
+                    ? ReviewEditingMode.GuidedBbCode
+                    : ReviewEditingMode.UnguidedBbCode;
+
+        _showModeSwitchDialog = true;
+    }
+
+    private void CancelEditorTypeSwitch()
+    {
+        _pendingEditingMode = null;
+        _showModeSwitchDialog = false;
+    }
+
+    private async Task ConfirmEditorTypeSwitchAsync()
+    {
+        if (_pendingEditingMode is not { } editingMode)
+        {
+            return;
+        }
+
+        _saveDebounce?.Cancel();
+
+        Draft = new ReviewDraft
+        {
+            EditingMode = editingMode
+        };
+
+        SelectedTemplate = Draft.Template;
+        CurrentStep = BuilderStep.Setup;
+        CurrentBbCodeStep = BbCodeStep.Setup;
+        SelectedBbCodeStart = BbCodeStartChoice.Blank;
+        _copyMessage = string.Empty;
+        _pendingEditingMode = null;
+        _showModeSwitchDialog = false;
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task ApplyBbCodeStartingPointAsync()
+    {
+        Draft.RawBbCode =
+            SelectedBbCodeStart ==
+            BbCodeStartChoice.ReviewStarter
+                ? SteamBbCodeGenerator.Generate(Draft)
+                : string.Empty;
+
+        CurrentBbCodeStep = BbCodeStep.Compose;
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private void NextBbCodeStep()
+    {
+        if (CurrentBbCodeStep == BbCodeStep.Setup &&
+            SetupComplete)
+        {
+            CurrentBbCodeStep = BbCodeStep.StartingPoint;
+        }
+        else if (CurrentBbCodeStep == BbCodeStep.Compose &&
+                 !string.IsNullOrWhiteSpace(Draft.RawBbCode))
+        {
+            CurrentBbCodeStep = BbCodeStep.FinalPreview;
+        }
+    }
+
+    private void PreviousBbCodeStep()
+    {
+        if (CurrentBbCodeStep > BbCodeStep.Setup)
+        {
+            CurrentBbCodeStep--;
+        }
+    }
+
+    private async Task InsertBbCodeBlockAsync(
+        BbCodeBlock block)
+    {
+        await JS.InvokeVoidAsync(
+            "bbCodeEditor.insertTemplate",
+            "raw-bbcode-editor",
+            block.Template);
+    }
+
+    private async Task InitializeBbCodeUndoAsync()
+    {
+        await JS.InvokeVoidAsync(
+            "bbCodeEditor.initialize",
+            "raw-bbcode-editor");
+    }
+
+    private async Task UndoBbCodeAsync()
+    {
+        await JS.InvokeVoidAsync(
+            "bbCodeEditor.undo",
+            "raw-bbcode-editor");
+    }
+
+    private async Task ClearBbCodeAsync()
+    {
+        await JS.InvokeVoidAsync(
+            "bbCodeEditor.clear",
+            "raw-bbcode-editor");
+    }
+
     private void GoToStep(BuilderStep step)
     {
         if (step != BuilderStep.Setup &&
@@ -1996,6 +2695,276 @@
         };
     }
 
+    private RenderFragment RenderBbCodeWorkflow() =>
+        @<div class="workflow-editor bbcode-workflow">
+            @if (IsGuidedBbCode)
+            {
+                <ol class="step-list bbcode-step-list">
+                    @foreach (var step in Enum.GetValues<BbCodeStep>())
+                    {
+                        <li>
+                            <div class="@GetBbCodeStepClass(step)">
+                                <span class="step-number">
+                                    @((int)step)
+                                </span>
+                                <span>
+                                    <strong>@GetBbCodeStepName(step)</strong>
+                                </span>
+                            </div>
+                        </li>
+                    }
+                </ol>
+
+                <div class="workflow-editor-heading">
+                    <h2>@GetBbCodeStepName(CurrentBbCodeStep)</h2>
+                    <p>@GetBbCodeStepDescription(CurrentBbCodeStep)</p>
+                </div>
+
+                @if (CurrentBbCodeStep == BbCodeStep.Setup)
+                {
+                    <section class="editor-section">
+                        <div class="field">
+                            <label>Recommendation</label>
+                            <div class="compact-choice-row"
+                                 role="radiogroup"
+                                 aria-label="Recommendation">
+                                <button class="@GetRecommendationChoiceClass(
+                                                   ReviewRecommendation.Recommended)"
+                                        type="button"
+                                        role="radio"
+                                        aria-checked="@(Draft.Recommendation ==
+                                                          ReviewRecommendation.Recommended)"
+                                        @onclick="() => SelectRecommendationAsync(
+                                                            ReviewRecommendation.Recommended)">
+                                    Recommended
+                                </button>
+                                <button class="@GetRecommendationChoiceClass(
+                                                   ReviewRecommendation.NotRecommended)"
+                                        type="button"
+                                        role="radio"
+                                        aria-checked="@(Draft.Recommendation ==
+                                                          ReviewRecommendation.NotRecommended)"
+                                        @onclick="() => SelectRecommendationAsync(
+                                                            ReviewRecommendation.NotRecommended)">
+                                    Not Recommended
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="bbcode-summary">Short summary</label>
+                            <input id="bbcode-summary"
+                                   type="text"
+                                   @bind="Draft.Summary"
+                                   @bind:event="oninput"
+                                   @bind:after="QueueDraftSaveAsync"/>
+                        </div>
+
+                        <div class="field">
+                            <label for="bbcode-playtime">Playtime</label>
+                            <input id="bbcode-playtime"
+                                   type="number"
+                                   min="0"
+                                   max="@PlaytimeFormatter.MaximumHours"
+                                   step="0.1"
+                                   inputmode="decimal"
+                                   value="@Draft.Playtime"
+                                   @oninput="UpdatePlaytimeAsync"/>
+                        </div>
+
+                        <label class="steam-checkbox">
+                            <input type="checkbox"
+                                   @bind="Draft.ReceivedProductForFree"
+                                   @bind:after="QueueDraftSaveAsync"/>
+                            <span>Product received for free</span>
+                        </label>
+                    </section>
+                }
+                else if (CurrentBbCodeStep == BbCodeStep.StartingPoint)
+                {
+                    <section class="editor-section">
+                        <div class="bbcode-start-grid"
+                             role="radiogroup"
+                             aria-label="BBCode starting point">
+                            <button class="@GetBbCodeStartClass(
+                                               BbCodeStartChoice.Blank)"
+                                    type="button"
+                                    role="radio"
+                                    aria-checked="@(SelectedBbCodeStart ==
+                                                      BbCodeStartChoice.Blank)"
+                                    @onclick="() => SelectedBbCodeStart =
+                                        BbCodeStartChoice.Blank">
+                                <strong>Blank document</strong>
+                                <span>Start with an empty BBCode editor.</span>
+                            </button>
+                            <button class="@GetBbCodeStartClass(
+                                               BbCodeStartChoice.ReviewStarter)"
+                                    type="button"
+                                    role="radio"
+                                    aria-checked="@(SelectedBbCodeStart ==
+                                                      BbCodeStartChoice.ReviewStarter)"
+                                    @onclick="() => SelectedBbCodeStart =
+                                        BbCodeStartChoice.ReviewStarter">
+                                <strong>Review starter</strong>
+                                <span>
+                                    Begin with a title, rating table, strengths,
+                                    weaknesses, and final thoughts.
+                                </span>
+                            </button>
+                        </div>
+                    </section>
+                }
+                else if (CurrentBbCodeStep == BbCodeStep.Compose)
+                {
+                    <section class="editor-section bbcode-block-section">
+                        <div class="section-heading">
+                            <h3>Insert a BBCode block</h3>
+                            <p>
+                                Place the cursor in the editor, then insert a
+                                template and replace its example text.
+                            </p>
+                        </div>
+
+                        <div class="bbcode-block-grid">
+                            @foreach (var block in BbCodeBlocks)
+                            {
+                                <button type="button"
+                                        @onclick="() => InsertBbCodeBlockAsync(block)">
+                                    <strong>@block.Name</strong>
+                                    <span>@block.Description</span>
+                                </button>
+                            }
+                        </div>
+                    </section>
+                }
+                else
+                {
+                    <div class="final-preview-note">
+                        Review the rendered post, then copy the BBCode when it
+                        looks right.
+                    </div>
+                }
+
+                <div class="step-navigation">
+                    <button class="button secondary"
+                            type="button"
+                            disabled="@(CurrentBbCodeStep == BbCodeStep.Setup)"
+                            @onclick="PreviousBbCodeStep">
+                        Back
+                    </button>
+
+                    @if (CurrentBbCodeStep == BbCodeStep.StartingPoint)
+                    {
+                        <button class="button primary"
+                                type="button"
+                                @onclick="ApplyBbCodeStartingPointAsync">
+                            Open editor
+                        </button>
+                    }
+                    else if (CurrentBbCodeStep != BbCodeStep.FinalPreview)
+                    {
+                        <button class="button primary"
+                                type="button"
+                                disabled="@(CurrentBbCodeStep == BbCodeStep.Setup
+                                                ? !SetupComplete
+                                                : string.IsNullOrWhiteSpace(
+                                                    Draft.RawBbCode))"
+                                @onclick="NextBbCodeStep">
+                            Next
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="workflow-editor-heading">
+                    <h2>Raw BBCode Editor</h2>
+                    <p>
+                        Write or paste BBCode directly. The Steam preview
+                        updates as you type.
+                    </p>
+                </div>
+
+                <div class="format-editing-note">
+                    Use Formatting help when you need Steam tag examples.
+                    There are no steps or generated sections in this mode.
+                </div>
+            }
+        </div>;
+
+    private static string GetModeButtonClass(
+        bool selected) =>
+        selected
+            ? "editor-mode-button selected"
+            : "editor-mode-button";
+
+    private string GetBbCodeStartClass(
+        BbCodeStartChoice choice) =>
+        SelectedBbCodeStart == choice
+            ? "bbcode-start-card selected"
+            : "bbcode-start-card";
+
+    private string GetBbCodeStepClass(
+        BbCodeStep step)
+    {
+        var classes = new List<string>
+        {
+            "step-item"
+        };
+
+        if (step == CurrentBbCodeStep)
+        {
+            classes.Add("active");
+        }
+        else if (step < CurrentBbCodeStep)
+        {
+            classes.Add("complete");
+        }
+        else
+        {
+            classes.Add("future");
+        }
+
+        return string.Join(' ', classes);
+    }
+
+    private static string GetBbCodeStepName(
+        BbCodeStep step) =>
+        step switch
+        {
+            BbCodeStep.Setup => "Setup",
+            BbCodeStep.StartingPoint => "Starting Point",
+            BbCodeStep.Compose => "Compose",
+            BbCodeStep.FinalPreview => "Final Preview",
+            _ => "BBCode Editor"
+        };
+
+    private static string GetBbCodeStepDescription(
+        BbCodeStep step) =>
+        step switch
+        {
+            BbCodeStep.Setup =>
+                "Set the Steam review metadata before writing.",
+            BbCodeStep.StartingPoint =>
+                "Choose a blank document or generated review starter.",
+            BbCodeStep.Compose =>
+                "Build the review with editable BBCode blocks.",
+            BbCodeStep.FinalPreview =>
+                "Inspect the finished post before copying it.",
+            _ => string.Empty
+        };
+
+    private async Task UpdateTemplateFromEventAsync(
+        ChangeEventArgs eventArgs)
+    {
+        if (Enum.TryParse<ReviewTemplate>(
+                eventArgs.Value?.ToString(),
+                out var template))
+        {
+            await SelectTemplate(template);
+        }
+    }
+
     private RenderFragment RenderRatingSystemEditor() =>
         @<section class="persistent-rating-system">
             <div class="field">
@@ -2192,6 +3161,54 @@
             }
         </div>;
 
+    private RenderFragment RenderComponentRatingEditor(
+        ReviewContentComponent component) =>
+        @<div class="steam-rating-editor"
+              aria-label="@($"{component.Heading} rating")">
+            @if (Draft.RatingSystem == ReviewRatingSystem.Text)
+            {
+                <select class="steam-rating-select"
+                        aria-label="@($"{component.Heading} text rating")"
+                        value="@component.Rating"
+                        @onchange="eventArgs => SetReviewComponentRatingFromEventAsync(component, eventArgs)">
+                    @foreach (var score in Enumerable.Range(1, RatingMaximum))
+                    {
+                        <option value="@score">@GetTextRating(score)</option>
+                    }
+                </select>
+            }
+            else if (Draft.RatingSystem == ReviewRatingSystem.FiveStars)
+            {
+                <div class="steam-rating-choices"
+                     role="radiogroup"
+                     aria-label="@($"{component.Heading} rating")">
+                    @foreach (var score in Enumerable.Range(1, 5))
+                    {
+                        <button class="@GetRatingChoiceClass(component.Rating, score)"
+                                type="button"
+                                role="radio"
+                                aria-checked="@(component.Rating == score)"
+                                aria-label="@($"Set {component.Heading} rating to {score} out of 5")"
+                                @onclick="() => SetReviewComponentRatingAsync(component, score)">
+                            ★
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <input class="steam-rating-number-input"
+                       type="number"
+                       min="1"
+                       max="@RatingMaximum"
+                       step="1"
+                       inputmode="numeric"
+                       aria-label="@($"{component.Heading} rating from 1 to {RatingMaximum}")"
+                       value="@component.Rating"
+                       @oninput="eventArgs => SetReviewComponentRatingFromEventAsync(component, eventArgs)"/>
+            }
+        </div>;
+
     private RenderFragment RenderCategoryControls(
         ReviewCategory category,
         bool isTableRow = false) =>
@@ -2343,6 +3360,109 @@
     {
         await AddCategoryAtAsync(
             Draft.Categories.Count);
+    }
+
+    private async Task AddStructuredComponentAsync(
+        StructuredComponent template)
+    {
+        var component = new ReviewContentComponent
+        {
+            Kind = template.Kind,
+            Heading = template.Heading,
+            Content = template.Content,
+            Rating = RatingMaximum == 10 ? 6 : 3
+        };
+
+        Draft.Components.Add(component);
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task SetReviewComponentRatingAsync(
+        ReviewContentComponent component,
+        int rating)
+    {
+        component.Rating = Math.Clamp(rating, 1, RatingMaximum);
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task SetReviewComponentRatingFromEventAsync(
+        ReviewContentComponent component,
+        ChangeEventArgs eventArgs)
+    {
+        if (int.TryParse(eventArgs.Value?.ToString(), out var rating))
+        {
+            await SetReviewComponentRatingAsync(component, rating);
+        }
+    }
+
+    private void BeginReviewComponentDrag(
+        ReviewContentComponent component)
+    {
+        _draggedReviewComponentId = component.Id;
+    }
+
+    private void EndReviewComponentDrag()
+    {
+        _draggedReviewComponentId = null;
+    }
+
+    private async Task DropReviewComponentAsync(
+        ReviewContentComponent target)
+    {
+        if (_draggedReviewComponentId is null ||
+            _draggedReviewComponentId == target.Id)
+        {
+            return;
+        }
+
+        var source = Draft.Components.FirstOrDefault(
+            component => component.Id == _draggedReviewComponentId);
+
+        if (source is null)
+        {
+            return;
+        }
+
+        var targetIndex = Draft.Components.IndexOf(target);
+        Draft.Components.Remove(source);
+        Draft.Components.Insert(targetIndex, source);
+        _draggedReviewComponentId = null;
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task MoveReviewComponentAsync(
+        ReviewContentComponent component,
+        int offset)
+    {
+        var currentIndex = Draft.Components.IndexOf(component);
+        var targetIndex = currentIndex + offset;
+
+        if (currentIndex < 0 ||
+            targetIndex < 0 ||
+            targetIndex >= Draft.Components.Count)
+        {
+            return;
+        }
+
+        Draft.Components.RemoveAt(currentIndex);
+        Draft.Components.Insert(targetIndex, component);
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task RemoveReviewComponentAsync(
+        ReviewContentComponent component)
+    {
+        Draft.Components.Remove(component);
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private string GetReviewComponentClass(
+        ReviewContentComponent component)
+    {
+        return _draggedReviewComponentId == component.Id
+            ? "structured-review-component dragging"
+            : "structured-review-component";
     }
 
     private async Task AddCategoryAtAsync(
@@ -2762,6 +3882,13 @@
             Draft = restoredDraft;
             SelectedTemplate = Draft.Template;
 
+            if (Draft.EditingMode ==
+                ReviewEditingMode.GuidedBbCode &&
+                !string.IsNullOrWhiteSpace(Draft.RawBbCode))
+            {
+                CurrentBbCodeStep = BbCodeStep.Compose;
+            }
+
             _saveStatus = "Draft restored";
         }
         catch
@@ -2921,10 +4048,16 @@
 
             await DraftStorage.ClearAsync();
 
-            Draft = new ReviewDraft();
+            var editingMode = Draft.EditingMode;
+
+            Draft = new ReviewDraft
+            {
+                EditingMode = editingMode
+            };
             SelectedTemplate = Draft.Template;
 
             CurrentStep = BuilderStep.Setup;
+            CurrentBbCodeStep = BbCodeStep.Setup;
 
             _copyMessage = string.Empty;
             _saveStatus = "Not saved yet";

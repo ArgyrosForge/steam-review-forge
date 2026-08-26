@@ -2,6 +2,11 @@ namespace SteamReviewForge.Models;
 
 public sealed class ReviewDraft
 {
+    public ReviewEditingMode EditingMode { get; set; } =
+        ReviewEditingMode.GuidedStructured;
+
+    public string RawBbCode { get; set; } = string.Empty;
+
     public string Title { get; set; } = "[Game Title] Review";
 
     public string Summary { get; set; } = "Short Summary";
@@ -61,6 +66,8 @@ public sealed class ReviewDraft
 
     public string FinalThoughts { get; set; } =
         "Despite its rough edges, the game delivers a memorable and consistently enjoyable experience.";
+
+    public List<ReviewContentComponent> Components { get; set; } = [];
 
     public List<ReviewCategory> Categories { get; set; } = new()
     {

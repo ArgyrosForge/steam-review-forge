@@ -48,6 +48,14 @@ public sealed class ReviewDraftStorageService
 
         if (draft is not null)
         {
+            if (!Enum.IsDefined(draft.EditingMode))
+            {
+                draft.EditingMode =
+                    ReviewEditingMode.GuidedStructured;
+            }
+
+            draft.RawBbCode ??= string.Empty;
+
             if (!hasTableColumns)
             {
                 draft.TableColumns =
@@ -92,6 +100,38 @@ public sealed class ReviewDraftStorageService
                 category.CustomCells ??= [];
                 category.Rating = Math.Clamp(
                     category.Rating,
+                    1,
+                    maximumRating);
+            }
+
+            draft.Components ??= [];
+
+            var seenComponentIds = new HashSet<Guid>();
+
+            for (var index = draft.Components.Count - 1;
+                 index >= 0;
+                 index--)
+            {
+                var component = draft.Components[index];
+
+                if (component is null ||
+                    !Enum.IsDefined(component.Kind))
+                {
+                    draft.Components.RemoveAt(index);
+                    continue;
+                }
+
+                if (component.Id == Guid.Empty ||
+                    !seenComponentIds.Add(component.Id))
+                {
+                    component.Id = Guid.NewGuid();
+                    seenComponentIds.Add(component.Id);
+                }
+
+                component.Heading ??= "New Section";
+                component.Content ??= string.Empty;
+                component.Rating = Math.Clamp(
+                    component.Rating,
                     1,
                     maximumRating);
             }

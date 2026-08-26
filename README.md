@@ -12,7 +12,9 @@ The core review-building workflow is functional, but the project has not yet rea
 
 ## Features
 
-- Guided five-step review builder with a required recommendation setup
+- Guided and unguided structured review builders
+- Guided and unguided freeform BBCode editors
+- Insertable templates covering every option in Steam's Recommendation formatting help, including widget URLs and table variants
 - Multiple starter templates:
   - Balanced Review
   - Quick Take
@@ -33,23 +35,27 @@ The core review-building workflow is functional, but the project has not yet rea
   - Customizable text ratings
 - Guided strengths, weaknesses, and final-thought prompts
 - Centered Steam-style editor with inline category and response editing
-- Persistent Steam BBCode preview and copy action
+- Independent structured components that can be added by click or native drag-and-drop, then edited, reordered, or removed in the preview
+- One-click BBCode copy in Structured modes and a dedicated raw editor in BBCode modes
+- BBCode editor history with Undo and an undoable Clear Code action
 - Built-in Steam formatting reference
 - Actionable review validation with errors, recommendations, and field navigation
 - One-click BBCode clipboard export
 - Automatic local draft saving
 - Main Blue branding with dark and light modes
 - Responsive desktop and mobile editing layout
+- Non-overlapping HTTP and HTTPS development launch profiles
 
 ## How It Works
 
-1. Choose Recommended or Not Recommended and enter a short summary.
-2. Optionally add preview-only playtime and product-received-free metadata.
-3. Enter the review title and select a review template.
-4. Choose a display format and edit categories directly in the Steam preview.
-5. Write the guided responses directly in the Steam preview.
-6. Inspect the finalized, read-only Steam Review Preview.
-7. Copy the continuously available BBCode and paste it into Steam.
+Choose Structured or BBCode editing, then choose Guided or Unguided:
+
+- Guided Structured separates progress, the active step's choices, and the editable Steam preview into focused columns while walking through setup, template, format, writing, and final preview.
+- Unguided Structured exposes the complete structured editor without step gates and can create independent, reorderable rating, bulleted-list, and text components by dragging or selecting palette cards.
+- Guided BBCode walks through setup and a starting point, then provides every option from Steam's Recommendation formatting help as an insertable block beside the raw editor and live preview. Its final step shows only the finished Steam preview and Copy BBCode action.
+- Unguided BBCode opens the raw editor and live preview immediately.
+
+All four modes finish with Steam-compatible BBCode that can be copied and pasted into Steam. Switching between Guided and Unguided preserves the current content. Switching between Structured and BBCode starts a fresh review because freeform BBCode cannot be converted back into structured fields reliably.
 
 Drafts are stored locally in the browser. Steam Review Forge does not currently require an account or server-side storage.
 

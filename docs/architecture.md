@@ -72,6 +72,7 @@ The main review-building workflow currently lives in `Pages/Home.razor`.
 It is responsible for:
 
 - Holding the active `ReviewDraft`
+- Switching between guided and unguided structured or BBCode editing
 - Tracking the selected workflow step
 - Applying templates
 - Adding and removing categories
@@ -104,6 +105,8 @@ As the application grows, large independent UI areas should be extracted into fo
 - Final thoughts
 - A collection of review categories
 - An ordered collection of rating-table columns
+- The selected structured or BBCode editing mode
+- Freeform BBCode content when a BBCode editor is active
 
 New drafts begin in Setup with Recommended selected, preview-only
 received-for-free metadata unchecked, and placeholder title and summary text.
@@ -211,6 +214,28 @@ User-provided text is HTML encoded before supported formatting tags are converte
 
 The preview is an approximation of Steam rendering, not a complete general-purpose BBCode parser.
 
+The editor exposes four experiences from two independent choices: Structured
+or BBCode editing, and Guided or Unguided flow. Guidance changes preserve the
+current content. Switching editor type creates a new review because arbitrary
+BBCode cannot be parsed safely back into the structured review model. Guided
+BBCode editing inserts reusable templates at the textarea cursor. Its palette
+covers every option listed by Steam's Recommendation formatting help, including
+the three URL types Steam turns into widgets and all documented table variants.
+Unguided BBCode editing exposes the same raw content without workflow steps or
+block suggestions.
+
+Guided Structured uses three desktop workspace columns: editor mode and step
+progress on the left, the active step's choices in the middle, and the editable
+Steam preview on the right. At narrower widths the same regions reflow without
+changing their workflow responsibilities.
+
+Unguided Structured exposes a semantic component palette. Components can be
+dragged onto the Steam preview or selected as buttons for keyboard and touch
+input. Each action creates an independent, persisted component with its own
+heading and content, plus rating data when applicable. Components can be
+reordered or removed from the preview and generate BBCode through the typed
+review model.
+
 Setup configures recommendation, summary, playtime, received-for-free status,
 and the initial rating system. The rating-system control remains available
 above the active step editor throughout the workflow. Text rating systems store
@@ -227,14 +252,18 @@ inside the Steam preview; all structural and content edits occur in the
 configurer. Template reset restores template-owned layout, columns, rows, and
 guided writing while preserving Setup metadata, title, and rating configuration.
 Validation is shown outside the Steam surface as well.
-The Final Preview step replaces all editor controls with the rendered,
-read-only BBCode result and removes the editor gutter. Editor controls are
-UI-only and never enter generated BBCode.
+The Final Preview step replaces all editor controls with the rendered Steam
+preview and a Copy BBCode action. It removes both the editor gutter and any raw
+BBCode panel. The preview column is capped to approximate the common Steam store
+review width rather than the wider Community-page presentation. Editor controls
+are UI-only and never enter generated BBCode.
 
-The BBCode panel follows the active preview state. During Setup it emits only
-the visible short summary because recommendation, playtime, and free-product
-status are Steam-owned metadata. From Template through Final Preview it emits
-the complete structured review.
+Structured modes devote the main workspace to the Steam preview and expose a
+copy action in its header without showing a separate raw-output panel. BBCode
+modes retain a dedicated editable raw BBCode panel beside the live Steam
+preview, placing the editor in the center workspace and the rendered preview
+in the right column. Recommendation, playtime, and free-product status remain Steam-owned
+metadata and are not inserted into either generated or freeform BBCode.
 
 ### `ReviewDraftStorageService`
 
