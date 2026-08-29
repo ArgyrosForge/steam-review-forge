@@ -1,30 +1,36 @@
 # Licensing Guide
 
-This project does not currently include a license.
+Steam Review Forge is licensed under the **GNU Affero General Public License v3.0 only** (`AGPL-3.0-only`).
 
-## Before Publishing
+The complete license text is available in the repository root at [`LICENSE`](../LICENSE).
 
-Choose a license before publicly distributing the project. Without a license, other people generally do not receive permission to copy, modify, or redistribute the work.
+## What This Means
 
-## Common Choices
+The AGPLv3 is a strong copyleft free-software license. It permits use, modification, redistribution, and commercial use, provided its license requirements are followed.
 
-- **MIT:** Permissive and simple. Allows reuse with attribution and preservation of the license notice.
-- **Apache License 2.0:** Permissive and includes an explicit patent grant.
-- **GNU GPLv3:** Requires distributed derivative works to remain under the GPL.
-- **Proprietary:** Keep the repository private or add custom terms reviewed for the project.
+Key requirements include:
 
-## Adding a License
+- Preserve applicable copyright and license notices.
+- Make the corresponding source code available when distributing covered modified versions.
+- License covered derivative works under the AGPLv3.
+- If a modified version is made available for users to interact with over a computer network, provide those users an opportunity to receive the corresponding source code as required by Section 13.
 
-1. Decide whether the project is private, source-available, or open source.
-2. Review the full license terms rather than relying only on a summary.
-3. Add the chosen text as a root-level `LICENSE` file.
-4. Update the License section in `README.md`.
-5. Record major licensing changes in `CHANGELOG.md`.
+This project uses the `AGPL-3.0-only` designation, meaning the license grant is specifically GNU Affero General Public License version 3 rather than "version 3 or any later version."
 
-Changing a license after public releases or outside contributions may require additional permissions. Make the decision early when possible.
+## Contributions
 
-## Bundled Fonts
+Unless explicitly stated otherwise, contributions accepted into Steam Review Forge are incorporated under the project's GNU AGPLv3-only license.
 
-The application bundles Sora and JetBrains Mono under the SIL Open Font
-License 1.1. Their license texts are included beside the font files in
-`src/SteamReviewForge/wwwroot/fonts`.
+Contributors should only submit material they have the right to license under these terms.
+
+## Third-Party Components
+
+Third-party dependencies, assets, fonts, and other bundled materials may be distributed under their own licenses. Those licenses continue to apply to their respective components.
+
+### Bundled Fonts
+
+The application bundles Sora and JetBrains Mono under the SIL Open Font License 1.1. Their license texts are included beside the font files in `src/SteamReviewForge/wwwroot/fonts`.
+
+## Reference
+
+The `LICENSE` file contains the controlling license text. This document is a project-specific summary and does not replace or modify the GNU Affero General Public License.
