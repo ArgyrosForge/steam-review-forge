@@ -1,0 +1,197 @@
+/* Palette source: https://github.com/catppuccin/palette */
+
+:root[data-theme="catppuccin-latte"][data-color-mode="light"] {
+    color-scheme: light;
+
+    --brand-graphite: #4c4f69;
+    --brand-steel: #6c6f85;
+    --brand-silver: #bcc0cc;
+    --brand-off-white: #eff1f5;
+    --brand-accent: #1e66f5;
+
+    --page-bg: #eff1f5;
+    --surface: #dce0e8;
+    --surface-raised: #e6e9ef;
+    --surface-soft: #ccd0da;
+    --surface-muted: #bcc0cc;
+
+    --border: #acb0be;
+    --border-strong: #8c8fa1;
+    --control-border: #9ca0b0;
+
+    --text: #4c4f69;
+    --muted: #6c6f85;
+    --subtle: #8c8fa1;
+
+    --accent: #1e66f5;
+    --accent-strong: #8839ef;
+    --accent-contrast: #eff1f5;
+    --action-bg: #1e66f5;
+    --action-bg-hover: #1a57d5;
+    --accent-soft: rgba(30, 102, 245, 0.14);
+    --accent-grid: rgba(30, 102, 245, 0.34);
+    --focus-ring: rgba(30, 102, 245, 0.24);
+
+    --danger: #d20f39;
+    --danger-soft: rgba(210, 15, 57, 0.1);
+    --danger-border: rgba(210, 15, 57, 0.48);
+    --danger-contrast: #eff1f5;
+
+    --warning: #8a5700;
+    --warning-soft: rgba(223, 142, 29, 0.14);
+    --warning-border: rgba(223, 142, 29, 0.58);
+
+    --code-bg: #4c4f69;
+    --code-text: #eff1f5;
+
+    --overlay: rgba(76, 79, 105, 0.68);
+    --panel-shadow: 0 12px 28px rgba(76, 79, 105, 0.14);
+    --dialog-shadow: 0 26px 70px rgba(76, 79, 105, 0.26);
+}
+
+:root[data-theme="catppuccin-frappe"][data-color-mode="dark"] {
+    color-scheme: dark;
+
+    --brand-graphite: #303446;
+    --brand-steel: #414559;
+    --brand-silver: #b5bfe2;
+    --brand-off-white: #c6d0f5;
+    --brand-accent: #8caaee;
+
+    --page-bg: #303446;
+    --surface: #232634;
+    --surface-raised: #292c3c;
+    --surface-soft: #414559;
+    --surface-muted: #51576d;
+
+    --border: #626880;
+    --border-strong: #838ba7;
+    --control-border: #737994;
+
+    --text: #c6d0f5;
+    --muted: #a5adce;
+    --subtle: #838ba7;
+
+    --accent: #8caaee;
+    --accent-strong: #ca9ee6;
+    --accent-contrast: #303446;
+    --action-bg: #8caaee;
+    --action-bg-hover: #babbf1;
+    --accent-soft: rgba(140, 170, 238, 0.16);
+    --accent-grid: rgba(140, 170, 238, 0.42);
+    --focus-ring: rgba(140, 170, 238, 0.3);
+
+    --danger: #e78284;
+    --danger-soft: rgba(231, 130, 132, 0.14);
+    --danger-border: rgba(231, 130, 132, 0.56);
+    --danger-contrast: #303446;
+
+    --warning: #e5c890;
+    --warning-soft: rgba(229, 200, 144, 0.14);
+    --warning-border: rgba(229, 200, 144, 0.56);
+
+    --code-bg: #232634;
+    --code-text: #c6d0f5;
+
+    --overlay: rgba(35, 38, 52, 0.86);
+    --panel-shadow: 0 14px 34px rgba(24, 26, 36, 0.34);
+    --dialog-shadow: 0 28px 80px rgba(24, 26, 36, 0.62);
+}
+
+:root[data-theme="catppuccin-macchiato"][data-color-mode="dark"] {
+    color-scheme: dark;
+
+    --brand-graphite: #24273a;
+    --brand-steel: #363a4f;
+    --brand-silver: #b8c0e0;
+    --brand-off-white: #cad3f5;
+    --brand-accent: #8aadf4;
+
+    --page-bg: #24273a;
+    --surface: #181926;
+    --surface-raised: #1e2030;
+    --surface-soft: #363a4f;
+    --surface-muted: #494d64;
+
+    --border: #5b6078;
+    --border-strong: #8087a2;
+    --control-border: #6e738d;
+
+    --text: #cad3f5;
+    --muted: #a5adcb;
+    --subtle: #8087a2;
+
+    --accent: #8aadf4;
+    --accent-strong: #c6a0f6;
+    --accent-contrast: #24273a;
+    --action-bg: #8aadf4;
+    --action-bg-hover: #b7bdf8;
+    --accent-soft: rgba(138, 173, 244, 0.16);
+    --accent-grid: rgba(138, 173, 244, 0.42);
+    --focus-ring: rgba(138, 173, 244, 0.3);
+
+    --danger: #ed8796;
+    --danger-soft: rgba(237, 135, 150, 0.14);
+    --danger-border: rgba(237, 135, 150, 0.56);
+    --danger-contrast: #24273a;
+
+    --warning: #eed49f;
+    --warning-soft: rgba(238, 212, 159, 0.14);
+    --warning-border: rgba(238, 212, 159, 0.56);
+
+    --code-bg: #181926;
+    --code-text: #cad3f5;
+
+    --overlay: rgba(24, 25, 38, 0.86);
+    --panel-shadow: 0 14px 34px rgba(15, 16, 25, 0.36);
+    --dialog-shadow: 0 28px 80px rgba(15, 16, 25, 0.64);
+}
+
+:root[data-theme="catppuccin-mocha"][data-color-mode="dark"] {
+    color-scheme: dark;
+
+    --brand-graphite: #1e1e2e;
+    --brand-steel: #313244;
+    --brand-silver: #bac2de;
+    --brand-off-white: #cdd6f4;
+    --brand-accent: #89b4fa;
+
+    --page-bg: #1e1e2e;
+    --surface: #11111b;
+    --surface-raised: #181825;
+    --surface-soft: #313244;
+    --surface-muted: #45475a;
+
+    --border: #585b70;
+    --border-strong: #7f849c;
+    --control-border: #6c7086;
+
+    --text: #cdd6f4;
+    --muted: #a6adc8;
+    --subtle: #7f849c;
+
+    --accent: #89b4fa;
+    --accent-strong: #cba6f7;
+    --accent-contrast: #1e1e2e;
+    --action-bg: #89b4fa;
+    --action-bg-hover: #b4befe;
+    --accent-soft: rgba(137, 180, 250, 0.16);
+    --accent-grid: rgba(137, 180, 250, 0.42);
+    --focus-ring: rgba(137, 180, 250, 0.3);
+
+    --danger: #f38ba8;
+    --danger-soft: rgba(243, 139, 168, 0.14);
+    --danger-border: rgba(243, 139, 168, 0.56);
+    --danger-contrast: #1e1e2e;
+
+    --warning: #f9e2af;
+    --warning-soft: rgba(249, 226, 175, 0.14);
+    --warning-border: rgba(249, 226, 175, 0.56);
+
+    --code-bg: #11111b;
+    --code-text: #cdd6f4;
+
+    --overlay: rgba(17, 17, 27, 0.86);
+    --panel-shadow: 0 14px 34px rgba(8, 8, 14, 0.38);
+    --dialog-shadow: 0 28px 80px rgba(8, 8, 14, 0.66);
+}
