@@ -9,6 +9,7 @@ Try Steam Review Forge at [argyrosforge.github.io/steam-review-forge](https://ar
 ## Project Status
 
 `v0.1.0` is available as a public pre-release. The project remains under active development and has not reached stable `1.0.0` status.
+[![GitHub stars](https://img.shields.io/github/stars/ArgyrosForge/steam-review-forge?style=social)](https://github.com/ArgyrosForge/steam-review-forge/stargazers)
 
 ## Features
 
