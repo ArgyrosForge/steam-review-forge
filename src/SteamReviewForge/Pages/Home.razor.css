@@ -162,54 +162,19 @@
 }
 
 .builder-layout.guided-structured-layout {
-    max-width: 1900px;
+    max-width: 1600px;
     grid-template-columns:
-        minmax(250px, 300px)
         minmax(360px, 460px)
         minmax(480px, 1fr);
-    grid-template-rows: auto auto auto;
     grid-template-areas:
-        "guided-heading guided-choices preview"
-        "guided-mode guided-choices preview"
-        "guided-progress guided-choices preview";
-    row-gap: 0;
+        "workflow preview";
 }
 
-.guided-structured-layout .workflow-panel {
-    display: contents;
-}
-
-.guided-structured-layout .workflow-panel > .panel-heading {
-    grid-area: guided-heading;
-    border: 1px solid var(--border);
-    border-radius: 8px 8px 0 0;
-    box-shadow: var(--panel-shadow);
-}
-
-.guided-structured-layout .editor-mode-switcher {
-    grid-area: guided-mode;
-    border-right: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-}
-
-.guided-structured-layout .step-list {
-    grid-area: guided-progress;
-    align-self: start;
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
-    border-top: 0;
-    border-radius: 0 0 8px 8px;
-    box-shadow: var(--panel-shadow);
-}
-
-.guided-structured-layout .workflow-editor {
-    grid-area: guided-choices;
-    align-self: start;
-    overflow: hidden;
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: var(--panel-shadow);
+.builder-layout.no-preview-layout {
+    max-width: 560px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "workflow";
+    justify-content: center;
 }
 
 .builder-layout.final-preview-layout {
@@ -562,7 +527,7 @@
 
 .bbcode-step-list {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.25rem;
 }
 
@@ -579,6 +544,11 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.6rem;
+}
+
+.bbcode-start-heading,
+.bbcode-start-grid {
+    grid-column: 1 / -1;
 }
 
 .bbcode-start-card,
@@ -1047,14 +1017,7 @@ textarea:focus {
             minmax(280px, 0.72fr)
             minmax(0, 1.28fr);
         grid-template-areas:
-            "guided-heading guided-choices"
-            "guided-mode guided-choices"
-            "guided-progress guided-choices"
-            "preview preview";
-    }
-
-    .guided-structured-layout .preview-panel {
-        margin-top: 1.25rem;
+            "workflow preview";
     }
 }
 
@@ -1114,19 +1077,11 @@ textarea:focus {
             "preview";
     }
 
-    .builder-layout.guided-structured-layout {
+    .builder-layout.no-preview-layout {
         grid-template-columns: 1fr;
-        grid-template-areas:
-            "guided-heading"
-            "guided-mode"
-            "guided-progress"
-            "guided-choices"
-            "preview";
+        grid-template-areas: "workflow";
     }
 
-    .guided-structured-layout .workflow-editor {
-        margin-top: 1.25rem;
-    }
 }
 
 .step-content {
@@ -3180,7 +3135,7 @@ div.steam-add-category-row {
     }
 
     .bbcode-step-list {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .bbcode-start-grid,

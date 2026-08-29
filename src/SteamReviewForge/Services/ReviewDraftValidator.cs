@@ -11,7 +11,20 @@ public static class ReviewDraftValidator
 
         var result = new ReviewValidationResult();
 
+        if (draft.EditingMode ==
+            ReviewEditingMode.UnguidedBbCode)
+        {
+            return result;
+        }
+
         ValidateSetup(draft, result);
+
+        if (draft.EditingMode ==
+            ReviewEditingMode.GuidedBbCode)
+        {
+            return result;
+        }
+
         ValidateTemplate(draft, result);
         ValidateFormat(draft, result);
         ValidateQuestions(draft, result);

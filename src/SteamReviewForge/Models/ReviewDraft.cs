@@ -9,10 +9,9 @@ public sealed class ReviewDraft
 
     public string Title { get; set; } = "[Game Title] Review";
 
-    public string Summary { get; set; } = "Short Summary";
+    public string Summary { get; set; } = string.Empty;
 
-    public ReviewRecommendation? Recommendation { get; set; } =
-        ReviewRecommendation.Recommended;
+    public ReviewRecommendation? Recommendation { get; set; }
 
     public bool ReceivedProductForFree { get; set; } = false;
 

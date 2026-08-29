@@ -541,11 +541,12 @@
                     @RenderRatingSystemEditor()
 
                     <section class="editor-section unguided-controls">
-                        <div class="field">
+                        <div class="@GetFieldClass(nameof(Draft.Recommendation))">
                             <label>Recommendation</label>
                             <div class="compact-choice-row"
                                  role="radiogroup"
-                                 aria-label="Recommendation">
+                                 aria-label="Recommendation"
+                                 data-validation-field="@nameof(Draft.Recommendation)">
                                 <button class="@GetRecommendationChoiceClass(
                                                    ReviewRecommendation.Recommended)"
                                         type="button"
@@ -567,15 +568,35 @@
                                     Not Recommended
                                 </button>
                             </div>
+
+                            @foreach (var issue in GetFieldIssues(
+                                              nameof(Draft.Recommendation)))
+                            {
+                                <span class="@GetIssueClass(issue)">
+                                    @issue.Message
+                                </span>
+                            }
                         </div>
 
-                        <div class="field">
+                        <div class="@GetFieldClass(nameof(Draft.Summary))">
                             <label for="unguided-summary">Short summary</label>
                             <input id="unguided-summary"
                                    type="text"
+                                   required
+                                   data-validation-field="@nameof(Draft.Summary)"
+                                   aria-invalid="@HasFieldError(nameof(Draft.Summary))"
+                                   placeholder="Summarize your opinion in one sentence"
                                    @bind="Draft.Summary"
                                    @bind:event="oninput"
                                    @bind:after="QueueDraftSaveAsync"/>
+
+                            @foreach (var issue in GetFieldIssues(
+                                              nameof(Draft.Summary)))
+                            {
+                                <span class="@GetIssueClass(issue)">
+                                    @issue.Message
+                                </span>
+                            }
                         </div>
 
                         <div class="field">
@@ -654,6 +675,8 @@
             }
         </aside>
 
+        @if (ShouldShowPreview)
+        {
         <aside class="panel preview-panel">
             <div class="panel-heading preview-panel-heading">
                 <div>
@@ -662,9 +685,6 @@
                             ? "Live BBCode Preview"
                             : IsFinalPreview
                             ? "Final Steam Review"
-                            : !IsUnguidedStructured &&
-                              CurrentStep == BuilderStep.Setup
-                            ? "Steam setup preview"
                             : HasRecommendation
                             ? "Editable Steam preview"
                             : "Steam preview")
@@ -675,9 +695,6 @@
                             ? "See each BBCode change rendered as you write."
                             : IsFinalPreview
                             ? "A read-only preview of the finished review."
-                            : !IsUnguidedStructured &&
-                              CurrentStep == BuilderStep.Setup
-                            ? "A basic preview of the Steam review metadata."
                             : HasRecommendation
                             ? "Edit the review directly at any workflow step."
                             : "Choose a recommendation to unlock editing.")
@@ -780,7 +797,10 @@
 
                             <span class="steam-review-verdict">
                                 <strong>@RecommendationName</strong>
-                                <small>@SteamPlaytimeLabel</small>
+                                @if (!string.IsNullOrWhiteSpace(Draft.Playtime))
+                                {
+                                    <small>@SteamPlaytimeLabel</small>
+                                }
                             </span>
                         </header>
 
@@ -798,26 +818,7 @@
 
                             @if (IsBbCodeMode)
                             {
-                                @if (IsGuidedBbCode &&
-                                     CurrentBbCodeStep is
-                                         BbCodeStep.Setup or
-                                         BbCodeStep.StartingPoint)
-                                {
-                                    <p class="steam-setup-summary">
-                                        @Draft.Summary
-                                    </p>
-                                }
-                                else
-                                {
-                                    @RenderedPreview
-                                }
-                            }
-                            else if (!IsUnguidedStructured &&
-                                     CurrentStep == BuilderStep.Setup)
-                            {
-                                <p class="steam-setup-summary">
-                                    @Draft.Summary
-                                </p>
+                                @RenderedPreview
                             }
                             else if (HasRecommendation &&
                                  !IsFinalPreview)
@@ -1058,8 +1059,9 @@
                 </div>
             </div>
         </aside>
+        }
 
-        @if (IsBbCodeMode && !IsFinalPreview)
+        @if (ShouldShowBbCodeEditor)
         {
             <aside class="panel bbcode-panel">
                 <div class="panel-heading output-panel-heading">
@@ -1569,15 +1571,8 @@
     private enum BbCodeStep
     {
         Setup = 1,
-        StartingPoint = 2,
-        Compose = 3,
-        FinalPreview = 4
-    }
-
-    private enum BbCodeStartChoice
-    {
-        Blank,
-        ReviewStarter
+        Composer = 2,
+        FinalPreview = 3
     }
 
     private sealed record TemplateOption(
@@ -1786,8 +1781,7 @@
     private BbCodeStep CurrentBbCodeStep { get; set; } =
         BbCodeStep.Setup;
 
-    private BbCodeStartChoice SelectedBbCodeStart { get; set; } =
-        BbCodeStartChoice.Blank;
+    private ReviewTemplate? SelectedBbCodeTemplate { get; set; }
 
     private ReviewTemplate SelectedTemplate { get; set; } =
         ReviewTemplate.Balanced;
@@ -1830,14 +1824,13 @@
     private string GeneratedBbCode =>
         IsBbCodeMode
             ? Draft.RawBbCode
-            : !IsUnguidedStructured &&
-              CurrentStep == BuilderStep.Setup
-            ? SteamBbCodeGenerator.GenerateSetupPreview(Draft)
             : SteamBbCodeGenerator.Generate(Draft);
 
     private string BuilderLayoutClass =>
         IsFinalPreview
             ? "builder-layout final-preview-layout"
+            : !ShouldShowPreview
+            ? "builder-layout no-preview-layout"
             : Draft.EditingMode == ReviewEditingMode.GuidedStructured
             ? "builder-layout guided-structured-layout"
             : IsStructuredMode
@@ -1869,7 +1862,23 @@
 
     private bool IsBbCodeEditorEditable =>
         !IsGuidedBbCode ||
-        CurrentBbCodeStep == BbCodeStep.Compose;
+        CurrentBbCodeStep == BbCodeStep.Composer;
+
+    private bool IsGuidedSetup =>
+        (Draft.EditingMode == ReviewEditingMode.GuidedStructured &&
+         CurrentStep == BuilderStep.Setup) ||
+        (IsGuidedBbCode &&
+         CurrentBbCodeStep == BbCodeStep.Setup);
+
+    private bool ShouldShowPreview =>
+        !IsGuidedMode ||
+        (!IsGuidedSetup && SetupComplete);
+
+    private bool ShouldShowBbCodeEditor =>
+        IsBbCodeMode &&
+        !IsFinalPreview &&
+        (!IsGuidedBbCode ||
+         CurrentBbCodeStep == BbCodeStep.Composer);
 
     private bool IsBbCodeFinalPreview =>
         IsGuidedBbCode &&
@@ -2075,11 +2084,7 @@
     {
         get
         {
-            var playtime = string.IsNullOrWhiteSpace(Draft.Playtime)
-                ? "0"
-                : Draft.Playtime.Trim();
-
-            return $"{playtime} hrs on record";
+            return $"{Draft.Playtime.Trim()} hrs on record";
         }
     }
 
@@ -2312,7 +2317,12 @@
             CurrentBbCodeStep =
                 string.IsNullOrWhiteSpace(Draft.RawBbCode)
                     ? BbCodeStep.Setup
-                    : BbCodeStep.Compose;
+                    : BbCodeStep.Composer;
+
+            if (CurrentBbCodeStep == BbCodeStep.Setup)
+            {
+                SelectedBbCodeTemplate = null;
+            }
         }
 
         await SaveDraftImmediatelyAsync();
@@ -2361,7 +2371,7 @@
         SelectedTemplate = Draft.Template;
         CurrentStep = BuilderStep.Setup;
         CurrentBbCodeStep = BbCodeStep.Setup;
-        SelectedBbCodeStart = BbCodeStartChoice.Blank;
+        SelectedBbCodeTemplate = null;
         _copyMessage = string.Empty;
         _pendingEditingMode = null;
         _showModeSwitchDialog = false;
@@ -2371,25 +2381,31 @@
 
     private async Task ApplyBbCodeStartingPointAsync()
     {
-        Draft.RawBbCode =
-            SelectedBbCodeStart ==
-            BbCodeStartChoice.ReviewStarter
-                ? SteamBbCodeGenerator.Generate(Draft)
-                : string.Empty;
+        if (!SetupComplete)
+        {
+            return;
+        }
 
-        CurrentBbCodeStep = BbCodeStep.Compose;
+        if (SelectedBbCodeTemplate is { } template)
+        {
+            ReviewTemplateService.Apply(Draft, template);
+            SelectedTemplate = template;
+            Draft.RawBbCode =
+                SteamBbCodeGenerator.Generate(Draft);
+        }
+        else
+        {
+            Draft.RawBbCode = string.Empty;
+        }
+
+        CurrentBbCodeStep = BbCodeStep.Composer;
 
         await SaveDraftImmediatelyAsync();
     }
 
     private void NextBbCodeStep()
     {
-        if (CurrentBbCodeStep == BbCodeStep.Setup &&
-            SetupComplete)
-        {
-            CurrentBbCodeStep = BbCodeStep.StartingPoint;
-        }
-        else if (CurrentBbCodeStep == BbCodeStep.Compose &&
+        if (CurrentBbCodeStep == BbCodeStep.Composer &&
                  !string.IsNullOrWhiteSpace(Draft.RawBbCode))
         {
             CurrentBbCodeStep = BbCodeStep.FinalPreview;
@@ -2402,6 +2418,43 @@
         {
             CurrentBbCodeStep--;
         }
+    }
+
+    private async Task GoToBbCodeStepAsync(BbCodeStep step)
+    {
+        if (step == BbCodeStep.Setup)
+        {
+            CurrentBbCodeStep = step;
+            return;
+        }
+
+        if (!SetupComplete)
+        {
+            return;
+        }
+
+        if (step == BbCodeStep.FinalPreview &&
+            string.IsNullOrWhiteSpace(Draft.RawBbCode))
+        {
+            return;
+        }
+
+        if (CurrentBbCodeStep == BbCodeStep.Setup &&
+            step == BbCodeStep.Composer)
+        {
+            if (string.IsNullOrWhiteSpace(Draft.RawBbCode))
+            {
+                await ApplyBbCodeStartingPointAsync();
+            }
+            else
+            {
+                CurrentBbCodeStep = step;
+            }
+
+            return;
+        }
+
+        CurrentBbCodeStep = step;
     }
 
     private async Task InsertBbCodeBlockAsync(
@@ -2703,14 +2756,17 @@
                     @foreach (var step in Enum.GetValues<BbCodeStep>())
                     {
                         <li>
-                            <div class="@GetBbCodeStepClass(step)">
+                            <button class="@GetBbCodeStepClass(step)"
+                                    type="button"
+                                    disabled="@(!CanOpenBbCodeStep(step))"
+                                    @onclick="() => GoToBbCodeStepAsync(step)">
                                 <span class="step-number">
                                     @((int)step)
                                 </span>
                                 <span>
                                     <strong>@GetBbCodeStepName(step)</strong>
                                 </span>
-                            </div>
+                            </button>
                         </li>
                     }
                 </ol>
@@ -2723,11 +2779,12 @@
                 @if (CurrentBbCodeStep == BbCodeStep.Setup)
                 {
                     <section class="editor-section">
-                        <div class="field">
+                        <div class="@GetFieldClass(nameof(Draft.Recommendation))">
                             <label>Recommendation</label>
                             <div class="compact-choice-row"
                                  role="radiogroup"
-                                 aria-label="Recommendation">
+                                 aria-label="Recommendation"
+                                 data-validation-field="@nameof(Draft.Recommendation)">
                                 <button class="@GetRecommendationChoiceClass(
                                                    ReviewRecommendation.Recommended)"
                                         type="button"
@@ -2749,15 +2806,35 @@
                                     Not Recommended
                                 </button>
                             </div>
+
+                            @foreach (var issue in GetFieldIssues(
+                                              nameof(Draft.Recommendation)))
+                            {
+                                <span class="@GetIssueClass(issue)">
+                                    @issue.Message
+                                </span>
+                            }
                         </div>
 
-                        <div class="field">
+                        <div class="@GetFieldClass(nameof(Draft.Summary))">
                             <label for="bbcode-summary">Short summary</label>
                             <input id="bbcode-summary"
                                    type="text"
+                                   required
+                                   data-validation-field="@nameof(Draft.Summary)"
+                                   aria-invalid="@HasFieldError(nameof(Draft.Summary))"
+                                   placeholder="Summarize your opinion in one sentence"
                                    @bind="Draft.Summary"
                                    @bind:event="oninput"
                                    @bind:after="QueueDraftSaveAsync"/>
+
+                            @foreach (var issue in GetFieldIssues(
+                                              nameof(Draft.Summary)))
+                            {
+                                <span class="@GetIssueClass(issue)">
+                                    @issue.Message
+                                </span>
+                            }
                         </div>
 
                         <div class="field">
@@ -2778,43 +2855,43 @@
                                    @bind:after="QueueDraftSaveAsync"/>
                             <span>Product received for free</span>
                         </label>
-                    </section>
-                }
-                else if (CurrentBbCodeStep == BbCodeStep.StartingPoint)
-                {
-                    <section class="editor-section">
+
+                        <div class="section-heading bbcode-start-heading">
+                            <h3>Choose a starting point</h3>
+                            <p>
+                                Start blank or generate editable BBCode from
+                                one of the review templates.
+                            </p>
+                        </div>
+
                         <div class="bbcode-start-grid"
                              role="radiogroup"
                              aria-label="BBCode starting point">
                             <button class="@GetBbCodeStartClass(
-                                               BbCodeStartChoice.Blank)"
+                                               null)"
                                     type="button"
                                     role="radio"
-                                    aria-checked="@(SelectedBbCodeStart ==
-                                                      BbCodeStartChoice.Blank)"
-                                    @onclick="() => SelectedBbCodeStart =
-                                        BbCodeStartChoice.Blank">
+                                    aria-checked="@(SelectedBbCodeTemplate is null)"
+                                    @onclick="() => SelectedBbCodeTemplate = null">
                                 <strong>Blank document</strong>
                                 <span>Start with an empty BBCode editor.</span>
                             </button>
-                            <button class="@GetBbCodeStartClass(
-                                               BbCodeStartChoice.ReviewStarter)"
-                                    type="button"
-                                    role="radio"
-                                    aria-checked="@(SelectedBbCodeStart ==
-                                                      BbCodeStartChoice.ReviewStarter)"
-                                    @onclick="() => SelectedBbCodeStart =
-                                        BbCodeStartChoice.ReviewStarter">
-                                <strong>Review starter</strong>
-                                <span>
-                                    Begin with a title, rating table, strengths,
-                                    weaknesses, and final thoughts.
-                                </span>
-                            </button>
+
+                            @foreach (var option in TemplateOptions)
+                            {
+                                <button class="@GetBbCodeStartClass(option.Template)"
+                                        type="button"
+                                        role="radio"
+                                        aria-checked="@(SelectedBbCodeTemplate == option.Template)"
+                                        @onclick="() => SelectedBbCodeTemplate = option.Template">
+                                    <strong>@option.Name</strong>
+                                    <span>@option.Description</span>
+                                </button>
+                            }
                         </div>
                     </section>
                 }
-                else if (CurrentBbCodeStep == BbCodeStep.Compose)
+                else if (CurrentBbCodeStep == BbCodeStep.Composer)
                 {
                     <section class="editor-section bbcode-block-section">
                         <div class="section-heading">
@@ -2853,22 +2930,21 @@
                         Back
                     </button>
 
-                    @if (CurrentBbCodeStep == BbCodeStep.StartingPoint)
+                    @if (CurrentBbCodeStep == BbCodeStep.Setup)
                     {
                         <button class="button primary"
                                 type="button"
+                                disabled="@(!SetupComplete)"
                                 @onclick="ApplyBbCodeStartingPointAsync">
-                            Open editor
+                            Open composer
                         </button>
                     }
                     else if (CurrentBbCodeStep != BbCodeStep.FinalPreview)
                     {
                         <button class="button primary"
                                 type="button"
-                                disabled="@(CurrentBbCodeStep == BbCodeStep.Setup
-                                                ? !SetupComplete
-                                                : string.IsNullOrWhiteSpace(
-                                                    Draft.RawBbCode))"
+                                disabled="@(string.IsNullOrWhiteSpace(
+                                                Draft.RawBbCode))"
                                 @onclick="NextBbCodeStep">
                             Next
                         </button>
@@ -2899,10 +2975,21 @@
             : "editor-mode-button";
 
     private string GetBbCodeStartClass(
-        BbCodeStartChoice choice) =>
-        SelectedBbCodeStart == choice
+        ReviewTemplate? template) =>
+        SelectedBbCodeTemplate == template
             ? "bbcode-start-card selected"
             : "bbcode-start-card";
+
+    private bool CanOpenBbCodeStep(BbCodeStep step) =>
+        step switch
+        {
+            BbCodeStep.Setup => true,
+            BbCodeStep.Composer => SetupComplete,
+            BbCodeStep.FinalPreview =>
+                SetupComplete &&
+                !string.IsNullOrWhiteSpace(Draft.RawBbCode),
+            _ => false
+        };
 
     private string GetBbCodeStepClass(
         BbCodeStep step)
@@ -2933,8 +3020,7 @@
         step switch
         {
             BbCodeStep.Setup => "Setup",
-            BbCodeStep.StartingPoint => "Starting Point",
-            BbCodeStep.Compose => "Compose",
+            BbCodeStep.Composer => "Composer",
             BbCodeStep.FinalPreview => "Final Preview",
             _ => "BBCode Editor"
         };
@@ -2944,10 +3030,8 @@
         step switch
         {
             BbCodeStep.Setup =>
-                "Set the Steam review metadata before writing.",
-            BbCodeStep.StartingPoint =>
-                "Choose a blank document or generated review starter.",
-            BbCodeStep.Compose =>
+                "Set the required metadata and choose a starting point.",
+            BbCodeStep.Composer =>
                 "Build the review with editable BBCode blocks.",
             BbCodeStep.FinalPreview =>
                 "Inspect the finished post before copying it.",
@@ -3886,7 +3970,7 @@
                 ReviewEditingMode.GuidedBbCode &&
                 !string.IsNullOrWhiteSpace(Draft.RawBbCode))
             {
-                CurrentBbCodeStep = BbCodeStep.Compose;
+                CurrentBbCodeStep = BbCodeStep.Composer;
             }
 
             _saveStatus = "Draft restored";
@@ -4058,6 +4142,7 @@
 
             CurrentStep = BuilderStep.Setup;
             CurrentBbCodeStep = BbCodeStep.Setup;
+            SelectedBbCodeTemplate = null;
 
             _copyMessage = string.Empty;
             _saveStatus = "Not saved yet";
