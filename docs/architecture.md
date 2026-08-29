@@ -214,6 +214,11 @@ User-provided text is HTML encoded before supported formatting tags are converte
 
 The preview is an approximation of Steam rendering, not a complete general-purpose BBCode parser.
 
+`SteamBbCodeAnalyzer` checks generated and freeform BBCode against the tags
+documented by Steam. It reports unsupported, unclosed, misnested, unsafe-link,
+list, and table-structure warnings with source locations. Diagnostics never
+rewrite content or prevent clipboard export.
+
 The editor exposes four experiences from two independent choices: Structured
 or BBCode editing, and Guided or Unguided flow. Guidance changes preserve the
 current content. Switching editor type creates a new review because arbitrary
@@ -269,15 +274,21 @@ metadata and are not inserted into either generated or freeform BBCode.
 
 Serializes the current `ReviewDraft` as JSON and stores it through a small JavaScript local-storage bridge.
 
-The storage key is versioned:
+The current storage key and payload schema are versioned:
 
 ```text
-steam-review-forge-draft-v1
+steam-review-forge-draft-v2
 ```
 
-The service supports loading, saving, and clearing one active draft.
+The service supports loading, saving, migrating, recovering, and clearing one
+active draft. Existing `steam-review-forge-draft-v1` payloads are normalized,
+saved in the current envelope, and removed only after migration succeeds.
+Malformed or newer-schema data is returned as a recovery result with the raw
+payload intact instead of being overwritten.
 
 The page debounces ordinary input saves and performs immediate saves after structural changes such as selecting a template or modifying categories.
+Pending and failed saves register a browser unload warning until persistence
+succeeds.
 
 ## Browser Interoperability
 

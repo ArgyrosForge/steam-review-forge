@@ -15,9 +15,16 @@ public static class PlaytimeFormatter
 
         var normalized = RemoveLegacySuffix(value.Trim());
 
+        if (!normalized.Contains('.') &&
+            normalized.Count(character => character == ',') == 1)
+        {
+            normalized = normalized.Replace(',', '.');
+        }
+
         if (!decimal.TryParse(
                 normalized,
-                NumberStyles.Number,
+                NumberStyles.AllowDecimalPoint |
+                NumberStyles.AllowLeadingSign,
                 CultureInfo.InvariantCulture,
                 out var hours))
         {

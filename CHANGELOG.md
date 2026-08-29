@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Versioned draft persistence with automatic migration from v0.1 draft data
+- Recovery dialog that preserves invalid or newer saved data for copying before reset
+- Non-destructive Steam BBCode compatibility diagnostics with line and column guidance
+- Automatic unit and browser test coverage for pull requests and deployments
+- Firefox primary-workflow tests and Chromium smoke tests
+
+### Changed
+
+- Expanded unit coverage across draft persistence, BBCode generation and preview, templates, validation, and playtime formatting
+- Improved multiline preview rendering for code, no-parse, and quote blocks
+- Allowed comma decimal input when normalizing playtime
+- Required the complete test suite to pass before GitHub Pages deployment
+
+### Fixed
+
+- Preserved category identifiers when drafts are restored
+- Normalized invalid, duplicate, and null saved-draft values without crashing the application
+- Prevented invalid saved drafts from being mislabeled as unavailable storage or overwritten automatically
+- Warned users before leaving while edits are awaiting persistence or storage has failed
+
 ## [0.1.0] - 2026-08-29
 
 Initial public pre-release of Steam Review Forge. The core review-building workflow is usable, but the project remains under active development and has not reached stable `1.0.0` status.

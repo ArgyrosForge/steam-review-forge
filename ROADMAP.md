@@ -30,21 +30,16 @@ The first usable version of Steam Review Forge.
 - [x] Add guided and unguided structured and BBCode editing modes
 - [x] Publish the first usable release
 
-### Remaining
+## v0.2.0 — Reliability and Compatibility
 
-- [ ] Perform a full accessibility and keyboard-navigation review
-- [ ] Test the application across major desktop and mobile browsers
+Improve confidence in saved drafts, generated reviews, and release quality.
 
-## v0.2.0 — Reliability and Editing Improvements
-
-Improve confidence in generated reviews and make the editing workflow more flexible.
-
-- [ ] Add unit-test coverage for BBCode generation, templates, validation, draft serialization, and reliability and editing features
-- [ ] Add browser-level tests for the primary review workflow
-- [ ] Allow review sections to be enabled or disabled individually
-- [ ] Warn users before leaving with unsaved changes when local storage is unavailable
-- [ ] Add clearer recovery behavior for invalid or outdated saved drafts
-- [ ] Improve BBCode compatibility checks and output sanitization
+- [x] Add unit-test coverage for generation, templates, validation, formatting, preview rendering, BBCode diagnostics, and draft persistence
+- [x] Add Firefox-first browser tests for the primary workflow and Chromium smoke coverage
+- [x] Warn before leaving while a save is pending or browser storage is unavailable
+- [x] Add versioned draft migration and recovery for invalid or newer saved drafts
+- [x] Add non-destructive BBCode compatibility diagnostics and multiline preview support
+- [x] Run tests automatically for pull requests and gate GitHub Pages deployment on them
 
 ## v0.3.0 — Import, Export, and Sharing
 
@@ -63,6 +58,7 @@ Make reviews easier to back up, reuse, and move between browsers.
 Add more control for users who want advanced review formats.
 
 - [ ] Add more built-in review templates
+- [ ] Allow review sections to be enabled or disabled individually
 - [ ] Add optional pros-and-cons sections
 - [ ] Add spoiler formatting controls
 - [ ] Add configurable headings and labels
@@ -76,8 +72,8 @@ Prepare Steam Review Forge for dependable public use.
 
 - [ ] Finalize the supported review formats
 - [ ] Complete automated test coverage for critical workflows
-- [ ] Complete accessibility review
-- [ ] Complete browser compatibility testing
+- [ ] Complete accessibility and keyboard-navigation review
+- [ ] Complete broad desktop and mobile browser compatibility testing
 - [ ] Finalize user and contributor documentation
 - [ ] Resolve all known release-blocking defects
 - [ ] Publish a stable hosted version

@@ -12,12 +12,6 @@ public static class SteamBbCodePreviewRenderer
             RegexOptions.IgnoreCase |
             RegexOptions.CultureInvariant);
 
-    private static readonly Regex AttributedQuotePattern =
-        new(
-            @"^\[quote=(?<author>[^\]]+)\](?<text>.*)\[/quote\]$",
-            RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant);
-
     public static string Render(string bbCode)
     {
         if (string.IsNullOrWhiteSpace(bbCode))
@@ -36,8 +30,66 @@ public static class SteamBbCodePreviewRenderer
             .Replace('\r', '\n')
             .Split('\n');
 
-        foreach (var rawLine in lines)
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
         {
+            var rawLine = lines[lineIndex];
+
+            if (TryConsumeBlock(
+                    lines,
+                    ref lineIndex,
+                    "noparse",
+                    out var unparsedText,
+                    out _))
+            {
+                output.AppendLine(
+                    $"<p class=\"preview-noparse\">" +
+                    $"{EncodeWithLineBreaks(unparsedText)}</p>");
+
+                continue;
+            }
+
+            if (TryConsumeBlock(
+                    lines,
+                    ref lineIndex,
+                    "code",
+                    out var codeText,
+                    out _))
+            {
+                output.AppendLine(
+                    $"<pre class=\"preview-code\"><code>" +
+                    $"{WebUtility.HtmlEncode(codeText)}</code></pre>");
+
+                continue;
+            }
+
+            if (TryConsumeBlock(
+                    lines,
+                    ref lineIndex,
+                    "quote",
+                    out var quoteText,
+                    out var quoteAuthor))
+            {
+                var renderedQuote = RenderInlineWithLineBreaks(quoteText);
+
+                if (string.IsNullOrWhiteSpace(quoteAuthor))
+                {
+                    output.AppendLine($"<blockquote>{renderedQuote}</blockquote>");
+                }
+                else
+                {
+                    output.AppendLine(
+                        "<blockquote class=\"preview-attributed-quote\">" +
+                        "<span class=\"preview-quote-author\">" +
+                        "Originally posted by " +
+                        $"<strong>{WebUtility.HtmlEncode(quoteAuthor)}</strong>:" +
+                        "</span>" +
+                        renderedQuote +
+                        "</blockquote>");
+                }
+
+                continue;
+            }
+
             var line = rawLine.TrimEnd();
 
             if (string.IsNullOrWhiteSpace(line))
@@ -74,24 +126,6 @@ public static class SteamBbCodePreviewRenderer
                 output.AppendLine(
                     $"<p class=\"preview-summary\">" +
                     $"<em>{RenderInline(italicText)}</em></p>");
-
-                continue;
-            }
-
-            if (TryGetTagContent(line, "noparse", out var unparsedText))
-            {
-                output.AppendLine(
-                    $"<p class=\"preview-noparse\">" +
-                    $"{WebUtility.HtmlEncode(unparsedText)}</p>");
-
-                continue;
-            }
-
-            if (TryGetTagContent(line, "code", out var codeText))
-            {
-                output.AppendLine(
-                    $"<pre class=\"preview-code\"><code>" +
-                    $"{WebUtility.HtmlEncode(codeText)}</code></pre>");
 
                 continue;
             }
@@ -142,29 +176,6 @@ public static class SteamBbCodePreviewRenderer
             {
                 output.AppendLine(
                     $"<li>{RenderInline(line[3..].Trim())}</li>");
-                continue;
-            }
-
-            var attributedQuote = AttributedQuotePattern.Match(line);
-
-            if (attributedQuote.Success)
-            {
-                output.AppendLine(
-                    "<blockquote class=\"preview-attributed-quote\">" +
-                    "<span class=\"preview-quote-author\">" +
-                    "Originally posted by " +
-                    $"<strong>{WebUtility.HtmlEncode(attributedQuote.Groups["author"].Value)}</strong>:" +
-                    "</span>" +
-                    $"{RenderInline(attributedQuote.Groups["text"].Value)}" +
-                    "</blockquote>");
-
-                continue;
-            }
-
-            if (TryGetTagContent(line, "quote", out var quote))
-            {
-                output.AppendLine(
-                    $"<blockquote>{RenderInline(quote)}</blockquote>");
                 continue;
             }
 
@@ -255,6 +266,98 @@ public static class SteamBbCodePreviewRenderer
         }
 
         return output.ToString();
+    }
+
+    private static bool TryConsumeBlock(
+        IReadOnlyList<string> lines,
+        ref int lineIndex,
+        string tag,
+        out string content,
+        out string? attribute)
+    {
+        content = string.Empty;
+        attribute = null;
+
+        var rawLine = lines[lineIndex];
+        var trimmedLine = rawLine.TrimStart();
+        var leadingWhitespaceLength = rawLine.Length - trimmedLine.Length;
+        var openingTag = $"[{tag}]";
+        var openingLength = 0;
+
+        if (trimmedLine.StartsWith(
+                openingTag,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            openingLength = openingTag.Length;
+        }
+        else if (tag == "quote" &&
+                 trimmedLine.StartsWith(
+                     "[quote=",
+                     StringComparison.OrdinalIgnoreCase))
+        {
+            var attributeEnd = trimmedLine.IndexOf(']');
+
+            if (attributeEnd > "[quote=".Length)
+            {
+                attribute = trimmedLine["[quote=".Length..attributeEnd];
+                openingLength = attributeEnd + 1;
+            }
+        }
+
+        if (openingLength == 0)
+        {
+            return false;
+        }
+
+        var closingTag = $"[/{tag}]";
+        var collected = new List<string>();
+        var openingRemainder = rawLine[
+            (leadingWhitespaceLength + openingLength)..];
+        var closingIndex = openingRemainder.IndexOf(
+            closingTag,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (closingIndex >= 0)
+        {
+            content = openingRemainder[..closingIndex];
+            return true;
+        }
+
+        collected.Add(openingRemainder);
+
+        for (var searchIndex = lineIndex + 1;
+             searchIndex < lines.Count;
+             searchIndex++)
+        {
+            closingIndex = lines[searchIndex].IndexOf(
+                closingTag,
+                StringComparison.OrdinalIgnoreCase);
+
+            if (closingIndex < 0)
+            {
+                collected.Add(lines[searchIndex]);
+                continue;
+            }
+
+            collected.Add(lines[searchIndex][..closingIndex]);
+            content = string.Join('\n', collected);
+            lineIndex = searchIndex;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string EncodeWithLineBreaks(string text)
+    {
+        return WebUtility.HtmlEncode(text)
+            .Replace("\n", "<br />", StringComparison.Ordinal);
+    }
+
+    private static string RenderInlineWithLineBreaks(string text)
+    {
+        return RenderInline(text)
+            .Replace("\n", "<br />", StringComparison.Ordinal);
     }
 
     private static bool TryGetTagContent(

@@ -786,6 +786,11 @@
                 </div>
             }
 
+            @if (CurrentBbCodeAnalysis.HasWarnings)
+            {
+                @RenderBbCodeCompatibilityWarnings("preview-bbcode-compatibility")
+            }
+
             <div class="@SteamPreviewClass"
                  aria-label="Rendered review preview">
                 <div class="steam-review-page">
@@ -1162,6 +1167,11 @@
                     </span>
                 }
 
+                @if (CurrentBbCodeAnalysis.HasWarnings)
+                {
+                    @RenderBbCodeCompatibilityWarnings("editor-bbcode-compatibility")
+                }
+
                 <textarea id="raw-bbcode-editor"
                           class="code-output bbcode-editor"
                           rows="36"
@@ -1181,6 +1191,56 @@
         Steam Review Forge is not affiliated with, endorsed by, or sponsored
         by Valve Corporation or Steam.
     </footer>
+    @if (_draftRecoveryData is not null)
+    {
+        <div class="modal-backdrop recovery-backdrop"
+             role="presentation">
+            <section class="confirmation-dialog recovery-dialog"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="draft-recovery-title"
+                     aria-describedby="draft-recovery-description">
+                <div class="dialog-content">
+                    <h2 id="draft-recovery-title">
+                        Saved draft needs recovery
+                    </h2>
+                    <p id="draft-recovery-description">
+                        @_draftRecoveryMessage
+                        Your saved data will not be overwritten until you reset it.
+                    </p>
+
+                    <label class="recovery-data-field">
+                        <span>Saved draft backup</span>
+                        <textarea readonly
+                                  rows="8"
+                                  aria-label="Saved draft backup data">@_draftRecoveryData</textarea>
+                    </label>
+
+                    @if (!string.IsNullOrWhiteSpace(_recoveryCopyMessage))
+                    {
+                        <span class="copy-status"
+                              role="status"
+                              aria-live="polite">
+                            @_recoveryCopyMessage
+                        </span>
+                    }
+                </div>
+
+                <div class="dialog-actions">
+                    <button class="button secondary"
+                            type="button"
+                            @onclick="CopyRecoveryDataAsync">
+                        Copy saved data
+                    </button>
+                    <button class="button danger-solid"
+                            type="button"
+                            @onclick="ResetRecoveredDraftAsync">
+                        Reset saved draft
+                    </button>
+                </div>
+            </section>
+        </div>
+    }
     @if (_showModeSwitchDialog)
     {
         <div class="modal-backdrop"
@@ -1859,11 +1919,25 @@
 
     private CancellationTokenSource? _saveDebounce;
 
+    private long _saveRevision;
+
     private bool _draftStorageReady;
 
     private string _saveStatus = "Loading draft…";
 
     private string _copyMessage = string.Empty;
+
+    private string? _draftRecoveryData;
+
+    private string _draftRecoveryMessage = string.Empty;
+
+    private string _recoveryCopyMessage = string.Empty;
+
+    private bool _hasUnsavedChanges;
+
+    private string? _analyzedBbCode;
+
+    private BbCodeAnalysisResult _bbCodeAnalysis = new();
 
     private AppearanceState _appearance =
         new("main-blue", "dark");
@@ -1908,6 +1982,25 @@
         IsBbCodeMode
             ? Draft.RawBbCode
             : SteamBbCodeGenerator.Generate(Draft);
+
+    private BbCodeAnalysisResult CurrentBbCodeAnalysis
+    {
+        get
+        {
+            var bbCode = GeneratedBbCode;
+
+            if (!string.Equals(
+                    _analyzedBbCode,
+                    bbCode,
+                    StringComparison.Ordinal))
+            {
+                _analyzedBbCode = bbCode;
+                _bbCodeAnalysis = SteamBbCodeAnalyzer.Analyze(bbCode);
+            }
+
+            return _bbCodeAnalysis;
+        }
+    }
 
     private string BuilderLayoutClass =>
         IsFinalPreview
@@ -3051,6 +3144,38 @@
             }
         </div>;
 
+    private RenderFragment RenderBbCodeCompatibilityWarnings(
+        string titleId) =>
+        @<div class="bbcode-compatibility"
+              role="region"
+              aria-labelledby="@titleId"
+              aria-live="polite">
+            <strong id="@titleId">
+                BBCode compatibility warnings
+                (@CurrentBbCodeAnalysis.Diagnostics.Count)
+            </strong>
+            <ul>
+                @foreach (var diagnostic in
+                    CurrentBbCodeAnalysis.Diagnostics.Take(8))
+                {
+                    <li>
+                        Line @diagnostic.Line, column @diagnostic.Column:
+                        @diagnostic.Message
+                    </li>
+                }
+            </ul>
+            @if (CurrentBbCodeAnalysis.Diagnostics.Count > 8)
+            {
+                <span>
+                    @(CurrentBbCodeAnalysis.Diagnostics.Count - 8)
+                    additional warnings are not shown.
+                </span>
+            }
+            <small>
+                Copy remains available and your BBCode will not be rewritten.
+            </small>
+        </div>;
+
     private static string GetModeButtonClass(
         bool selected) =>
         selected
@@ -4078,12 +4203,18 @@
     {
         try
         {
+            var warningCount =
+                CurrentBbCodeAnalysis.Diagnostics.Count;
+
             await JS.InvokeVoidAsync(
                 "clipboardManager.copyText",
                 GeneratedBbCode);
 
             _copyMessage =
-                "Copied to clipboard.";
+                warningCount == 0
+                    ? "Copied to clipboard."
+                    : $"Copied with {warningCount} BBCode compatibility " +
+                      (warningCount == 1 ? "warning." : "warnings.");
         }
         catch
         {
@@ -4161,26 +4292,43 @@
     {
         try
         {
-            var restoredDraft =
+            var loadResult =
                 await DraftStorage.LoadAsync();
 
-            if (restoredDraft is null)
+            if (loadResult.Status == DraftLoadStatus.Empty)
             {
                 _saveStatus = "Not saved yet";
+                _draftStorageReady = true;
                 return;
             }
 
-            restoredDraft.Categories ??= [];
-
-            if (restoredDraft.Categories.Count == 0 &&
-                restoredDraft.DisplayFormat !=
-                ReviewDisplayFormat.MinimalVerdict)
+            if (loadResult.Status is
+                DraftLoadStatus.Invalid or
+                DraftLoadStatus.Unsupported)
             {
-                restoredDraft.Categories.Add(
-                    new ReviewCategory());
+                _draftRecoveryData = loadResult.RawBackup ?? string.Empty;
+                _draftRecoveryMessage = loadResult.Message ??
+                    "The saved draft could not be restored.";
+                _saveStatus = "Draft recovery required";
+                _draftStorageReady = false;
+                return;
             }
 
-            Draft = restoredDraft;
+            if (loadResult.Status == DraftLoadStatus.Unavailable)
+            {
+                _saveStatus = "Draft storage unavailable";
+                _draftStorageReady = true;
+                return;
+            }
+
+            if (loadResult.Draft is null)
+            {
+                _saveStatus = "Not saved yet";
+                _draftStorageReady = true;
+                return;
+            }
+
+            Draft = loadResult.Draft;
             SelectedTemplate = Draft.Template;
 
             if (Draft.EditingMode ==
@@ -4190,14 +4338,16 @@
                 CurrentBbCodeStep = BbCodeStep.Composer;
             }
 
-            _saveStatus = "Draft restored";
+            _saveStatus = loadResult.Status == DraftLoadStatus.Migrated
+                ? loadResult.StorageAvailable
+                    ? "Draft upgraded and restored"
+                    : "Draft restored; storage unavailable"
+                : "Draft restored";
+            _draftStorageReady = true;
         }
         catch
         {
             _saveStatus = "Draft storage unavailable";
-        }
-        finally
-        {
             _draftStorageReady = true;
         }
     }
@@ -4218,8 +4368,10 @@
         previousSave?.Dispose();
 
         var currentSave = _saveDebounce;
+        var saveRevision = ++_saveRevision;
 
         _saveStatus = "Saving…";
+        await SetUnsavedChangesAsync(true);
 
         try
         {
@@ -4229,11 +4381,11 @@
 
             await DraftStorage.SaveAsync(Draft);
 
-            if (ReferenceEquals(
-                    _saveDebounce,
-                    currentSave))
+            if (saveRevision == _saveRevision &&
+                ReferenceEquals(_saveDebounce, currentSave))
             {
                 _saveStatus = "Saved";
+                await SetUnsavedChangesAsync(false);
             }
         }
         catch (OperationCanceledException)
@@ -4242,9 +4394,8 @@
         }
         catch
         {
-            if (ReferenceEquals(
-                    _saveDebounce,
-                    currentSave))
+            if (saveRevision == _saveRevision &&
+                ReferenceEquals(_saveDebounce, currentSave))
             {
                 _saveStatus =
                     "Draft storage unavailable";
@@ -4260,18 +4411,97 @@
         }
 
         _saveDebounce?.Cancel();
+        var saveRevision = ++_saveRevision;
 
         _saveStatus = "Saving…";
+        await SetUnsavedChangesAsync(true);
 
         try
         {
             await DraftStorage.SaveAsync(Draft);
-            _saveStatus = "Saved";
+
+            if (saveRevision == _saveRevision)
+            {
+                _saveStatus = "Saved";
+                await SetUnsavedChangesAsync(false);
+            }
         }
         catch
         {
-            _saveStatus =
-                "Draft storage unavailable";
+            if (saveRevision == _saveRevision)
+            {
+                _saveStatus =
+                    "Draft storage unavailable";
+            }
+        }
+    }
+
+    private async Task SetUnsavedChangesAsync(bool value)
+    {
+        if (_hasUnsavedChanges == value)
+        {
+            return;
+        }
+
+        _hasUnsavedChanges = value;
+
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "reviewDraftLifecycle.setUnsavedChanges",
+                value);
+        }
+        catch
+        {
+            // Saving still proceeds when lifecycle notifications are unavailable.
+        }
+    }
+
+    private async Task CopyRecoveryDataAsync()
+    {
+        if (_draftRecoveryData is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "clipboardManager.copyText",
+                _draftRecoveryData);
+            _recoveryCopyMessage = "Saved draft data copied.";
+        }
+        catch
+        {
+            _recoveryCopyMessage =
+                "Copy failed. Select the backup data manually.";
+        }
+    }
+
+    private async Task ResetRecoveredDraftAsync()
+    {
+        try
+        {
+            _saveRevision++;
+
+            await DraftStorage.ClearAsync();
+
+            Draft = new ReviewDraft();
+            SelectedTemplate = Draft.Template;
+            CurrentStep = BuilderStep.Setup;
+            CurrentBbCodeStep = BbCodeStep.Setup;
+            SelectedBbCodeTemplate = null;
+            _draftRecoveryData = null;
+            _draftRecoveryMessage = string.Empty;
+            _recoveryCopyMessage = string.Empty;
+            _draftStorageReady = true;
+            _saveStatus = "Not saved yet";
+            await SetUnsavedChangesAsync(false);
+        }
+        catch
+        {
+            _recoveryCopyMessage =
+                "Unable to clear the saved draft. Your backup remains available.";
         }
     }
 
@@ -4347,6 +4577,8 @@
         {
             _saveDebounce?.Cancel();
 
+            _saveRevision++;
+
             await DraftStorage.ClearAsync();
 
             var editingMode = Draft.EditingMode;
@@ -4367,6 +4599,7 @@
             _showFormattingHelp = false;
             _showTableConfigurer = false;
             _showResetTemplateDialog = false;
+            await SetUnsavedChangesAsync(false);
         }
         catch
         {

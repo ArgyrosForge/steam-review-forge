@@ -1,7 +1,9 @@
 name: Run Tests
 
 on:
+  pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -19,5 +21,54 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Run tests
-        run: dotnet test tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj -c Release
+      - name: Restore
+        run: dotnet restore SteamReviewForge.slnx
+
+      - name: Run unit tests
+        run: >
+          dotnet test
+          tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj
+          -c Release
+          --no-restore
+
+      - name: Build browser tests
+        run: >
+          dotnet build
+          tests/SteamReviewForge.BrowserTests/SteamReviewForge.BrowserTests.csproj
+          -c Release
+          --no-restore
+
+      - name: Install Firefox and Chromium
+        run: >
+          pwsh
+          tests/SteamReviewForge.BrowserTests/bin/Release/net10.0/playwright.ps1
+          install --with-deps firefox chromium
+
+      - name: Run Firefox and Chromium browser tests
+        run: |
+          dotnet run \
+            --project src/SteamReviewForge/SteamReviewForge.csproj \
+            -c Release \
+            --no-build \
+            --urls http://127.0.0.1:5080 &
+          app_process=$!
+          trap 'kill "$app_process"' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5080 >/dev/null; then
+              break
+            fi
+
+            if [ "$attempt" -eq 30 ]; then
+              echo "Application did not become ready."
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          dotnet test \
+            tests/SteamReviewForge.BrowserTests/SteamReviewForge.BrowserTests.csproj \
+            -c Release \
+            --no-build \
+            --no-restore
