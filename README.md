@@ -1,121 +1,39 @@
 # Steam Review Forge
 
-Steam Review Forge is a browser-based tool for building structured Steam reviews and exporting them as Steam-compatible BBCode.
-
-Instead of manually formatting headings, rating tables, sections, and recommendations, users complete a guided review workflow and copy the finished BBCode into Steam.
+Steam Review Forge is a browser-based editor for building Steam reviews and exporting Steam-compatible BBCode. It supports guided workflows, freeform editing, reusable templates, and a Steam-style preview.
 
 ## Project Status
 
-Steam Review Forge is currently under active development.
-
-The core review-building workflow is functional, but the project has not yet reached a stable `1.0.0` release.
+The core review workflow is functional, but the project remains under active development and has not reached `1.0.0`.
 
 ## Features
 
-- Guided and unguided structured review builders
-- Guided and unguided freeform BBCode editors
-- Insertable templates covering every option in Steam's Recommendation formatting help, including widget URLs and table variants
-- Multiple starter templates:
-  - Balanced Review
-  - Quick Take
-  - Deep Dive
-  - Full Custom
-- Multiple review layouts:
-  - Rating Table
-  - Individual Sections
-  - Checklist
-  - Minimal Verdict
-- Customizable, reorderable table rows and columns
-- Custom text columns with editable per-row values
-- Drag-and-drop and keyboard-accessible reorder controls
-- Rating systems:
-  - 1–10 numbers
-  - 1–5 numbers
-  - 1–5 stars
-  - Customizable text ratings
-- Guided strengths, weaknesses, and final-thought prompts
-- Centered Steam-style editor with inline category and response editing
-- Independent structured components that can be inserted by click or native drag-and-drop, then edited, reordered, duplicated, or removed in the preview
-- One-click BBCode copy in Structured modes and a dedicated raw editor in BBCode modes
-- BBCode editor history with Undo and an undoable Clear Code action
-- Built-in Steam formatting reference
-- Actionable review validation with errors, recommendations, and field navigation
-- One-click BBCode clipboard export
-- Automatic local draft saving
-- Main Blue branding with dark and light modes
-- Responsive desktop and mobile editing layout
-- Non-overlapping HTTP and HTTPS development launch profiles
+- Guided and unguided Structured and BBCode editing modes
+- Balanced, Quick Take, Deep Dive, and Full Custom starter templates
+- Rating Table, Individual Sections, Checklist, and Minimal Verdict layouts
+- Numeric, star, and customizable text rating systems
+- Editable and reorderable tables, categories, and independent review components
+- Click, drag-and-drop, keyboard, and touch-friendly editing controls
+- Raw BBCode editing with templates, preview, history, and formatting help
+- Actionable validation, automatic local draft saving, and one-click BBCode copy
+- Responsive Steam-style preview with dark and light themes
 
 ## How It Works
 
 Choose Structured or BBCode editing, then choose Guided or Unguided:
 
-- Guided Structured separates progress, the active step's choices, and the editable Steam preview into focused columns while walking through setup, template, format, writing, and final preview.
-- Unguided Structured exposes the complete structured editor without step gates and can create independent, reorderable rating, bulleted-list, and text components by dragging or selecting palette cards.
-- Guided BBCode combines required Steam metadata with a blank or template-based starting point, then provides every option from Steam's Recommendation formatting help as an insertable block beside the raw editor and live preview. Its final step shows only the finished Steam preview and Copy BBCode action.
+- Guided Structured walks through setup, template, format, writing, and final preview.
+- Unguided Structured exposes the complete structured editor without step gates.
+- Guided BBCode combines required metadata and a starting template before opening the composer and final preview.
 - Unguided BBCode opens the raw editor and live preview immediately.
 
-All four modes finish with Steam-compatible BBCode that can be copied and pasted into Steam. Switching between Guided and Unguided preserves the current content. Switching between Structured and BBCode starts a fresh review because freeform BBCode cannot be converted back into structured fields reliably.
+All four modes produce Steam-compatible BBCode. Switching between Guided and Unguided preserves content; switching between Structured and BBCode starts a fresh review because freeform BBCode cannot be converted reliably into structured fields.
 
-Drafts are stored locally in the browser. Steam Review Forge does not currently require an account or server-side storage.
-
-## Technology
-
-- C#
-- .NET 10
-- Blazor WebAssembly
-- HTML and CSS
-- Browser local storage
-- JavaScript interoperability
-
-## Getting Started
-
-### Prerequisites
-
-Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
-
-### Clone the Repository
-
-```bash
-git clone https://github.com/ArgyrosDev/steam-review-forge.git
-cd steam-review-forge
-```
-
-### Run the Application
-
-```bash
-dotnet restore
-dotnet run --project src/SteamReviewForge/SteamReviewForge.csproj
-```
-
-Open the local URL displayed in the terminal.
-
-### Build the Project
-
-```bash
-dotnet build
-```
-
-## Project Structure
-
-```text
-steam-review-forge/
-├── src/
-│   └── SteamReviewForge/
-│       ├── Models/       # Review data and validation models
-│       ├── Pages/        # Application pages and review builder
-│       ├── Services/     # Templates, validation, storage, and BBCode generation
-│       └── wwwroot/      # Static browser assets
-├── CHANGELOG.md
-├── ROADMAP.md
-└── SteamReviewForge.slnx
-```
+Drafts are stored locally in the browser; no account or server-side storage is required.
 
 ## Privacy
 
-Review drafts are saved to the browser's local storage.
-
-Draft content is not currently sent to a remote server. Clearing browser storage or starting a new review removes the locally saved draft.
+Draft content is not sent to a remote server. Clearing browser storage or starting a new review removes the locally saved draft.
 
 ## Roadmap
 
@@ -123,15 +41,8 @@ See [`ROADMAP.md`](ROADMAP.md) for planned releases and future improvements.
 
 ## Contributing
 
-Bug reports and feature requests are welcome through GitHub Issues.
-
-Pull requests should:
-
-- Focus on a clearly defined change
-- Avoid unrelated formatting changes
-- Preserve the existing project structure
-- Include an explanation of how the change was tested
-- Successfully run `dotnet build`
+- [Report a bug](https://github.com/ArgyrosForge/steam-review-forge/issues/new?template=bug-report.yml)
+- [Request a feature](https://github.com/ArgyrosForge/steam-review-forge/issues/new?template=feature-request.yml)
 
 ## License
 
