@@ -100,6 +100,52 @@
     gap: 0.65rem;
 }
 
+.theme-selector {
+    min-width: 9.25rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-left: 0.65rem;
+    color: var(--muted);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+}
+
+.theme-selector:hover,
+.theme-selector:focus-within {
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+.theme-selector:focus-within {
+    outline: 3px solid var(--focus-ring);
+}
+
+.theme-selector span {
+    font-size: 0.58rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.theme-selector select {
+    min-width: 0;
+    height: 100%;
+    flex: 1;
+    padding: 0 1.65rem 0 0.2rem;
+    color: var(--text);
+    background-color: transparent;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 650;
+}
+
 .theme-toggle {
     min-width: 5.5rem;
     height: 2.5rem;
@@ -1316,6 +1362,13 @@ textarea:focus {
         display: none;
     }
 
+    .header-actions {
+        max-width: 12rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.4rem;
+    }
+
     .new-review-button {
         padding-inline: 0.65rem;
         font-size: 0.78rem;
@@ -1339,6 +1392,18 @@ textarea:focus {
     .theme-toggle {
         min-width: 2.6rem;
         padding: 0 0.5rem;
+    }
+
+    .theme-selector {
+        min-width: 6.8rem;
+    }
+
+    .theme-selector span {
+        display: none;
+    }
+
+    .theme-selector select {
+        padding-left: 0.55rem;
     }
 
     .theme-toggle > span:last-child {
