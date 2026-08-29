@@ -9,7 +9,11 @@ public sealed class ReviewDraft
 
     public string Title { get; set; } = "[Game Title] Review";
 
+    public bool IncludeTitle { get; set; } = true;
+
     public string Summary { get; set; } = string.Empty;
+
+    public bool IncludeSummary { get; set; } = true;
 
     public ReviewRecommendation? Recommendation { get; set; }
 
@@ -59,12 +63,18 @@ public sealed class ReviewDraft
         "Lots of content to discover\n" +
         "Strong visual identity";
 
+    public bool IncludeWhatWorks { get; set; } = true;
+
     public string WhatCouldBeBetter { get; set; } =
         "Occasional performance issues\n" +
         "Some systems need clearer explanations";
 
+    public bool IncludeWhatCouldBeBetter { get; set; } = true;
+
     public string FinalThoughts { get; set; } =
         "Despite its rough edges, the game delivers a memorable and consistently enjoyable experience.";
+
+    public bool IncludeFinalThoughts { get; set; } = true;
 
     public List<ReviewContentComponent> Components { get; set; } = [];
 

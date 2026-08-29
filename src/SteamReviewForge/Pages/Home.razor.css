@@ -184,14 +184,14 @@
 
 .builder-layout {
     width: 100%;
-    max-width: 1800px;
+    max-width: 1900px;
     margin: 0 auto;
     padding: 1.5rem;
     display: grid;
     grid-template-columns:
-        minmax(300px, 0.72fr)
-        minmax(520px, 1.3fr)
-        minmax(360px, 0.85fr);
+        minmax(290px, 340px)
+        minmax(520px, 1fr)
+        minmax(360px, 460px);
     grid-template-areas:
         "workflow bbcode preview";
     gap: 1.25rem;
@@ -199,28 +199,30 @@
 }
 
 .builder-layout.structured-layout {
-    max-width: 1600px;
+    max-width: 1900px;
     grid-template-columns:
-        minmax(320px, 0.62fr)
-        minmax(0, 1.68fr);
+        minmax(290px, 340px)
+        minmax(520px, 1fr)
+        minmax(360px, 460px);
     grid-template-areas:
-        "workflow preview";
+        "workflow preview final";
 }
 
 .builder-layout.guided-structured-layout {
-    max-width: 1600px;
+    max-width: 1900px;
     grid-template-columns:
-        minmax(360px, 460px)
-        minmax(480px, 1fr);
+        minmax(290px, 340px)
+        minmax(520px, 1fr)
+        minmax(360px, 460px);
     grid-template-areas:
-        "workflow preview";
+        "workflow preview final";
 }
 
 .builder-layout.no-preview-layout {
-    max-width: 560px;
+    max-width: 1480px;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "workflow";
-    justify-content: center;
+    justify-content: stretch;
 }
 
 .builder-layout.final-preview-layout {
@@ -282,8 +284,194 @@
     line-height: 1.4;
 }
 
-.workflow-panel {
+.workflow-column {
     grid-area: workflow;
+    min-width: 0;
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+}
+
+.workflow-navigation-panel,
+.workflow-options-panel {
+    min-width: 0;
+}
+
+.workflow-options-panel .workflow-editor {
+    border-top: 0;
+}
+
+@media (min-width: 1201px) {
+    .builder-layout.wide-workflow-layout {
+        grid-template-columns:
+            minmax(360px, 420px)
+            minmax(480px, 1fr)
+            minmax(360px, 460px);
+    }
+
+    .workflow-column {
+        gap: 0.9rem;
+    }
+
+    .workflow-navigation-panel > .panel-heading,
+    .workflow-options-panel .workflow-editor-heading {
+        min-height: 0;
+        padding: 0.85rem 0.95rem;
+    }
+
+    .workflow-navigation-panel > .editor-mode-switcher {
+        gap: 0.4rem;
+        padding: 0.6rem;
+    }
+
+    .workflow-navigation-panel > .step-list {
+        padding: 0.5rem 0.6rem;
+    }
+
+    .workflow-navigation-panel .bbcode-step-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.15rem;
+    }
+
+    .workflow-navigation-panel .bbcode-step-list .step-item {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        gap: 0.3rem;
+        padding: 0.45rem 0.15rem;
+        text-align: center;
+    }
+
+    .workflow-navigation-panel .step-item {
+        grid-template-columns: 1.65rem minmax(0, 1fr);
+        justify-items: start;
+        gap: 0.55rem;
+        padding: 0.48rem 0.55rem;
+        text-align: left;
+    }
+
+    .workflow-navigation-panel .step-number {
+        width: 1.6rem;
+        height: 1.6rem;
+        font-size: 0.7rem;
+    }
+
+    .workflow-navigation-panel .step-item strong {
+        font-size: 0.78rem;
+    }
+
+    .workflow-navigation-panel .step-item small {
+        margin-top: 0.05rem;
+        font-size: 0.67rem;
+        line-height: 1.2;
+    }
+
+    .workflow-options-panel .editor-section,
+    .workflow-options-panel .persistent-rating-system {
+        padding: 0.85rem;
+    }
+
+    .workflow-options-panel .section-heading {
+        margin-bottom: 0.7rem;
+    }
+
+    .workflow-options-panel .step-navigation {
+        padding: 0.65rem 0.85rem;
+    }
+
+    .workflow-options-panel .bbcode-block-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.4rem;
+    }
+
+    .workflow-options-panel .bbcode-block-grid button {
+        min-height: 48px;
+        justify-items: center;
+        align-content: center;
+        padding: 0.45rem 0.35rem;
+        text-align: center;
+    }
+
+    .workflow-options-panel .bbcode-block-grid strong {
+        font-size: 0.7rem;
+        line-height: 1.2;
+    }
+
+    .workflow-options-panel .bbcode-block-grid span {
+        display: none;
+    }
+
+    .workflow-options-panel .template-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+
+    .workflow-options-panel .template-card {
+        min-height: 0;
+        padding: 0.7rem;
+    }
+
+    .workflow-options-panel .template-card-header {
+        min-height: 1.75rem;
+    }
+
+    .workflow-options-panel .template-card h4 {
+        margin: 0.55rem 0 0.25rem;
+        font-size: 0.82rem;
+    }
+
+    .workflow-options-panel .template-card p {
+        min-height: 0;
+        font-size: 0.7rem;
+        line-height: 1.3;
+    }
+
+    .workflow-options-panel .template-card ul {
+        display: none;
+    }
+
+    .wide-workflow-layout .bbcode-workflow .editor-section {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 0.75rem;
+    }
+
+    .wide-workflow-layout .bbcode-workflow .field {
+        align-content: start;
+    }
+
+    .wide-workflow-layout .bbcode-workflow .editor-section >
+        .field:first-of-type,
+    .wide-workflow-layout .bbcode-workflow .steam-checkbox,
+    .wide-workflow-layout .bbcode-workflow .bbcode-start-heading,
+    .wide-workflow-layout .bbcode-workflow .bbcode-start-grid {
+        grid-column: 1 / -1;
+    }
+
+    .wide-workflow-layout .bbcode-start-card:not(.featured) {
+        min-height: 76px;
+        justify-items: center;
+        padding: 0.5rem 0.35rem;
+        text-align: center;
+    }
+
+    .wide-workflow-layout .bbcode-start-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.4rem;
+    }
+
+    .wide-workflow-layout .bbcode-start-card:not(.featured) strong {
+        font-size: 0.7rem;
+        line-height: 1.15;
+    }
+
+    .wide-workflow-layout .bbcode-start-card:not(.featured) span {
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 0.62rem;
+        line-height: 1.2;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
 }
 
 .editor-mode-switcher {
@@ -355,11 +543,16 @@
     grid-area: preview;
 }
 
+.final-preview-panel {
+    grid-area: final;
+}
+
 .bbcode-panel {
     grid-area: bbcode;
 }
 
 .preview-panel,
+.final-preview-panel,
 .bbcode-panel {
     position: sticky;
     top: 6rem;
@@ -617,6 +810,12 @@
 .bbcode-start-card.selected {
     background: var(--accent-soft);
     border-color: var(--accent);
+}
+
+.bbcode-start-card.featured {
+    min-height: 104px;
+    grid-column: 1 / -1;
+    padding: 1rem;
 }
 
 .bbcode-start-card span,
@@ -1077,19 +1276,19 @@ textarea:focus {
     }
 
     .builder-layout.structured-layout {
-        grid-template-columns:
-            minmax(280px, 0.72fr)
-            minmax(0, 1.28fr);
+        grid-template-columns: minmax(0, 1fr);
         grid-template-areas:
-            "workflow preview";
+            "workflow"
+            "preview"
+            "final";
     }
 
     .builder-layout.guided-structured-layout {
-        grid-template-columns:
-            minmax(280px, 0.72fr)
-            minmax(0, 1.28fr);
+        grid-template-columns: minmax(0, 1fr);
         grid-template-areas:
-            "workflow preview";
+            "workflow"
+            "preview"
+            "final";
     }
 }
 
@@ -1113,7 +1312,7 @@ textarea:focus {
 
     .step-list {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 0.35rem;
     }
 
@@ -1141,7 +1340,14 @@ textarea:focus {
         flex-direction: column;
     }
 
-    .builder-layout.structured-layout,
+    .builder-layout.structured-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "workflow"
+            "preview"
+            "final";
+    }
+
     .builder-layout.final-preview-layout {
         grid-template-columns: 1fr;
         grid-template-areas:
@@ -1186,6 +1392,415 @@ textarea:focus {
     padding: 1rem 1.25rem;
     background: var(--surface-soft);
     border-top: 1px solid var(--border);
+}
+
+/* Give setup-only modes a desktop workspace instead of a phone-sized column. */
+@media (min-width: 961px) {
+    .no-preview-layout .workflow-panel {
+        min-height: calc(100dvh - 12.5rem);
+        display: grid;
+        grid-template-columns: minmax(260px, 288px) minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        align-items: stretch;
+    }
+
+    .no-preview-layout .workflow-panel > .panel-heading {
+        min-height: 0;
+        padding: 0.9rem 1rem;
+    }
+
+    .no-preview-layout .workflow-panel > .editor-mode-switcher {
+        gap: 0.4rem;
+        padding: 0.6rem;
+    }
+
+    .no-preview-layout .workflow-panel > .panel-heading,
+    .no-preview-layout .workflow-panel > .editor-mode-switcher,
+    .no-preview-layout .workflow-panel > .step-list {
+        grid-column: 1;
+    }
+
+    .no-preview-layout .workflow-panel > .panel-heading {
+        grid-row: 1;
+    }
+
+    .no-preview-layout .workflow-panel > .editor-mode-switcher {
+        grid-row: 2;
+    }
+
+    .no-preview-layout .workflow-panel > .step-list {
+        grid-row: 3;
+        padding: 0.55rem 0.65rem;
+        border-right: 1px solid var(--border);
+    }
+
+    .no-preview-layout .workflow-panel > .step-list .step-item {
+        grid-template-columns: 1.7rem minmax(0, 1fr);
+        gap: 0.6rem;
+        padding: 0.5rem 0.6rem;
+    }
+
+    .no-preview-layout .workflow-panel > .step-list .step-number {
+        width: 1.65rem;
+        height: 1.65rem;
+        font-size: 0.72rem;
+    }
+
+    .no-preview-layout .workflow-panel > .step-list .step-item strong {
+        font-size: 0.82rem;
+    }
+
+    .no-preview-layout .workflow-panel > .step-list .step-item small {
+        margin-top: 0.08rem;
+        font-size: 0.69rem;
+        line-height: 1.25;
+    }
+
+    .no-preview-layout .workflow-panel > .workflow-editor {
+        min-width: 0;
+        min-height: 100%;
+        display: flex;
+        grid-column: 2;
+        grid-row: 1 / -1;
+        flex-direction: column;
+        border-top: 0;
+        border-left: 1px solid var(--border);
+    }
+
+    .no-preview-layout .workflow-editor-heading {
+        min-height: 0;
+        padding: 1rem 1.5rem;
+    }
+
+    .no-preview-layout .persistent-rating-system,
+    .no-preview-layout .editor-section {
+        padding: 1rem 1.5rem;
+    }
+
+    .no-preview-layout .section-heading {
+        max-width: 72ch;
+        margin-bottom: 0.85rem;
+    }
+
+    .no-preview-layout .workflow-editor .recommendation-choice,
+    .no-preview-layout .workflow-editor .field-grid,
+    .no-preview-layout .workflow-editor .template-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .no-preview-layout .workflow-editor input[type="text"] {
+        max-width: none;
+    }
+
+    .no-preview-layout .setup-details .field-grid {
+        grid-template-columns: minmax(0, 2fr) minmax(180px, 0.7fr);
+    }
+
+    .no-preview-layout .recommendation-option {
+        min-height: 76px;
+        padding: 0.7rem 0.9rem;
+    }
+
+    .no-preview-layout .setup-details {
+        margin-top: 0.9rem;
+        padding-top: 0.9rem;
+    }
+
+    .no-preview-layout .step-navigation {
+        margin-top: auto;
+        padding: 0.8rem 1.5rem;
+    }
+
+    .no-preview-layout .bbcode-workflow .bbcode-step-list {
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .no-preview-layout .bbcode-workflow .editor-section {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 1.25rem;
+        align-content: start;
+    }
+
+    .no-preview-layout .bbcode-workflow .bbcode-start-grid,
+    .no-preview-layout .bbcode-workflow .bbcode-start-heading,
+    .no-preview-layout .bbcode-workflow .steam-checkbox {
+        grid-column: 1 / -1;
+    }
+}
+
+/*
+ * Wide screens keep navigation, the active editor, and both Steam previews
+ * visible together. Long editor and preview content scrolls inside its own
+ * pane so the surrounding page stays stable.
+ */
+@media (min-width: 1281px) {
+    .guided-structured-layout .workflow-panel,
+    .guided-structured-layout .preview-panel,
+    .guided-structured-layout .final-preview-panel,
+    .structured-layout .preview-panel,
+    .structured-layout .final-preview-panel {
+        height: calc(100dvh - 12.5rem);
+        min-height: 35.5rem;
+    }
+
+    .guided-structured-layout .workflow-panel {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+        align-items: stretch;
+    }
+
+    .guided-structured-layout .workflow-panel > .panel-heading,
+    .guided-structured-layout .workflow-panel > .editor-mode-switcher,
+    .guided-structured-layout .workflow-panel > .step-list {
+        grid-column: 1;
+    }
+
+    .guided-structured-layout .workflow-panel > .panel-heading {
+        min-height: 0;
+        grid-row: 1;
+        padding: 0.9rem 1rem;
+    }
+
+    .guided-structured-layout .workflow-panel > .editor-mode-switcher {
+        grid-template-columns: minmax(0, 1fr);
+        grid-row: 2;
+        gap: 0.4rem;
+        padding: 0.6rem;
+    }
+
+    .guided-structured-layout .workflow-panel >
+        .editor-mode-switcher .editor-mode-axis {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .guided-structured-layout .workflow-panel > .step-list {
+        min-height: 0;
+        grid-row: 3;
+        overflow-y: auto;
+        padding: 0.55rem 0.65rem;
+        border-right: 1px solid var(--border);
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+
+    .guided-structured-layout .workflow-panel > .step-list .step-item {
+        grid-template-columns: 1.7rem minmax(0, 1fr);
+        gap: 0.6rem;
+        padding: 0.5rem 0.6rem;
+    }
+
+    .guided-structured-layout .workflow-panel > .step-list .step-number {
+        width: 1.65rem;
+        height: 1.65rem;
+        font-size: 0.72rem;
+    }
+
+    .guided-structured-layout .workflow-panel > .step-list .step-item strong {
+        font-size: 0.82rem;
+    }
+
+    .guided-structured-layout .workflow-panel > .step-list .step-item small {
+        margin-top: 0.08rem;
+        font-size: 0.69rem;
+        line-height: 1.25;
+    }
+
+    .guided-structured-layout .workflow-panel > .workflow-editor {
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        display: flex;
+        grid-column: 2;
+        grid-row: 1 / -1;
+        flex-direction: column;
+        border-top: 0;
+        border-left: 1px solid var(--border);
+    }
+
+    .guided-structured-layout .workflow-editor-heading {
+        min-height: 0;
+        flex: 0 0 auto;
+        padding: 1rem 1.25rem;
+    }
+
+    .guided-structured-layout .persistent-rating-system {
+        flex: 0 0 auto;
+        padding: 0.85rem 1.25rem;
+    }
+
+    .guided-structured-layout .step-content {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+
+    .guided-structured-layout .editor-section {
+        padding: 1rem 1.25rem;
+    }
+
+    .guided-structured-layout .section-heading {
+        margin-bottom: 0.85rem;
+    }
+
+    .guided-structured-layout .workflow-editor .recommendation-choice,
+    .guided-structured-layout .workflow-editor .field-grid,
+    .guided-structured-layout .workflow-editor .template-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .guided-structured-layout .workflow-editor input[type="text"] {
+        max-width: none;
+    }
+
+    .guided-structured-layout .setup-details .field-grid {
+        grid-template-columns: minmax(0, 2fr) minmax(150px, 0.7fr);
+    }
+
+    .guided-structured-layout .recommendation-option {
+        min-height: 72px;
+        padding: 0.65rem 0.8rem;
+    }
+
+    .guided-structured-layout .setup-details {
+        margin-top: 0.8rem;
+        padding-top: 0.8rem;
+    }
+
+    .guided-structured-layout .step-navigation {
+        flex: 0 0 auto;
+        padding: 0.75rem 1.25rem;
+    }
+
+    :is(
+        .guided-structured-layout,
+        .structured-layout) :is(
+            .preview-panel,
+            .final-preview-panel) {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    :is(
+        .guided-structured-layout,
+        .structured-layout) :is(
+        .preview-panel,
+        .final-preview-panel) > :is(
+            .panel-heading,
+            .copy-status,
+            .preview-validation,
+            .bbcode-compatibility) {
+        flex: 0 0 auto;
+    }
+
+    :is(
+        .guided-structured-layout,
+        .structured-layout) :is(
+        .preview-panel,
+        .final-preview-panel) > .steam-preview {
+        min-height: 0;
+        flex: 1 1 auto;
+        max-height: none;
+        overscroll-behavior: contain;
+    }
+}
+
+@media (min-width: 1281px) and (max-width: 1499px) {
+    .guided-structured-layout .workflow-editor .recommendation-choice,
+    .guided-structured-layout .workflow-editor .field-grid,
+    .guided-structured-layout .workflow-editor .template-grid,
+    .guided-structured-layout .setup-details .field-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (min-width: 801px) and (max-width: 1280px) {
+    .builder-layout.guided-structured-layout,
+    .builder-layout.structured-layout {
+        max-width: 900px;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "workflow"
+            "preview"
+            "final";
+    }
+
+    :is(
+        .guided-structured-layout,
+        .structured-layout) :is(
+            .preview-panel,
+            .final-preview-panel) {
+        position: static;
+    }
+}
+
+@media (max-width: 960px) {
+    .builder-layout.no-preview-layout {
+        max-width: 760px;
+    }
+}
+
+@media (min-width: 1201px) {
+    .builder-layout.wide-workflow-layout
+        .workflow-options-panel
+        .bbcode-workflow
+        .editor-section {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 0.75rem;
+    }
+
+    .builder-layout.wide-workflow-layout
+        .bbcode-workflow
+        .editor-section > .field:first-of-type,
+    .builder-layout.wide-workflow-layout
+        .bbcode-workflow .steam-checkbox,
+    .builder-layout.wide-workflow-layout
+        .bbcode-workflow .bbcode-start-heading,
+    .builder-layout.wide-workflow-layout
+        .bbcode-workflow .bbcode-start-grid {
+        grid-column: 1 / -1;
+    }
+
+    .builder-layout.wide-workflow-layout
+        .bbcode-workflow .field {
+        align-content: start;
+    }
+
+    .workflow-options-panel .workflow-editor .recommendation-choice,
+    .workflow-options-panel .workflow-editor .field-grid,
+    .workflow-options-panel .setup-details .field-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .workflow-options-panel .recommendation-option {
+        min-width: 0;
+        grid-template-columns: 2.25rem minmax(0, 1fr);
+        gap: 0.6rem;
+        padding: 0.65rem;
+    }
+
+    .workflow-options-panel .recommendation-choice-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+
+    .workflow-options-panel :is(
+        button,
+        button > span,
+        button strong) {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .workflow-options-panel .step-content {
+        overflow-x: hidden;
+    }
 }
 
 .button.primary {
@@ -1321,7 +1936,7 @@ textarea:focus {
 
 @media (max-width: 800px) {
     .step-list {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 
     .template-grid {
@@ -2167,6 +2782,77 @@ div.steam-add-category-row {
 .steam-writing-editor {
     display: grid;
     gap: 12px;
+}
+
+.steam-removable-block {
+    position: relative;
+    min-width: 0;
+}
+
+.steam-removable-block > .steam-inline-input,
+.steam-removable-block > label .steam-inline-input,
+.steam-removable-block > .steam-editable-title .steam-inline-input {
+    padding-right: 34px;
+}
+
+.steam-remove-block {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 2;
+    width: 26px;
+    min-height: 26px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #e85b61;
+    background: rgba(16, 25, 35, 0.92);
+    border: 1px solid rgba(232, 91, 97, 0.4);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.steam-remove-block:hover,
+.steam-remove-block:focus-visible {
+    color: #ffffff;
+    background: rgba(232, 91, 97, 0.32);
+    border-color: #e85b61;
+    outline: 2px solid rgba(232, 91, 97, 0.25);
+}
+
+.steam-removable-table {
+    margin-bottom: 14px;
+}
+
+.steam-empty-block {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 10px;
+    color: var(--steam-meta);
+    background: #101923;
+    border: 1px dashed #344454;
+}
+
+.steam-empty-block button {
+    min-height: 30px;
+    padding: 4px 8px;
+    color: var(--steam-blue);
+    background: #172433;
+    border: 1px solid #344454;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.steam-empty-block button:hover,
+.steam-empty-block button:focus-visible {
+    border-color: var(--steam-blue);
+    outline: 2px solid rgba(102, 192, 244, 0.2);
 }
 
 .steam-writing-editor label {
@@ -3265,7 +3951,7 @@ div.steam-add-category-row {
     }
 
     .step-list {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.15rem;
         padding: 0.5rem;
     }

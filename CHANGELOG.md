@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-29
+
+This pre-release focuses on a desktop-first editing workspace, more flexible structured reviews, and stronger draft and release reliability.
+
 ### Added
 
 - Dedicated xUnit test project under `tests/SteamReviewForge.Tests`
@@ -18,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Non-destructive Steam BBCode compatibility diagnostics with line and column guidance
 - Automatic unit and browser test coverage for pull requests and deployments
 - Firefox primary-workflow tests and Chromium smoke tests
+- A persistent Final Preview beside both structured and BBCode editors
+- A desktop-first, three-column workspace with workflow choices stacked in the left rail
+- Empty-BBCode safeguards that keep copy actions disabled until review content exists
 
 ### Changed
 
@@ -26,6 +33,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Improved multiline preview rendering for code, no-parse, and quote blocks
 - Allowed comma decimal input when normalizing playtime
 - Required the complete test suite to pass before GitHub Pages deployment
+- Made the editor the central focus while keeping setup controls compact and constraining the preview to a Steam-like width
+- Simplified Deep Dive to six removable starter sections without fixed strengths, improvements, or final-thought blocks
+- Made every structured preview block removable, including content supplied by starter templates
+- Reduced Guided Structured to Setup, Template, Format, and Questions while keeping Final Preview visible throughout
+- Removed Short Summary from guided Setup and from BBCode workflows; summaries remain optional structured content
+- Featured Blank Document in BBCode template choices and condensed the remaining starter templates
+- Kept Copy BBCode in the editor and removed the duplicate action from the BBCode Final Preview
 
 ### Fixed
 
@@ -33,6 +47,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Normalized invalid, duplicate, and null saved-draft values without crashing the application
 - Prevented invalid saved drafts from being mislabeled as unavailable storage or overwritten automatically
 - Warned users before leaving while edits are awaiting persistence or storage has failed
+- Prevented workflow labels and controls from spilling outside their desktop columns
+- Reduced unnecessary desktop scrolling in setup, template, and composer views
 
 ## [0.1.0] - 2026-08-29
 

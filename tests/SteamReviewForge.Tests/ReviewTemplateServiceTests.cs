@@ -48,6 +48,23 @@ public sealed class ReviewTemplateServiceTests
     }
 
     [Fact]
+    public void Apply_DeepDiveContainsOnlySectionCategories()
+    {
+        var draft = new ReviewDraft();
+
+        ReviewTemplateService.Apply(draft, ReviewTemplate.DeepDive);
+
+        Assert.Equal(ReviewDisplayFormat.Sections, draft.DisplayFormat);
+        Assert.Equal(6, draft.Categories.Count);
+        Assert.False(draft.IncludeWhatWorks);
+        Assert.False(draft.IncludeWhatCouldBeBetter);
+        Assert.False(draft.IncludeFinalThoughts);
+        Assert.Empty(draft.WhatWorks);
+        Assert.Empty(draft.WhatCouldBeBetter);
+        Assert.Empty(draft.FinalThoughts);
+    }
+
+    [Fact]
     public void Apply_RemapsRatingsForTenPointScale()
     {
         var draft = new ReviewDraft

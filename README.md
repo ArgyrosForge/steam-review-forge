@@ -8,7 +8,7 @@ Try Steam Review Forge at [argyrosforge.github.io/steam-review-forge](https://ar
 
 ## Project Status
 
-`v0.1.0` is available as a public pre-release. The project remains under active development and has not reached stable `1.0.0` status.
+`v0.2.0` is the current pre-release line. The project remains under active development and has not reached stable `1.0.0` status.
 
 ## Features
 
@@ -26,9 +26,9 @@ Try Steam Review Forge at [argyrosforge.github.io/steam-review-forge](https://ar
 
 Choose Structured or BBCode editing, then choose Guided or Unguided:
 
-- Guided Structured walks through setup, template, format, writing, and final preview.
+- Guided Structured walks through setup, template, format, and writing while keeping the final preview visible.
 - Unguided Structured exposes the complete structured editor without step gates.
-- Guided BBCode combines required metadata and a starting template before opening the composer and final preview.
+- Guided BBCode combines a recommendation and starting template before opening the composer with a live final preview.
 - Unguided BBCode opens the raw editor and live preview immediately.
 
 All four modes produce Steam-compatible BBCode. Switching between Guided and Unguided preserves content; switching between Structured and BBCode starts a fresh review because freeform BBCode cannot be converted reliably into structured fields.
@@ -43,13 +43,13 @@ Clearing browser storage or starting a new review removes the locally saved draf
 
 ## Testing
 
-Automated tests live in `tests/SteamReviewForge.Tests` and can be run locally with:
+Unit tests live in `tests/SteamReviewForge.Tests` and can be run locally with:
 
 ```bash
-dotnet test
+dotnet test tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj
 ```
 
-The GitHub Actions test workflow is manual-only and runs only when explicitly started from the repository's **Actions** tab.
+Firefox and Chromium workflow tests live in `tests/SteamReviewForge.BrowserTests`. GitHub Actions runs the complete suite for pull requests and before every GitHub Pages deployment; it can also be started manually from the repository's **Actions** tab.
 
 ## Roadmap
 

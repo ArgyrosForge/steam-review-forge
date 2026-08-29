@@ -22,10 +22,36 @@ public sealed class ReviewDraftValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.Recommendation));
-        Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.Summary));
+        Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Summary));
         Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.Title));
-        Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.Categories));
+        Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Categories));
         Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.FinalThoughts));
+    }
+
+    [Fact]
+    public void Validate_AllowsRemovedStructuredBlocks()
+    {
+        var draft = new ReviewDraft
+        {
+            Recommendation = ReviewRecommendation.Recommended,
+            IncludeTitle = false,
+            IncludeSummary = false,
+            IncludeWhatWorks = false,
+            IncludeWhatCouldBeBetter = false,
+            IncludeFinalThoughts = false,
+            Categories = []
+        };
+
+        var result = ReviewDraftValidator.Validate(draft);
+
+        Assert.True(result.IsValid);
+        Assert.DoesNotContain(result.Issues, issue =>
+            issue.Field is nameof(draft.Title) or
+                nameof(draft.Summary) or
+                nameof(draft.WhatWorks) or
+                nameof(draft.WhatCouldBeBetter) or
+                nameof(draft.FinalThoughts) or
+                nameof(draft.Categories));
     }
 
     [Fact]
@@ -50,7 +76,7 @@ public sealed class ReviewDraftValidatorTests
         var draft = new ReviewDraft
         {
             EditingMode = ReviewEditingMode.GuidedBbCode,
-            Summary = "Summary",
+            Summary = string.Empty,
             Recommendation = ReviewRecommendation.Recommended,
             Title = string.Empty,
             FinalThoughts = string.Empty,
@@ -61,6 +87,7 @@ public sealed class ReviewDraftValidatorTests
 
         Assert.True(result.IsValid);
         Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Title));
+        Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Summary));
     }
 
     [Fact]

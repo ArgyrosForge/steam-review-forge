@@ -44,13 +44,6 @@ public static class ReviewDraftValidator
                 nameof(draft.Recommendation),
                 "Choose Recommended or Not Recommended.");
 
-        if (string.IsNullOrWhiteSpace(draft.Summary))
-            AddError(
-                result,
-                ReviewValidationSection.Setup,
-                nameof(draft.Summary),
-                "Add a short sentence that summarizes your review.");
-
         if (draft.RatingSystem ==
             ReviewRatingSystem.Text)
         {
@@ -91,7 +84,8 @@ public static class ReviewDraftValidator
         ReviewDraft draft,
         ReviewValidationResult result)
     {
-        if (string.IsNullOrWhiteSpace(draft.Title))
+        if (draft.IncludeTitle &&
+            string.IsNullOrWhiteSpace(draft.Title))
             AddError(
                 result,
                 ReviewValidationSection.Template,
@@ -106,17 +100,6 @@ public static class ReviewDraftValidator
         if (draft.DisplayFormat ==
             ReviewDisplayFormat.MinimalVerdict)
             return;
-
-        if (draft.Categories.Count == 0)
-        {
-            AddError(
-                result,
-                ReviewValidationSection.Format,
-                nameof(draft.Categories),
-                "Add at least one review category.");
-
-            return;
-        }
 
         if (draft.DisplayFormat ==
             ReviewDisplayFormat.RatingTable)
@@ -188,7 +171,8 @@ public static class ReviewDraftValidator
         ReviewDraft draft,
         ReviewValidationResult result)
     {
-        if (string.IsNullOrWhiteSpace(
+        if (draft.IncludeFinalThoughts &&
+            string.IsNullOrWhiteSpace(
                 draft.FinalThoughts))
             AddError(
                 result,
@@ -203,14 +187,16 @@ public static class ReviewDraftValidator
             ReviewDisplayFormat.MinimalVerdict)
             return;
 
-        if (string.IsNullOrWhiteSpace(draft.WhatWorks))
+        if (draft.IncludeWhatWorks &&
+            string.IsNullOrWhiteSpace(draft.WhatWorks))
             AddWarning(
                 result,
                 ReviewValidationSection.Questions,
                 nameof(draft.WhatWorks),
                 "Consider adding at least one strength.");
 
-        if (string.IsNullOrWhiteSpace(
+        if (draft.IncludeWhatCouldBeBetter &&
+            string.IsNullOrWhiteSpace(
                 draft.WhatCouldBeBetter))
             AddWarning(
                 result,
