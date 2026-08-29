@@ -35,7 +35,7 @@ The core review-building workflow is functional, but the project has not yet rea
   - Customizable text ratings
 - Guided strengths, weaknesses, and final-thought prompts
 - Centered Steam-style editor with inline category and response editing
-- Independent structured components that can be added by click or native drag-and-drop, then edited, reordered, or removed in the preview
+- Independent structured components that can be inserted by click or native drag-and-drop, then edited, reordered, duplicated, or removed in the preview
 - One-click BBCode copy in Structured modes and a dedicated raw editor in BBCode modes
 - BBCode editor history with Undo and an undoable Clear Code action
 - Built-in Steam formatting reference
