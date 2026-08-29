@@ -46,9 +46,11 @@ See [`ROADMAP.md`](ROADMAP.md) for planned releases and future improvements.
 
 ## License
 
-This project does not currently declare a license.
+Steam Review Forge is licensed under the **GNU Affero General Public License v3.0 only** (`AGPL-3.0-only`).
 
-Until a license is added, the source code remains copyrighted and is not automatically available for redistribution or reuse. See [`docs/licensing.md`](docs/licensing.md) for additional information.
+You may use, modify, and redistribute the project under the terms of that license. Modified versions offered to users over a network must also make their corresponding source code available as required by the AGPLv3.
+
+See [`LICENSE`](LICENSE) for the full license text and [`docs/licensing.md`](docs/licensing.md) for project-specific licensing notes.
 
 ## Disclaimer
 
