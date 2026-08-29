@@ -28,12 +28,12 @@ The first usable version of Steam Review Forge.
 - [x] Improve validation messages and navigation to invalid fields
 - [x] Improve mobile editing and preview behavior
 - [x] Add guided and unguided structured and BBCode editing modes
+- [x] Publish the first usable release
 
 ### Remaining
 
 - [ ] Perform a full accessibility and keyboard-navigation review
 - [ ] Test the application across major desktop and mobile browsers
-- [ ] Publish the first usable release
 
 ## v0.2.0 — Reliability and Editing Improvements
 
