@@ -20,7 +20,10 @@ public sealed class ReviewWorkflowTests
                 AriaRole.Radio,
                 new PageGetByRoleOptions { NameRegex = new("Yes.*Recommended") })
             .ClickAsync();
-        await page.Locator("#review-summary").FillAsync("Firefox primary workflow review.");
+        await Assertions.Expect(page.Locator("#review-summary"))
+            .ToHaveCountAsync(0);
+        await page.GetByLabel("Short review summary")
+            .FillAsync("Firefox primary workflow review.");
         await page.Locator("#playtime").FillAsync("42.5");
         await page.GetByRole(
                 AriaRole.Button,
@@ -34,19 +37,19 @@ public sealed class ReviewWorkflowTests
                 AriaRole.Button,
                 new PageGetByRoleOptions { Name = "Continue to questions" })
             .ClickAsync();
-        await page.GetByRole(
-                AriaRole.Button,
-                new PageGetByRoleOptions { Name = "Open final preview" })
-            .ClickAsync();
 
         await Assertions.Expect(
-                page.GetByRole(
+                page.Locator(".final-preview-panel").GetByRole(
                     AriaRole.Heading,
-                    new PageGetByRoleOptions { Name = "Final Steam Review" }))
+                    new LocatorGetByRoleOptions { Name = "Final Preview" }))
             .ToBeVisibleAsync();
-        await page.GetByRole(
+        await Assertions.Expect(page.GetByRole(
                 AriaRole.Button,
-                new PageGetByRoleOptions { Name = "Copy BBCode" })
+                new PageGetByRoleOptions { Name = "Final Preview" }))
+            .ToHaveCountAsync(0);
+        await page.Locator(".final-preview-panel").GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions { Name = "Copy BBCode" })
             .ClickAsync();
         await Assertions.Expect(page.GetByText("Copied to clipboard."))
             .ToBeVisibleAsync();
@@ -63,7 +66,7 @@ public sealed class ReviewWorkflowTests
         });
         await WaitForApplicationAsync(page);
 
-        await Assertions.Expect(page.Locator("#review-summary"))
+        await Assertions.Expect(page.GetByLabel("Short review summary"))
             .ToHaveValueAsync("Firefox primary workflow review.");
         await Assertions.Expect(page.GetByText("Draft restored", new() { Exact = true }))
             .ToBeVisibleAsync();
@@ -147,7 +150,7 @@ public sealed class ReviewWorkflowTests
         await OpenApplicationAsync(page);
         await page.GetByRole(
                 AriaRole.Button,
-                new PageGetByRoleOptions { Name = "BBCode" })
+                new PageGetByRoleOptions { Name = "BBCode", Exact = true })
             .ClickAsync();
         await page.GetByRole(
                 AriaRole.Button,
@@ -186,7 +189,7 @@ public sealed class ReviewWorkflowTests
         await OpenApplicationAsync(page);
         await page.GetByRole(
                 AriaRole.Button,
-                new PageGetByRoleOptions { Name = "BBCode" })
+                new PageGetByRoleOptions { Name = "BBCode", Exact = true })
             .ClickAsync();
         await page.GetByRole(
                 AriaRole.Button,
@@ -212,6 +215,221 @@ public sealed class ReviewWorkflowTests
             await page.EvaluateAsync<string>("window.__copiedText"));
         await Assertions.Expect(page.GetByText("Saved", new() { Exact = true }))
             .ToBeVisibleAsync();
+    }
+
+    [Fact]
+    public async Task Chromium_BbCodeWorkspaceStacksToolsBesideEditorAndPreview()
+    {
+        await using var session = await BrowserSession.CreateAsync("chromium");
+        var page = session.Page;
+        await page.SetViewportSizeAsync(1600, 900);
+
+        await OpenApplicationAsync(page);
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "BBCode", Exact = true })
+            .ClickAsync();
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Start fresh" })
+            .ClickAsync();
+        await Assertions.Expect(page.Locator(".bbcode-panel"))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".preview-panel").GetByRole(
+                AriaRole.Heading,
+                new LocatorGetByRoleOptions { Name = "Final Preview" }))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".bbcode-panel").GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions { Name = "Copy BBCode" }))
+            .ToBeDisabledAsync();
+
+        var setupLayout = await page.EvaluateAsync<double[]>("""
+            () => {
+                const workflow = document.querySelector('.workflow-column')
+                    .getBoundingClientRect();
+                const cards = [...document.querySelectorAll(
+                    '.bbcode-start-grid .bbcode-start-card')]
+                    .map(card => card.getBoundingClientRect());
+                return [
+                    workflow.width,
+                    cards[0].width,
+                    cards[1].width,
+                    cards[0].height,
+                    cards[1].height,
+                    cards[0].top,
+                    cards[1].top
+                ];
+            }
+            """);
+
+        Assert.InRange(setupLayout[0], 360, 420);
+        Assert.True(setupLayout[1] > setupLayout[2] * 3.5);
+        Assert.True(setupLayout[3] > setupLayout[4]);
+        Assert.True(setupLayout[6] > setupLayout[5]);
+
+        await page.GetByRole(
+                AriaRole.Radio,
+                new PageGetByRoleOptions { Name = "Recommended", Exact = true })
+            .ClickAsync();
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Open composer" })
+            .ClickAsync();
+
+        await Assertions.Expect(page.Locator(".bbcode-block-grid button"))
+            .ToHaveCountAsync(21);
+        Assert.Equal(0, await page.EvaluateAsync<double>("window.scrollY"));
+
+        var layout = await page.EvaluateAsync<double[]>("""
+            () => {
+                const workflow = document.querySelector('.workflow-column');
+                const navigation = document.querySelector(
+                    '.workflow-navigation-panel');
+                const options = document.querySelector(
+                    '.workflow-options-panel');
+                const editor = document.querySelector('.bbcode-panel');
+                const preview = document.querySelector('.preview-panel');
+                const grid = document.querySelector('.bbcode-block-grid');
+                const cards = [...grid.querySelectorAll('button')];
+                const first = cards[0].getBoundingClientRect();
+                const third = cards[2].getBoundingClientRect();
+                const fourth = cards[3].getBoundingClientRect();
+                const workflowBox = workflow.getBoundingClientRect();
+                const navigationBox = navigation.getBoundingClientRect();
+                const optionsBox = options.getBoundingClientRect();
+                const editorBox = editor.getBoundingClientRect();
+                const previewBox = preview.getBoundingClientRect();
+
+                return [
+                    workflowBox.width,
+                    navigationBox.bottom,
+                    optionsBox.top,
+                    editorBox.left,
+                    workflowBox.right,
+                    previewBox.left,
+                    editorBox.right,
+                    previewBox.width,
+                    editorBox.width,
+                    first.top,
+                    third.top,
+                    fourth.top
+                ];
+            }
+            """);
+
+        Assert.InRange(layout[0], 290, 340);
+        Assert.True(layout[2] > layout[1]);
+        Assert.True(layout[3] > layout[4]);
+        Assert.True(layout[5] > layout[6]);
+        Assert.InRange(layout[7], 440, 460);
+        Assert.True(layout[8] > layout[7]);
+        Assert.Equal(layout[9], layout[10], precision: 1);
+        Assert.True(layout[11] > layout[9]);
+
+        await page.Locator(".bbcode-block-grid button").First.ClickAsync();
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Next", Exact = true })
+            .ClickAsync();
+        await Assertions.Expect(page.Locator(".preview-panel").GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions { Name = "Copy BBCode" }))
+            .ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator(".bbcode-panel").GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions { Name = "Copy BBCode" }))
+            .ToBeEnabledAsync();
+    }
+
+    [Fact]
+    public async Task Chromium_DeepDiveUsesRemovableSectionOnlyContent()
+    {
+        await using var session = await BrowserSession.CreateAsync("chromium");
+        var page = session.Page;
+
+        await OpenApplicationAsync(page);
+        await page.GetByRole(
+                AriaRole.Radio,
+                new PageGetByRoleOptions { NameRegex = new("Yes.*Recommended") })
+            .ClickAsync();
+        Assert.True(await page.Locator(".workflow-options-panel .step-content")
+            .EvaluateAsync<bool>("element => element.scrollWidth <= element.clientWidth"));
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Continue to template" })
+            .ClickAsync();
+        await page.GetByRole(
+                AriaRole.Radio,
+                new PageGetByRoleOptions { NameRegex = new("Deep Dive") })
+            .ClickAsync();
+
+        await Assertions.Expect(page.Locator(".steam-editable-section"))
+            .ToHaveCountAsync(6);
+        await Assertions.Expect(page.GetByText("What Works", new() { Exact = true }))
+            .ToHaveCountAsync(0);
+        await Assertions.Expect(page.GetByText("What Could Be Better", new() { Exact = true }))
+            .ToHaveCountAsync(0);
+        await Assertions.Expect(page.GetByText("Final Thoughts", new() { Exact = true }))
+            .ToHaveCountAsync(0);
+
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Remove review title" })
+            .ClickAsync();
+        await Assertions.Expect(page.GetByLabel("Review title"))
+            .ToHaveCountAsync(0);
+
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Remove category Gameplay" })
+            .ClickAsync();
+        await Assertions.Expect(page.Locator(".steam-editable-section"))
+            .ToHaveCountAsync(5);
+    }
+
+    [Fact]
+    public async Task Chromium_RemovesAllBuiltInBalancedContent()
+    {
+        await using var session = await BrowserSession.CreateAsync("chromium");
+        var page = session.Page;
+
+        await OpenApplicationAsync(page);
+        await page.GetByRole(
+                AriaRole.Radio,
+                new PageGetByRoleOptions { NameRegex = new("Yes.*Recommended") })
+            .ClickAsync();
+
+        foreach (var blockName in new[]
+                 {
+                     "Remove review title",
+                     "Remove short summary",
+                     "Remove rating table",
+                     "Remove What Works",
+                     "Remove What Could Be Better",
+                     "Remove final thoughts"
+                 })
+        {
+            await page.GetByRole(
+                    AriaRole.Button,
+                    new PageGetByRoleOptions { Name = blockName, Exact = true })
+                .ClickAsync();
+        }
+
+        await Assertions.Expect(page.GetByLabel("Review title"))
+            .ToHaveCountAsync(0);
+        await Assertions.Expect(page.GetByLabel("Short review summary"))
+            .ToHaveCountAsync(0);
+        await Assertions.Expect(page.GetByText("Rating table removed.", new()
+            {
+                Exact = true
+            }))
+            .ToBeVisibleAsync();
+
+        await Assertions.Expect(page.Locator(".final-preview-panel").GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions { Name = "Copy BBCode", Exact = true }))
+            .ToBeDisabledAsync();
     }
 
     private static async Task OpenApplicationAsync(IPage page)

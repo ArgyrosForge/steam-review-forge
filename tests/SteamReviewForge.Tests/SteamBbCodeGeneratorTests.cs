@@ -87,6 +87,22 @@ public sealed class SteamBbCodeGeneratorTests
         Assert.Contains("• Two", output);
     }
 
+    [Fact]
+    public void Generate_ExcludesRemovedStructuredBlocks()
+    {
+        var draft = CreateCompleteDraft();
+        draft.IncludeTitle = false;
+        draft.IncludeSummary = false;
+        draft.IncludeWhatWorks = false;
+        draft.IncludeWhatCouldBeBetter = false;
+        draft.IncludeFinalThoughts = false;
+        draft.Categories.Clear();
+
+        var output = SteamBbCodeGenerator.Generate(draft);
+
+        Assert.Empty(output);
+    }
+
     private static ReviewDraft CreateCompleteDraft()
     {
         return new ReviewDraft

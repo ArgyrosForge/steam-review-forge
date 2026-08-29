@@ -69,6 +69,9 @@ public static class ReviewTemplateService
     private static void ApplyBalancedTemplate(ReviewDraft draft)
     {
         draft.DisplayFormat = ReviewDisplayFormat.RatingTable;
+        draft.IncludeWhatWorks = true;
+        draft.IncludeWhatCouldBeBetter = true;
+        draft.IncludeFinalThoughts = true;
 
         draft.WhatWorks =
             "Satisfying core gameplay\n" +
@@ -108,6 +111,9 @@ public static class ReviewTemplateService
     private static void ApplyQuickTakeTemplate(ReviewDraft draft)
     {
         draft.DisplayFormat = ReviewDisplayFormat.MinimalVerdict;
+        draft.IncludeWhatWorks = false;
+        draft.IncludeWhatCouldBeBetter = false;
+        draft.IncludeFinalThoughts = true;
 
         draft.WhatWorks = string.Empty;
         draft.WhatCouldBeBetter = string.Empty;
@@ -121,20 +127,12 @@ public static class ReviewTemplateService
     private static void ApplyDeepDiveTemplate(ReviewDraft draft)
     {
         draft.DisplayFormat = ReviewDisplayFormat.Sections;
-
-        draft.WhatWorks =
-            "Describe the strongest gameplay systems\n" +
-            "Describe the most successful presentation choices\n" +
-            "Describe the content that kept you engaged";
-
-        draft.WhatCouldBeBetter =
-            "Describe mechanical or balance problems\n" +
-            "Describe technical or performance issues\n" +
-            "Describe content that felt incomplete";
-
-        draft.FinalThoughts =
-            "Summarize the complete experience and identify " +
-            "the type of player most likely to enjoy it.";
+        draft.IncludeWhatWorks = false;
+        draft.IncludeWhatCouldBeBetter = false;
+        draft.IncludeFinalThoughts = false;
+        draft.WhatWorks = string.Empty;
+        draft.WhatCouldBeBetter = string.Empty;
+        draft.FinalThoughts = string.Empty;
 
         ReplaceCategories(
             draft,
@@ -179,6 +177,9 @@ public static class ReviewTemplateService
     private static void ApplyCustomTemplate(ReviewDraft draft)
     {
         draft.DisplayFormat = ReviewDisplayFormat.RatingTable;
+        draft.IncludeWhatWorks = true;
+        draft.IncludeWhatCouldBeBetter = true;
+        draft.IncludeFinalThoughts = true;
 
         draft.WhatWorks = string.Empty;
         draft.WhatCouldBeBetter = string.Empty;

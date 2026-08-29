@@ -37,15 +37,19 @@ public static class SteamBbCodeGenerator
     {
         ArgumentNullException.ThrowIfNull(draft);
 
-        var title = string.IsNullOrWhiteSpace(draft.Title)
-            ? "Untitled Review"
-            : draft.Title.Trim();
-
         var output = new StringBuilder();
 
-        output.AppendLine($"[h1]{title}[/h1]");
+        if (draft.IncludeTitle)
+        {
+            var title = string.IsNullOrWhiteSpace(draft.Title)
+                ? "Untitled Review"
+                : draft.Title.Trim();
 
-        if (!string.IsNullOrWhiteSpace(draft.Summary))
+            output.AppendLine($"[h1]{title}[/h1]");
+        }
+
+        if (draft.IncludeSummary &&
+            !string.IsNullOrWhiteSpace(draft.Summary))
         {
             output.AppendLine($"[i]{draft.Summary.Trim()}[/i]");
         }
@@ -179,9 +183,14 @@ public static class SteamBbCodeGenerator
         StringBuilder output,
         ReviewDraft draft)
     {
-        var whatWorks = GetLines(draft.WhatWorks);
-        var whatCouldBeBetter = GetLines(draft.WhatCouldBeBetter);
+        var whatWorks = draft.IncludeWhatWorks
+            ? GetLines(draft.WhatWorks)
+            : [];
+        var whatCouldBeBetter = draft.IncludeWhatCouldBeBetter
+            ? GetLines(draft.WhatCouldBeBetter)
+            : [];
         var hasFinalThoughts =
+            draft.IncludeFinalThoughts &&
             !string.IsNullOrWhiteSpace(draft.FinalThoughts);
 
         if (whatWorks.Length == 0 &&
@@ -211,7 +220,8 @@ public static class SteamBbCodeGenerator
         StringBuilder output,
         ReviewDraft draft)
     {
-        if (string.IsNullOrWhiteSpace(draft.FinalThoughts))
+        if (!draft.IncludeFinalThoughts ||
+            string.IsNullOrWhiteSpace(draft.FinalThoughts))
         {
             return;
         }

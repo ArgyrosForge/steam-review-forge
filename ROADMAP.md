@@ -45,6 +45,10 @@ Improve confidence in saved drafts, generated reviews, and release quality.
 - [x] Add versioned draft migration and recovery for invalid or newer saved drafts
 - [x] Add non-destructive BBCode compatibility diagnostics and multiline preview support
 - [x] Run tests automatically for pull requests and gate GitHub Pages deployment on them
+- [x] Rework the desktop workspace around a focused editor with persistent final preview
+- [x] Reduce setup and composer scrolling with compact, stacked workflow controls
+- [x] Make structured template content removable and simplify the Deep Dive starter layout
+- [x] Remove Short Summary from guided Setup and BBCode workflows
 
 ## v0.3.0 — Import, Export, and Sharing
 
@@ -99,3 +103,4 @@ Ideas not currently assigned to a release:
 ## Completed Milestones
 
 - `v0.1.0` — Core Review Builder public pre-release, published 2026-08-29
+- `v0.2.0` — Reliability, compatibility, and desktop workspace pre-release, prepared 2026-08-29
