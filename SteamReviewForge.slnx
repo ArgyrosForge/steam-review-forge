@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/SteamReviewForge/SteamReviewForge.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj" />
+  </Folder>
 </Solution>
