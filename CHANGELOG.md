@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Dedicated xUnit test project under `tests/SteamReviewForge.Tests`
+- Initial automated coverage for review validation behavior
+- Manual-only GitHub Actions test workflow, triggered explicitly with `workflow_dispatch`
+- GoatCounter aggregate page-view analytics for the hosted GitHub Pages site
+- Live GitHub Pages demo link in the README
+
+### Changed
+
+- Updated repository documentation to reflect the published `v0.1.0` pre-release, current testing setup, and analytics behavior
+
 ## [0.1.0] - 2026-08-29
 
 Initial public pre-release of Steam Review Forge. The core review-building workflow is usable, but the project remains under active development and has not reached stable `1.0.0` status.
