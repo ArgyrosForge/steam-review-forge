@@ -9,7 +9,7 @@ Steam Review Forge is a client-side .NET 10 Blazor WebAssembly application. The 
 The repository currently contains:
 
 - One Blazor WebAssembly application project
-- One xUnit test project
+- One xUnit unit-test project and one Playwright browser-test project
 - No application server or web API
 - No remote database
 - No authentication or user accounts
@@ -50,7 +50,8 @@ Review draft content remains in the browser unless the user manually copies or e
 ```text
 SteamReviewForge.slnx
 ├── src/SteamReviewForge/SteamReviewForge.csproj
-└── tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj
+├── tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj
+└── tests/SteamReviewForge.BrowserTests/SteamReviewForge.BrowserTests.csproj
 ```
 
 Application source:
@@ -70,11 +71,14 @@ Tests:
 
 ```text
 tests/SteamReviewForge.Tests/
-├── SteamReviewForge.Tests.csproj
-└── ReviewValidationResultTests.cs
+└── Unit tests for services, models, migration, and formatting
+
+tests/SteamReviewForge.BrowserTests/
+└── Firefox primary-workflow and Chromium smoke tests
 ```
 
-The test project references the application project directly.
+The unit-test project references the application project directly. Browser
+tests exercise a running Release build through Playwright.
 
 ## Application Entry Point
 
@@ -143,15 +147,30 @@ Converts the supported Steam BBCode subset into HTML for the in-application prev
 
 The preview is intentionally an approximation of Steam rendering rather than a general-purpose BBCode parser.
 
+`SteamBbCodeAnalyzer` checks generated and freeform BBCode against the tags
+documented by Steam. It reports unsupported, unclosed, misnested, unsafe-link,
+list, and table-structure warnings with source locations. Diagnostics never
+rewrite content or prevent clipboard export.
+
 ### `ReviewDraftStorageService`
 
 Serializes the active `ReviewDraft` as JSON and stores it through a small JavaScript local-storage bridge.
 
-The current storage key is:
+The current storage key and payload schema are versioned:
 
 ```text
-steam-review-forge-draft-v1
+steam-review-forge-draft-v2
 ```
+
+The service supports loading, saving, migrating, recovering, and clearing one
+active draft. Existing `steam-review-forge-draft-v1` payloads are normalized,
+saved in the current envelope, and removed only after migration succeeds.
+Malformed or newer-schema data is returned as a recovery result with the raw
+payload intact instead of being overwritten.
+
+The page debounces ordinary input saves and performs immediate saves after structural changes such as selecting a template or modifying categories.
+Pending and failed saves register a browser unload warning until persistence
+succeeds.
 
 The application currently supports one active locally stored draft.
 
@@ -173,6 +192,9 @@ Small JavaScript bridges under `wwwroot` provide browser-specific functionality.
 ### Draft storage
 
 `window.reviewDraftStorage` wraps `localStorage` operations used by `ReviewDraftStorageService`.
+
+`window.reviewDraftLifecycle` registers the browser unload warning while edits
+are awaiting persistence or storage is unavailable.
 
 ### Clipboard
 
@@ -250,27 +272,14 @@ No server-side .NET runtime is required after publishing.
 
 ## Testing Strategy
 
-A dedicated xUnit project exists under `tests/SteamReviewForge.Tests`.
+The xUnit suite covers generation, templates, validation, formatting, preview
+rendering, BBCode diagnostics, and draft persistence and migration. Playwright
+tests cover the primary Firefox workflow, recovery and storage failures,
+compatibility warnings, and a Chromium smoke path.
 
-Current automated coverage begins with `ReviewValidationResult` behavior. Planned coverage includes:
-
-1. `SteamBbCodeGenerator`
-2. `ReviewDraftValidator`
-3. `ReviewTemplateService`
-4. `SteamBbCodePreviewRenderer`, including HTML encoding
-5. Draft serialization and restoration
-6. Blazor component behavior
-7. Browser-level workflow, storage, clipboard, responsive, and keyboard behavior
-
-Tests can be run locally with:
-
-```bash
-dotnet test
-```
-
-The GitHub Actions test workflow is intentionally manual-only and uses `workflow_dispatch`. Tests do not run automatically on pushes or pull requests.
-
-Critical output tests should eventually use representative drafts for every template and display format.
+The GitHub Actions test workflow runs for pull requests and can also be started
+manually. The Pages workflow calls the same test workflow and does not publish
+until it succeeds.
 
 ## Current Architectural Constraints
 
@@ -278,7 +287,7 @@ Critical output tests should eventually use representative drafts for every temp
 - Only one draft can be stored at a time
 - Local storage is synchronous behind the JavaScript bridge and is not intended for large datasets
 - The preview renderer supports a bounded Steam BBCode subset
-- Automated test coverage is still limited and is being expanded during `v0.2.0`
+- Browser coverage currently targets Firefox and Chromium; broader desktop and mobile coverage remains planned
 - There is no application backend for shared links, synchronization, accounts, or remote metadata
 
 ## Extension Guidelines
@@ -294,7 +303,7 @@ When adding features:
 - Avoid adding server infrastructure unless the feature genuinely requires it
 - Extract focused Blazor components before the root page becomes harder to maintain
 - Document privacy changes whenever information leaves the browser
-- Expand tests deliberately; do not assume the manual GitHub workflow implies automatic CI
+- Expand tests deliberately and keep deployment gated on the shared CI workflow
 
 ## Potential Future Evolution
 

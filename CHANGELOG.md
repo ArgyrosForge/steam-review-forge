@@ -10,13 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Dedicated xUnit test project under `tests/SteamReviewForge.Tests`
 - Initial automated coverage for review validation behavior
-- Manual-only GitHub Actions test workflow, triggered explicitly with `workflow_dispatch`
+- GitHub Actions test workflow
 - GoatCounter aggregate page-view analytics for the hosted GitHub Pages site
 - Live GitHub Pages demo link in the README
+- Versioned draft persistence with automatic migration from v0.1 draft data
+- Recovery dialog that preserves invalid or newer saved data for copying before reset
+- Non-destructive Steam BBCode compatibility diagnostics with line and column guidance
+- Automatic unit and browser test coverage for pull requests and deployments
+- Firefox primary-workflow tests and Chromium smoke tests
 
 ### Changed
 
 - Updated repository documentation to reflect the published `v0.1.0` pre-release, current testing setup, and analytics behavior
+- Expanded unit coverage across draft persistence, BBCode generation and preview, templates, validation, and playtime formatting
+- Improved multiline preview rendering for code, no-parse, and quote blocks
+- Allowed comma decimal input when normalizing playtime
+- Required the complete test suite to pass before GitHub Pages deployment
+
+### Fixed
+
+- Preserved category identifiers when drafts are restored
+- Normalized invalid, duplicate, and null saved-draft values without crashing the application
+- Prevented invalid saved drafts from being mislabeled as unavailable storage or overwritten automatically
+- Warned users before leaving while edits are awaiting persistence or storage has failed
 
 ## [0.1.0] - 2026-08-29
 

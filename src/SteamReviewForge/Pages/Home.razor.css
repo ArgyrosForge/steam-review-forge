@@ -984,6 +984,32 @@ textarea:focus {
     padding-left: 1.1rem;
 }
 
+.bbcode-compatibility {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.75rem 1rem;
+    color: var(--warning);
+    background: var(--warning-soft);
+    border-bottom: 1px solid var(--warning-border);
+    font-size: 0.76rem;
+    line-height: 1.4;
+}
+
+.bbcode-compatibility strong {
+    color: var(--text);
+}
+
+.bbcode-compatibility ul {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.bbcode-compatibility small {
+    color: var(--muted);
+}
+
 .validation-link {
     padding: 0;
     color: inherit;
@@ -2312,6 +2338,34 @@ div.steam-add-category-row {
     border: 1px solid var(--border);
     border-radius: 8px;
     box-shadow: var(--dialog-shadow);
+}
+
+.recovery-dialog {
+    width: min(100%, 680px);
+}
+
+.recovery-data-field {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.recovery-data-field textarea {
+    width: 100%;
+    min-height: 10rem;
+    resize: vertical;
+    padding: 0.7rem;
+    color: var(--code-text);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 400;
+    line-height: 1.45;
 }
 
 .table-configurer-dialog {
