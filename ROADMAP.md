@@ -6,7 +6,7 @@ The roadmap represents the current direction of the project and may change as de
 
 ## v0.1.0 — Core Review Builder
 
-The first usable version of Steam Review Forge.
+The first usable version of Steam Review Forge was published as a public pre-release on 2026-08-29.
 
 ### Completed
 
@@ -29,6 +29,11 @@ The first usable version of Steam Review Forge.
 - [x] Improve mobile editing and preview behavior
 - [x] Add guided and unguided structured and BBCode editing modes
 - [x] Publish the first usable release
+
+### Deferred beyond v0.1.0
+
+- Perform a full accessibility and keyboard-navigation review
+- Complete broader testing across major desktop and mobile browsers
 
 ## v0.2.0 — Reliability and Compatibility
 
@@ -93,4 +98,4 @@ Ideas not currently assigned to a release:
 
 ## Completed Milestones
 
-Completed releases and major milestones should be moved here after they are published.
+- `v0.1.0` — Core Review Builder public pre-release, published 2026-08-29

@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Dedicated xUnit test project under `tests/SteamReviewForge.Tests`
+- Initial automated coverage for review validation behavior
+- GitHub Actions test workflow
+- GoatCounter aggregate page-view analytics for the hosted GitHub Pages site
+- Live GitHub Pages demo link in the README
 - Versioned draft persistence with automatic migration from v0.1 draft data
 - Recovery dialog that preserves invalid or newer saved data for copying before reset
 - Non-destructive Steam BBCode compatibility diagnostics with line and column guidance
@@ -16,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Updated repository documentation to reflect the published `v0.1.0` pre-release, current testing setup, and analytics behavior
 - Expanded unit coverage across draft persistence, BBCode generation and preview, templates, validation, and playtime formatting
 - Improved multiline preview rendering for code, no-parse, and quote blocks
 - Allowed comma decimal input when normalizing playtime

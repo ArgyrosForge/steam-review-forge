@@ -8,7 +8,7 @@ Try Steam Review Forge at [argyrosforge.github.io/steam-review-forge](https://ar
 
 ## Project Status
 
-The core review workflow is functional, but the project remains under active development and has not reached `1.0.0`.
+`v0.1.0` is available as a public pre-release. The project remains under active development and has not reached stable `1.0.0` status.
 
 ## Features
 
@@ -33,11 +33,23 @@ Choose Structured or BBCode editing, then choose Guided or Unguided:
 
 All four modes produce Steam-compatible BBCode. Switching between Guided and Unguided preserves content; switching between Structured and BBCode starts a fresh review because freeform BBCode cannot be converted reliably into structured fields.
 
-Drafts are stored locally in the browser; no account or server-side storage is required.
+Drafts are stored locally in the browser; no account or server-side review storage is required.
 
 ## Privacy
 
-Draft content is not sent to a remote server. Clearing browser storage or starting a new review removes the locally saved draft.
+Review drafts and their contents are stored locally in browser storage and are not sent to an application server. The hosted site uses GoatCounter for aggregate page-view analytics; review draft content is not included in those analytics.
+
+Clearing browser storage or starting a new review removes the locally saved draft.
+
+## Testing
+
+Automated tests live in `tests/SteamReviewForge.Tests` and can be run locally with:
+
+```bash
+dotnet test
+```
+
+The GitHub Actions test workflow is manual-only and runs only when explicitly started from the repository's **Actions** tab.
 
 ## Roadmap
 
