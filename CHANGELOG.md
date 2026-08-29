@@ -33,6 +33,7 @@ This pre-release focuses on a desktop-first editing workspace, more flexible str
 - Improved multiline preview rendering for code, no-parse, and quote blocks
 - Allowed comma decimal input when normalizing playtime
 - Required the complete test suite to pass before GitHub Pages deployment
+- Updated the GitHub Pages pipeline to the Node 24-based action releases
 - Made the editor the central focus while keeping setup controls compact and constraining the preview to a Steam-like width
 - Simplified Deep Dive to six removable starter sections without fixed strengths, improvements, or final-thought blocks
 - Made every structured preview block removable, including content supplied by starter templates
