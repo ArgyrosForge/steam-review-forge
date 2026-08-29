@@ -51,6 +51,18 @@
                 Formatting help
             </button>
 
+            <label class="theme-selector">
+                <span>Theme</span>
+                <select aria-label="Color theme"
+                        value="@_appearance.Theme"
+                        @onchange="SelectThemeAsync">
+                    @foreach (var theme in _themes)
+                    {
+                        <option value="@theme.Id">@theme.Name</option>
+                    }
+                </select>
+            </label>
+
             <button class="theme-toggle"
                     type="button"
                     title="@ThemeToggleLabel"
@@ -1636,6 +1648,10 @@
         string Theme,
         string ColorMode);
 
+    private sealed record ThemeOption(
+        string Id,
+        string Name);
+
     private sealed record BbCodeBlock(
         string Name,
         string Description,
@@ -1851,6 +1867,12 @@
 
     private AppearanceState _appearance =
         new("main-blue", "dark");
+
+    private ThemeOption[] _themes =
+    [
+        new("main-blue", "Main Blue"),
+        new("nord", "Nord")
+    ];
 
     private bool _showNewReviewDialog;
 
@@ -4078,6 +4100,9 @@
                 "structuredComponentDrag.initialize",
                 _structuredComponentDragReference);
 
+            _themes = await JS.InvokeAsync<ThemeOption[]>(
+                "themeManager.getThemes");
+
             _appearance = await JS.InvokeAsync<AppearanceState>(
                 "themeManager.get");
             await RestoreDraftAsync();
@@ -4111,6 +4136,21 @@
     {
         _appearance = await JS.InvokeAsync<AppearanceState>(
             "themeManager.toggleColorMode");
+    }
+
+    private async Task SelectThemeAsync(
+        ChangeEventArgs eventArgs)
+    {
+        var theme = eventArgs.Value?.ToString();
+
+        if (string.IsNullOrWhiteSpace(theme))
+        {
+            return;
+        }
+
+        _appearance = await JS.InvokeAsync<AppearanceState>(
+            "themeManager.setTheme",
+            theme);
     }
 
     private async Task RestoreDraftAsync()

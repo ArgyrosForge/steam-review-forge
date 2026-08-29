@@ -1,0 +1,97 @@
+:root[data-theme="nord"][data-color-mode="dark"] {
+    color-scheme: dark;
+
+    --brand-graphite: #2e3440;
+    --brand-steel: #3b4252;
+    --brand-silver: #d8dee9;
+    --brand-off-white: #eceff4;
+    --brand-accent: #88c0d0;
+
+    --page-bg: #2e3440;
+    --surface: #3b4252;
+    --surface-raised: #343b49;
+    --surface-soft: #434c5e;
+    --surface-muted: #4c566a;
+
+    --border: #4c566a;
+    --border-strong: #81a1c1;
+    --control-border: #5e81ac;
+
+    --text: #eceff4;
+    --muted: #d8dee9;
+    --subtle: #aeb8c8;
+
+    --accent: #88c0d0;
+    --accent-strong: #8fbcbb;
+    --accent-contrast: #2e3440;
+    --action-bg: #88c0d0;
+    --action-bg-hover: #8fbcbb;
+    --accent-soft: rgba(136, 192, 208, 0.18);
+    --accent-grid: rgba(136, 192, 208, 0.48);
+    --focus-ring: rgba(136, 192, 208, 0.34);
+
+    --danger: #bf616a;
+    --danger-soft: rgba(191, 97, 106, 0.16);
+    --danger-border: rgba(191, 97, 106, 0.62);
+    --danger-contrast: #eceff4;
+
+    --warning: #ebcb8b;
+    --warning-soft: rgba(235, 203, 139, 0.14);
+    --warning-border: rgba(235, 203, 139, 0.58);
+
+    --code-bg: #252a34;
+    --code-text: #eceff4;
+
+    --overlay: rgba(46, 52, 64, 0.86);
+    --panel-shadow: 0 14px 34px rgba(36, 41, 51, 0.34);
+    --dialog-shadow: 0 28px 80px rgba(36, 41, 51, 0.62);
+}
+
+:root[data-theme="nord"][data-color-mode="light"] {
+    color-scheme: light;
+
+    --brand-graphite: #2e3440;
+    --brand-steel: #3b4252;
+    --brand-silver: #d8dee9;
+    --brand-off-white: #eceff4;
+    --brand-accent: #5e81ac;
+
+    --page-bg: #eceff4;
+    --surface: #e5e9f0;
+    --surface-raised: #f7f8fa;
+    --surface-soft: #d8dee9;
+    --surface-muted: #c9d1df;
+
+    --border: #aeb8c8;
+    --border-strong: #74829a;
+    --control-border: #8794a8;
+
+    --text: #2e3440;
+    --muted: #434c5e;
+    --subtle: #4c566a;
+
+    --accent: #5e81ac;
+    --accent-strong: #4c6f93;
+    --accent-contrast: #eceff4;
+    --action-bg: #4c6f93;
+    --action-bg-hover: #3f6287;
+    --accent-soft: rgba(94, 129, 172, 0.16);
+    --accent-grid: rgba(94, 129, 172, 0.4);
+    --focus-ring: rgba(94, 129, 172, 0.28);
+
+    --danger: #a9444f;
+    --danger-soft: #f3dfe1;
+    --danger-border: #bf616a;
+    --danger-contrast: #eceff4;
+
+    --warning: #735719;
+    --warning-soft: #f5ead1;
+    --warning-border: #c49f54;
+
+    --code-bg: #2e3440;
+    --code-text: #eceff4;
+
+    --overlay: rgba(46, 52, 64, 0.7);
+    --panel-shadow: 0 12px 28px rgba(46, 52, 64, 0.16);
+    --dialog-shadow: 0 26px 70px rgba(46, 52, 64, 0.28);
+}

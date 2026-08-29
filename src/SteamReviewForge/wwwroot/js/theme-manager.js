@@ -6,6 +6,10 @@
         Object.freeze({
             id: "main-blue",
             name: "Main Blue"
+        }),
+        Object.freeze({
+            id: "nord",
+            name: "Nord"
         })
     ]);
 

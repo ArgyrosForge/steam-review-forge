@@ -16,7 +16,7 @@ The core review workflow is functional, but the project remains under active dev
 - Click, drag-and-drop, keyboard, and touch-friendly editing controls
 - Raw BBCode editing with templates, preview, history, and formatting help
 - Actionable validation, automatic local draft saving, and one-click BBCode copy
-- Responsive Steam-style preview with dark and light themes
+- Responsive Steam-style preview with Main Blue and Nord themes in dark and light modes
 
 ## How It Works
 
