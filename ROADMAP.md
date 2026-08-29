@@ -31,7 +31,6 @@ The first usable version of Steam Review Forge.
 
 ### Remaining
 
-- [ ] Add automated tests for BBCode generation, templates, validation, and draft serialization
 - [ ] Perform a full accessibility and keyboard-navigation review
 - [ ] Test the application across major desktop and mobile browsers
 - [ ] Publish the first usable release
@@ -40,7 +39,7 @@ The first usable version of Steam Review Forge.
 
 Improve confidence in generated reviews and make the editing workflow more flexible.
 
-- [ ] Expand unit-test coverage for reliability and editing features added in this release
+- [ ] Add unit-test coverage for BBCode generation, templates, validation, draft serialization, and reliability and editing features
 - [ ] Add browser-level tests for the primary review workflow
 - [ ] Allow review sections to be enabled or disabled individually
 - [ ] Warn users before leaving with unsaved changes when local storage is unavailable
@@ -81,7 +80,6 @@ Prepare Steam Review Forge for dependable public use.
 - [ ] Complete browser compatibility testing
 - [ ] Finalize user and contributor documentation
 - [ ] Resolve all known release-blocking defects
-- [ ] Select and add a project license
 - [ ] Publish a stable hosted version
 - [ ] Publish the first stable release
 
