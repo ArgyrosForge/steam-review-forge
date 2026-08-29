@@ -660,6 +660,7 @@
                                 <button type="button"
                                         draggable="true"
                                         data-structured-component-card
+                                        data-structured-component-key="@component.Key"
                                         @onclick="() => AddStructuredComponentAsync(component)">
                                     <strong>@component.Name</strong>
                                     <span>@component.Description</span>
@@ -775,15 +776,6 @@
 
             <div class="@SteamPreviewClass"
                  aria-label="Rendered review preview">
-                @if (IsUnguidedStructured)
-                {
-                    <div class="structured-component-drop-zone"
-                         data-structured-component-drop-zone
-                         aria-hidden="true">
-                        <span>Drop component to create it in the review</span>
-                    </div>
-                }
-
                 <div class="steam-review-page">
                     <article class="steam-review-card">
                         <header class="steam-review-header">
@@ -941,17 +933,37 @@
                                     </div>
                                 }
 
-                                @if (IsUnguidedStructured &&
-                                     Draft.Components.Count > 0)
+                                @if (IsUnguidedStructured)
                                 {
-                                    <div class="structured-review-components">
-                                        @foreach (var component in Draft.Components)
+                                    <div class="@GetReviewComponentsClass()"
+                                         data-structured-component-list>
+                                        @for (var index = 0;
+                                              index <= Draft.Components.Count;
+                                              index++)
                                         {
+                                            var insertionIndex = index;
+
+                                            <div class="structured-component-insert-target"
+                                                 data-structured-component-insert-target
+                                                 data-insertion-index="@insertionIndex"
+                                                 aria-hidden="true">
+                                                <span>Insert component here</span>
+                                            </div>
+
+                                            if (index == Draft.Components.Count)
+                                            {
+                                                continue;
+                                            }
+
+                                            var component = Draft.Components[index];
+
                                             <section class="@GetReviewComponentClass(component)"
                                                      @key="component.Id"
                                                      @ondragover:preventDefault
                                                      @ondrop="() => DropReviewComponentAsync(component)">
                                                 <div class="structured-review-component-controls"
+                                                     role="group"
+                                                     aria-label="@($"Reorder, duplicate, or remove {component.Heading}")"
                                                      draggable="true"
                                                      @ondragstart="() => BeginReviewComponentDrag(component)"
                                                      @ondragend="EndReviewComponentDrag">
@@ -971,8 +983,14 @@
                                                         ↓
                                                     </button>
                                                     <button type="button"
+                                                            title="Duplicate component"
+                                                            aria-label="@($"Duplicate {component.Heading}")"
+                                                            @onclick="() => DuplicateReviewComponentAsync(component)">
+                                                        ⧉
+                                                    </button>
+                                                    <button type="button"
                                                             title="Remove component"
-                                                            aria-label="Remove component"
+                                                            aria-label="@($"Remove {component.Heading}")"
                                                             @onclick="() => RemoveReviewComponentAsync(component)">
                                                         −
                                                     </button>
@@ -980,24 +998,56 @@
 
                                                 <input class="steam-inline-input steam-section-heading-input"
                                                        type="text"
+                                                       data-validation-field="@GetComponentHeadingField(component)"
+                                                       aria-invalid="@(HasFieldError(GetComponentHeadingField(component))
+                                                                           ? "true"
+                                                                           : "false")"
                                                        aria-label="Component heading"
                                                        @bind="component.Heading"
                                                        @bind:event="oninput"
                                                        @bind:after="QueueDraftSaveAsync"/>
 
+                                                @foreach (var issue in GetFieldIssues(
+                                                                  GetComponentHeadingField(component)))
+                                                {
+                                                    <span class="@GetIssueClass(issue)">
+                                                        @issue.Message
+                                                    </span>
+                                                }
+
                                                 @if (component.Kind ==
                                                      ReviewContentComponentKind.Rating)
                                                 {
                                                     @RenderComponentRatingEditor(component)
+
+                                                    @foreach (var issue in GetFieldIssues(
+                                                                      GetComponentRatingField(component)))
+                                                    {
+                                                        <span class="@GetIssueClass(issue)">
+                                                            @issue.Message
+                                                        </span>
+                                                    }
                                                 }
 
                                                 <textarea class="steam-inline-input steam-writing-textarea"
                                                           rows="@(component.Kind == ReviewContentComponentKind.Text ? 5 : 3)"
+                                                          data-validation-field="@GetComponentContentField(component)"
+                                                          aria-invalid="@(HasFieldError(GetComponentContentField(component))
+                                                                              ? "true"
+                                                                              : "false")"
                                                           aria-label="@($"{component.Heading} content")"
                                                           placeholder="@(component.Kind == ReviewContentComponentKind.BulletedList ? "Enter one item per line" : "Write this component")"
                                                           @bind="component.Content"
                                                           @bind:event="oninput"
                                                           @bind:after="QueueDraftSaveAsync"></textarea>
+
+                                                @foreach (var issue in GetFieldIssues(
+                                                                  GetComponentContentField(component)))
+                                                {
+                                                    <span class="@GetIssueClass(issue)">
+                                                        @issue.Message
+                                                    </span>
+                                                }
                                             </section>
                                         }
                                     </div>
@@ -1592,6 +1642,7 @@
         string Template);
 
     private sealed record StructuredComponent(
+        string Key,
         ReviewContentComponentKind Kind,
         string Name,
         string Description,
@@ -1601,24 +1652,28 @@
     private static readonly StructuredComponent[] StructuredComponents =
     [
         new(
+            "rating",
             ReviewContentComponentKind.Rating,
             "Rating category",
             "Create an independent rating and note block.",
             "New Rating",
             "Add your notes"),
         new(
+            "strengths",
             ReviewContentComponentKind.BulletedList,
             "Strengths list",
             "Create a separate bulleted review section.",
             "What Works",
             "Add a new strength"),
         new(
+            "improvements",
             ReviewContentComponentKind.BulletedList,
             "Improvements list",
             "Create a separate bulleted review section.",
             "What Could Be Better",
             "Add an improvement"),
         new(
+            "final-thoughts",
             ReviewContentComponentKind.Text,
             "Final thoughts",
             "Create a separate heading and text block.",
@@ -1820,6 +1875,8 @@
     private Guid? _rowDropTargetId;
 
     private Guid? _draggedReviewComponentId;
+
+    private DotNetObjectReference<Home>? _structuredComponentDragReference;
 
     private string GeneratedBbCode =>
         IsBbCodeMode
@@ -3248,6 +3305,10 @@
     private RenderFragment RenderComponentRatingEditor(
         ReviewContentComponent component) =>
         @<div class="steam-rating-editor"
+              data-validation-field="@GetComponentRatingField(component)"
+              aria-invalid="@(HasFieldError(GetComponentRatingField(component))
+                                  ? "true"
+                                  : "false")"
               aria-label="@($"{component.Heading} rating")">
             @if (Draft.RatingSystem == ReviewRatingSystem.Text)
             {
@@ -3449,6 +3510,39 @@
     private async Task AddStructuredComponentAsync(
         StructuredComponent template)
     {
+        await AddStructuredComponentAtAsync(
+            template,
+            Draft.Components.Count);
+    }
+
+    [JSInvokable]
+    public async Task AddStructuredComponentAtAsync(
+        string templateKey,
+        int insertionIndex)
+    {
+        var template = StructuredComponents.FirstOrDefault(
+            component =>
+                string.Equals(
+                    component.Key,
+                    templateKey,
+                    StringComparison.Ordinal));
+
+        if (template is null)
+        {
+            return;
+        }
+
+        await AddStructuredComponentAtAsync(
+            template,
+            insertionIndex);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AddStructuredComponentAtAsync(
+        StructuredComponent template,
+        int insertionIndex)
+    {
         var component = new ReviewContentComponent
         {
             Kind = template.Kind,
@@ -3457,7 +3551,13 @@
             Rating = RatingMaximum == 10 ? 6 : 3
         };
 
-        Draft.Components.Add(component);
+        Draft.Components.Insert(
+            Math.Clamp(
+                insertionIndex,
+                0,
+                Draft.Components.Count),
+            component);
+
         await SaveDraftImmediatelyAsync();
     }
 
@@ -3541,13 +3641,78 @@
         await SaveDraftImmediatelyAsync();
     }
 
+    private async Task DuplicateReviewComponentAsync(
+        ReviewContentComponent component)
+    {
+        var sourceIndex = Draft.Components.IndexOf(component);
+
+        if (sourceIndex < 0)
+        {
+            return;
+        }
+
+        var duplicate = new ReviewContentComponent
+        {
+            Kind = component.Kind,
+            Heading = component.Heading,
+            Content = component.Content,
+            Rating = component.Rating
+        };
+
+        Draft.Components.Insert(
+            sourceIndex + 1,
+            duplicate);
+
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private string GetReviewComponentsClass() =>
+        Draft.Components.Count == 0
+            ? "structured-review-components empty"
+            : "structured-review-components";
+
     private string GetReviewComponentClass(
         ReviewContentComponent component)
     {
-        return _draggedReviewComponentId == component.Id
-            ? "structured-review-component dragging"
-            : "structured-review-component";
+        var classes = new List<string>
+        {
+            "structured-review-component"
+        };
+
+        if (_draggedReviewComponentId == component.Id)
+        {
+            classes.Add("dragging");
+        }
+
+        if (GetReviewComponentIssues(component).Any(
+                issue =>
+                    issue.Severity ==
+                    ReviewValidationSeverity.Error))
+        {
+            classes.Add("has-error");
+        }
+
+        return string.Join(' ', classes);
     }
+
+    private IEnumerable<ReviewValidationIssue>
+        GetReviewComponentIssues(
+            ReviewContentComponent component) =>
+        GetFieldIssues(GetComponentHeadingField(component))
+            .Concat(GetFieldIssues(GetComponentContentField(component)))
+            .Concat(GetFieldIssues(GetComponentRatingField(component)));
+
+    private static string GetComponentHeadingField(
+        ReviewContentComponent component) =>
+        $"ComponentHeading:{component.Id}";
+
+    private static string GetComponentContentField(
+        ReviewContentComponent component) =>
+        $"ComponentContent:{component.Id}";
+
+    private static string GetComponentRatingField(
+        ReviewContentComponent component) =>
+        $"ComponentRating:{component.Id}";
 
     private async Task AddCategoryAtAsync(
         int index)
@@ -3906,6 +4071,13 @@
     {
         if (firstRender)
         {
+            _structuredComponentDragReference =
+                DotNetObjectReference.Create(this);
+
+            await JS.InvokeVoidAsync(
+                "structuredComponentDrag.initialize",
+                _structuredComponentDragReference);
+
             _appearance = await JS.InvokeAsync<AppearanceState>(
                 "themeManager.get");
             await RestoreDraftAsync();
@@ -3930,6 +4102,7 @@
     {
         _saveDebounce?.Cancel();
         _saveDebounce?.Dispose();
+        _structuredComponentDragReference?.Dispose();
 
         return ValueTask.CompletedTask;
     }

@@ -1370,42 +1370,6 @@ textarea:focus {
     scrollbar-width: thin;
 }
 
-.structured-component-drop-zone {
-    position: absolute;
-    z-index: 20;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 1.5rem;
-    color: transparent;
-    background: transparent;
-    border: 3px dashed transparent;
-    opacity: 0;
-    pointer-events: none;
-    visibility: hidden;
-    transition:
-        color 120ms ease,
-        background-color 120ms ease,
-        border-color 120ms ease;
-}
-
-.structured-component-drop-zone.active {
-    color: #c7d5e0;
-    background: rgba(27, 40, 56, 0.92);
-    border-color: var(--steam-blue);
-    opacity: 1;
-    pointer-events: auto;
-    visibility: visible;
-}
-
-.structured-component-drop-zone span {
-    padding: 1rem 1.25rem;
-    background: var(--steam-card);
-    border: 1px solid var(--steam-blue);
-    font-weight: 700;
-    text-align: center;
-}
-
 .steam-review-page {
     margin-right: 148px;
     padding: 14px;
@@ -2136,8 +2100,66 @@ div.steam-add-category-row {
 
 .structured-review-components {
     display: grid;
-    gap: 12px;
+    gap: 0;
     margin: 14px 0;
+}
+
+.structured-review-components.empty {
+    gap: 0;
+    margin: 0;
+}
+
+.structured-component-insert-target {
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: transparent;
+    background: transparent;
+    border: 0 dashed transparent;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+        min-height 120ms ease,
+        opacity 120ms ease,
+        border-color 120ms ease,
+        background-color 120ms ease;
+}
+
+.structured-review-components.palette-drag-active {
+    gap: 6px;
+}
+
+.structured-review-components:not(.palette-drag-active)
+    .structured-review-component {
+    margin: 6px 0;
+}
+
+.structured-review-components.empty.palette-drag-active {
+    margin: 14px 0;
+}
+
+.palette-drag-active .structured-component-insert-target {
+    min-height: 44px;
+    color: #c7d5e0;
+    background: rgba(23, 36, 51, 0.82);
+    border: 2px dashed #4f6b80;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.palette-drag-active .structured-component-insert-target.drag-over {
+    color: #ffffff;
+    background: rgba(102, 192, 244, 0.18);
+    border-color: var(--steam-blue);
+}
+
+.structured-component-insert-target span {
+    padding: 6px 10px;
+    font-weight: 700;
+    text-align: center;
 }
 
 .structured-review-component {
@@ -2150,6 +2172,10 @@ div.steam-add-category-row {
 
 .structured-review-component.dragging {
     opacity: 0.45;
+}
+
+.structured-review-component.has-error {
+    border-color: var(--danger);
 }
 
 .structured-review-component .steam-section-heading-input {

@@ -28,6 +28,7 @@ public static class ReviewDraftValidator
         ValidateTemplate(draft, result);
         ValidateFormat(draft, result);
         ValidateQuestions(draft, result);
+        ValidateComponents(draft, result);
 
         return result;
     }
@@ -216,6 +217,60 @@ public static class ReviewDraftValidator
                 ReviewValidationSection.Questions,
                 nameof(draft.WhatCouldBeBetter),
                 "Consider adding at least one weakness.");
+    }
+
+    private static void ValidateComponents(
+        ReviewDraft draft,
+        ReviewValidationResult result)
+    {
+        var maximumRating =
+            draft.RatingSystem switch
+            {
+                ReviewRatingSystem.TenPoint => 10,
+                ReviewRatingSystem.Text =>
+                    Math.Max(
+                        1,
+                        draft.TextRatingOptions.Count),
+                _ => 5
+            };
+
+        for (var index = 0;
+             index < draft.Components.Count;
+             index++)
+        {
+            var component = draft.Components[index];
+            var componentName = $"Component {index + 1}";
+
+            if (string.IsNullOrWhiteSpace(component.Heading))
+            {
+                AddError(
+                    result,
+                    ReviewValidationSection.Questions,
+                    $"ComponentHeading:{component.Id}",
+                    $"{componentName} needs a heading.");
+            }
+
+            if (string.IsNullOrWhiteSpace(component.Content))
+            {
+                AddError(
+                    result,
+                    ReviewValidationSection.Questions,
+                    $"ComponentContent:{component.Id}",
+                    $"{componentName} needs content.");
+            }
+
+            if (component.Kind ==
+                    ReviewContentComponentKind.Rating &&
+                (component.Rating < 1 ||
+                 component.Rating > maximumRating))
+            {
+                AddError(
+                    result,
+                    ReviewValidationSection.Questions,
+                    $"ComponentRating:{component.Id}",
+                    $"{componentName} rating must be between 1 and {maximumRating}.");
+            }
+        }
     }
 
     private static string GetCategoryLabel(
