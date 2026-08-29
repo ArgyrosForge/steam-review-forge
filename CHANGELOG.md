@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-29
+
+Initial public pre-release of Steam Review Forge. The core review-building workflow is usable, but the project remains under active development and has not reached stable `1.0.0` status.
+
 ### Added
 
 - Guided five-step workflow for building Steam reviews
@@ -69,13 +73,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Review drafts remain stored locally in the user's browser
 - No account, remote database, or server-side review storage is currently used
-
-<!-- Example release:
-
-## [0.1.0] - YYYY-MM-DD
-
-### Added
-
-- Initial usable release of Steam Review Forge.
-
--->
