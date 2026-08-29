@@ -6,16 +6,19 @@ This document describes the current architecture of Steam Review Forge and the b
 
 Steam Review Forge is a client-side .NET 10 Blazor WebAssembly application. The browser downloads the application and runs the review-building workflow locally.
 
-The project currently has:
+The repository currently contains:
 
-- One Blazor WebAssembly project
+- One Blazor WebAssembly application project
+- One xUnit test project
 - No application server or web API
 - No remote database
 - No authentication or user accounts
 - Browser local storage for draft and theme persistence
 - JavaScript interoperability for browser-only capabilities
+- Static hosting through GitHub Pages
+- GoatCounter for aggregate page-view analytics
 
-This architecture keeps deployment and operation simple: the application can be hosted as static web assets and does not require server-side application infrastructure.
+The application remains deployable as static web assets and does not require a server-side .NET runtime in production.
 
 ## System Context
 
@@ -32,14 +35,25 @@ Blazor WebAssembly application
   +--> Rendered preview
   |
   +--> Browser APIs
-         +--> localStorage
-         +--> Clipboard API
-         +--> Preferred color scheme
+  |      +--> localStorage
+  |      +--> Clipboard API
+  |      +--> Preferred color scheme
+  |
+  +--> GoatCounter
+         +--> Aggregate page-view analytics
 ```
 
-All review content remains inside the browser unless the user manually copies or exports it.
+Review draft content remains in the browser unless the user manually copies or exports it. GoatCounter receives page-view analytics, not review draft content.
 
 ## Project Structure
+
+```text
+SteamReviewForge.slnx
+├── src/SteamReviewForge/SteamReviewForge.csproj
+└── tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj
+```
+
+Application source:
 
 ```text
 src/SteamReviewForge/
@@ -47,23 +61,26 @@ src/SteamReviewForge/
 ├── Pages/        # Routed Blazor pages and review-builder orchestration
 ├── Services/     # Templates, validation, persistence, generation, and preview
 ├── Layout/       # Shared application layout components
-├── wwwroot/      # Static assets, JavaScript bridges, and global styles
+├── wwwroot/      # Static assets, JavaScript bridges, themes, and global styles
 ├── App.razor     # Application router
 └── Program.cs    # Blazor host and dependency registration
 ```
 
-The solution currently contains a single application project:
+Tests:
 
 ```text
-SteamReviewForge.slnx
-└── src/SteamReviewForge/SteamReviewForge.csproj
+tests/SteamReviewForge.Tests/
+├── SteamReviewForge.Tests.csproj
+└── ReviewValidationResultTests.cs
 ```
+
+The test project references the application project directly.
 
 ## Application Entry Point
 
-`Program.cs` creates the Blazor WebAssembly host, registers the root components, and adds `ReviewDraftStorageService` to dependency injection.
+`Program.cs` creates the Blazor WebAssembly host, registers the root components, and adds application services to dependency injection.
 
-The application router in `App.razor` resolves routes and uses the shared layout. The primary review-builder page is the root route at `/`.
+`App.razor` resolves routes and uses the shared layout. The primary review-builder page is the root route at `/`.
 
 ## Primary UI Component
 
@@ -75,214 +92,83 @@ It is responsible for:
 - Switching between guided and unguided structured or BBCode editing
 - Tracking the selected workflow step
 - Applying templates
-- Adding and removing categories
-- Editing category content directly in the Format-step Steam preview
+- Editing categories and structured review components
 - Triggering validation
 - Generating BBCode and rendered previews
 - Saving and restoring drafts
 - Copying BBCode to the clipboard
-- Managing theme and new-review interactions
+- Managing appearance and new-review interactions
 
-The page is intentionally the orchestration layer. Formatting, validation, persistence, and template behavior are delegated to services where practical.
+The page acts as the orchestration layer. Deterministic formatting, validation, persistence, template, and preview behavior should remain in services where practical.
 
-As the application grows, large independent UI areas should be extracted into focused Blazor components rather than continuing to expand the root page.
+As the application grows, independent UI areas should be extracted into focused Blazor components rather than continuing to expand the root page.
 
 ## Domain Model
 
 ### `ReviewDraft`
 
-`ReviewDraft` is the central mutable state object for the application. It contains:
+`ReviewDraft` is the central mutable state object. It contains the review metadata, selected template and display format, rating configuration, category content, guided responses, structured components, and freeform BBCode content where applicable.
 
-- Review title
-- Summary
-- Recommendation
-- Whether the product was received for free
-- Selected template
-- Selected display format
-- Playtime
-- Strengths
-- Weaknesses
-- Final thoughts
-- A collection of review categories
-- An ordered collection of rating-table columns
-- The selected structured or BBCode editing mode
-- Freeform BBCode content when a BBCode editor is active
-
-New drafts begin in Setup with Recommended selected, preview-only
-received-for-free metadata unchecked, and placeholder title and summary text.
-The remaining Balanced Review starter content is available after Setup.
+Recommendation, playtime, and received-for-free status are stored with the draft and displayed in the Steam-style preview. They are intentionally excluded from generated BBCode because Steam captures them as review metadata.
 
 ### `ReviewCategory`
 
-Each category contains:
-
-- A generated `Guid` identifier
-- A display name
-- A rating value interpreted by the draft's selected rating system
-- An optional note
-- Custom text values keyed by table-column identifier
-
-The identifier is used to preserve UI identity and associate validation messages with a specific category.
+Each category contains a stable identifier, display name, rating value, optional note, and custom text values for configurable table columns.
 
 ### `ReviewTableColumn`
 
-Each rating-table column has a stable identifier, editable heading, and kind.
-Category, Rating, and Note are unique built-in kinds; any number of custom text
-columns can be added. The ordered collection is the source of truth for both
-table visibility and table order.
+Each rating-table column has a stable identifier, editable heading, and kind. Built-in Category, Rating, and Note columns are unique; custom text columns can be added as needed.
 
 ### Enumerations
 
-The model uses enums rather than free-form strings for bounded choices:
-
-- `ReviewTemplate`: Balanced, Quick Take, Deep Dive, and Custom
-- `ReviewDisplayFormat`: Rating Table, Sections, Checklist, and Minimal Verdict
-- `ReviewRatingSystem`: 1–10 numbers, 1–5 numbers, 1–5 stars, and text
-  labels configured by the draft
-- `ReviewRecommendation`: Recommended and Not Recommended
-- Validation section and severity enums
-
-This keeps UI options, service behavior, and generated output aligned through compile-time types.
-
-Recommendation, playtime, and the received-for-free disclosure are saved with
-the draft and displayed in the Steam-style preview. They are intentionally
-excluded from generated BBCode because Steam captures them as review metadata.
-Playtime is stored as a numeric hours value with at most one decimal place,
-capped at 999,999,999; the preview supplies the Steam-style unit label.
+Bounded choices use enums rather than free-form strings, including review templates, display formats, rating systems, recommendation state, and validation severity/section values.
 
 ## Service Responsibilities
 
 ### `ReviewTemplateService`
 
-Applies a selected template to an existing `ReviewDraft`.
-
-A template can replace:
-
-- Display format
-- Guided-response text
-- Final thoughts
-- Category collection
-
-Templates mutate the existing draft rather than replacing the object. This allows the page to keep one state reference while updating the template-controlled fields.
+Applies a selected template to an existing `ReviewDraft` while preserving fields that are outside the template's ownership boundary.
 
 ### `ReviewDraftValidator`
 
-Validates the current draft and returns a `ReviewValidationResult` containing errors and warnings.
-
-Errors mark incomplete required fields but do not hide or block the persistent
-BBCode copy action. Warnings provide additional guidance.
-
-Validation is grouped by the Setup, Template, Format, and Questions workflow
-sections. Field identifiers allow the UI to show messages beside the relevant
-input and decorate workflow steps with status indicators.
+Validates the current draft and returns a `ReviewValidationResult` containing errors and warnings. Validation is grouped by workflow section and field identifier so the UI can surface actionable messages.
 
 ### `SteamBbCodeGenerator`
 
-Transforms a `ReviewDraft` into Steam-compatible BBCode.
-
-Generation is deterministic and has no browser dependencies. Output varies according to the selected display format:
-
-- Rating Table emits Steam table tags
-- Sections emits an individual heading for each category
-- Checklist emits checked or unchecked category rows
-- Minimal Verdict omits category output and focuses on the explanation
-
-The generator also adds the title, optional summary, questionnaire content,
-dividers, and ratings formatted with the selected rating system.
-
-Generation is split into intro, category, and body segments. The complete
-generator joins nonempty segments with Steam dividers. During the Format step,
-the preview renders the intro and body segments normally while replacing the
-category segment with controls bound directly to the draft.
-
-Because this service is pure application logic, it should remain independent from UI state and JavaScript. It is a primary target for unit testing.
+Transforms a `ReviewDraft` into deterministic Steam-compatible BBCode. It is browser-independent application logic and is a primary target for unit-test coverage.
 
 ### `SteamBbCodePreviewRenderer`
 
-Converts the generated subset of Steam BBCode into HTML for the in-application preview.
+Converts the supported Steam BBCode subset into HTML for the in-application preview. User-provided text is HTML encoded before supported formatting is rendered.
 
-The renderer supports the tags and structures produced by `SteamBbCodeGenerator`, including:
-
-- Headings
-- Bold and italic text
-- Dividers
-- Tables
-- Bullet-style response lines
-- Checklist rows
-
-User-provided text is HTML encoded before supported formatting tags are converted. This prevents review text from being treated as arbitrary HTML in the preview.
-
-The preview is an approximation of Steam rendering, not a complete general-purpose BBCode parser.
-
-The editor exposes four experiences from two independent choices: Structured
-or BBCode editing, and Guided or Unguided flow. Guidance changes preserve the
-current content. Switching editor type creates a new review because arbitrary
-BBCode cannot be parsed safely back into the structured review model. Guided
-BBCode editing inserts reusable templates at the textarea cursor. Its palette
-covers every option listed by Steam's Recommendation formatting help, including
-the three URL types Steam turns into widgets and all documented table variants.
-Unguided BBCode editing exposes the same raw content without workflow steps or
-block suggestions.
-
-Guided Structured uses three desktop workspace columns: editor mode and step
-progress on the left, the active step's choices in the middle, and the editable
-Steam preview on the right. At narrower widths the same regions reflow without
-changing their workflow responsibilities.
-
-Unguided Structured exposes a semantic component palette. Components can be
-dragged onto the Steam preview or selected as buttons for keyboard and touch
-input. Each action creates an independent, persisted component with its own
-heading and content, plus rating data when applicable. Components can be
-reordered or removed from the preview and generate BBCode through the typed
-review model.
-
-Setup configures recommendation, summary, playtime, received-for-free status,
-and the initial rating system. The rating-system control remains available
-above the active step editor throughout the workflow. Text rating systems store
-a customizable ordered list of labels in that persistent control. The Setup
-preview displays only the basic Steam metadata and short summary. Beginning
-with Template, the title, summary, category content, ratings, and guided
-responses remain editable directly in the preview. An external control gutter
-adds, reorders, and removes rows without placing application controls on the
-Steam-colored review surface. Column structure is managed in a responsive
-table-configurer dialog outside the Steam surface. The dialog supports heading
-edits, built-in and custom columns, row content, ratings, drag ordering, and
-always-visible accessible move and remove actions. Rating tables are read-only
-inside the Steam preview; all structural and content edits occur in the
-configurer. Template reset restores template-owned layout, columns, rows, and
-guided writing while preserving Setup metadata, title, and rating configuration.
-Validation is shown outside the Steam surface as well.
-The Final Preview step replaces all editor controls with the rendered Steam
-preview and a Copy BBCode action. It removes both the editor gutter and any raw
-BBCode panel. The preview column is capped to approximate the common Steam store
-review width rather than the wider Community-page presentation. Editor controls
-are UI-only and never enter generated BBCode.
-
-Structured modes devote the main workspace to the Steam preview and expose a
-copy action in its header without showing a separate raw-output panel. BBCode
-modes retain a dedicated editable raw BBCode panel beside the live Steam
-preview, placing the editor in the center workspace and the rendered preview
-in the right column. Recommendation, playtime, and free-product status remain Steam-owned
-metadata and are not inserted into either generated or freeform BBCode.
+The preview is intentionally an approximation of Steam rendering rather than a general-purpose BBCode parser.
 
 ### `ReviewDraftStorageService`
 
-Serializes the current `ReviewDraft` as JSON and stores it through a small JavaScript local-storage bridge.
+Serializes the active `ReviewDraft` as JSON and stores it through a small JavaScript local-storage bridge.
 
-The storage key is versioned:
+The current storage key is:
 
 ```text
 steam-review-forge-draft-v1
 ```
 
-The service supports loading, saving, and clearing one active draft.
+The application currently supports one active locally stored draft.
 
-The page debounces ordinary input saves and performs immediate saves after structural changes such as selecting a template or modifying categories.
+## Editing Modes
+
+The editor exposes four experiences formed from two independent choices:
+
+- Structured or BBCode editing
+- Guided or Unguided flow
+
+Switching between Guided and Unguided preserves content. Switching between Structured and BBCode starts a new review because arbitrary BBCode cannot be safely converted back into the typed structured model.
+
+Structured modes operate on typed review data and generate BBCode from that data. BBCode modes expose editable raw BBCode with live rendering.
 
 ## Browser Interoperability
 
-Browser-specific behavior is exposed through small JavaScript bridges in
-`wwwroot`.
+Small JavaScript bridges under `wwwroot` provide browser-specific functionality.
 
 ### Draft storage
 
@@ -290,169 +176,110 @@ Browser-specific behavior is exposed through small JavaScript bridges in
 
 ### Clipboard
 
-`window.clipboardManager` copies generated BBCode through the browser Clipboard API. Copy failures are caught by the Blazor page, which tells the user to select the BBCode manually.
+`window.clipboardManager` uses the browser Clipboard API to copy generated BBCode.
 
 ### Theme
 
-`window.themeManager`:
+`window.themeManager` manages brand theme and light/dark appearance settings and persists them in browser storage.
 
-- Registers the available brand themes
-- Treats brand theme and light/dark color mode as independent settings
-- Defaults new users to the Main Blue theme in dark mode
-- Migrates the previous light/dark preference when present
-- Applies both settings before styles load to prevent a theme flash
-- Persists the versioned appearance state in local storage
+Theme palettes live under `wwwroot/css/themes` and expose a shared semantic token contract consumed by application CSS.
 
-Theme palettes live under `wwwroot/css/themes`. Each theme defines the shared
-semantic token contract for both `dark` and `light` color modes. Application
-styles consume only semantic tokens, so future themes can be added without
-duplicating component CSS.
+### Drag and editor helpers
 
-JavaScript should remain limited to browser APIs that are not conveniently or reliably available directly through Blazor.
+Additional JavaScript modules provide table drag behavior, validation navigation, BBCode editor helpers, and structured component drag-and-drop behavior where direct browser APIs are more practical than Blazor-only handling.
 
-## Data Flow
+JavaScript should remain limited to browser-facing capabilities rather than core review logic.
 
-### Editing and preview flow
+## Data and Persistence Boundaries
 
-```text
-User edits a field
-  |
-  v
-ReviewDraft is updated
-  |
-  +--> ReviewDraftValidator.Validate
-  |
-  +--> SteamBbCodeGenerator.Generate
-  |       |
-  |       +--> Raw BBCode output
-  |       |
-  |       +--> SteamBbCodePreviewRenderer.Render
-  |               |
-  |               +--> Rendered HTML preview
-  |
-  +--> Debounced local-storage save
-```
-
-Generated BBCode, validation results, and rendered preview are derived from the current draft rather than stored as separate persistent state.
-
-### Startup flow
-
-```text
-Application starts
-  |
-  +--> Theme is read and applied
-  |
-  +--> Saved draft is loaded from localStorage
-          |
-          +--> No saved draft: keep defaults
-          |
-          +--> Saved draft: restore state and normalize categories
-```
-
-### New-review flow
-
-```text
-User selects New review
-  |
-  v
-Confirmation dialog
-  |
-  v
-Clear saved draft
-  |
-  v
-Create a new default ReviewDraft
-  |
-  v
-Return to the Setup step
-```
-
-## State and Persistence Boundaries
-
-The application currently supports one locally stored draft.
-
-Persistent state:
+Persistent browser state currently includes:
 
 - Review draft JSON
 - Theme preference
 
-Transient state:
+There is no account-based or cross-device synchronization. Clearing browser storage removes the locally stored draft and appearance state.
 
-- Current workflow step
-- Formatting-help and new-review dialog visibility
-- Copy-status message
-- Save-status message
-- Confirmation-dialog visibility
+Local storage should not be presented as a durable backup. Future incompatible storage changes should either migrate prior data explicitly or use a new versioned key.
 
-There is no cross-device synchronization. Clearing browser data removes the draft and saved theme. The application should not claim that local storage is a durable backup.
+## Privacy and Analytics
 
-Future storage format changes should either remain backward compatible or introduce a new versioned key with explicit migration behavior.
+The current application has no account system, remote review database, or application API.
 
-## Privacy and Security
+Review draft content is stored locally in the browser and is not sent to an application server.
 
-The current client-only model provides a narrow data boundary:
+The hosted GitHub Pages site loads GoatCounter to collect aggregate page-view analytics. Review draft content is not intentionally included in GoatCounter analytics.
 
-- Review content is not sent to an application server
-- There are no credentials or accounts
-- Draft data is stored in the user's browser
+Contributors should document any future feature that sends user-entered content or additional data outside the browser, including cloud storage, sharing, game lookup, or other external integrations.
+
+## Security
+
+The current design keeps the server-side attack surface narrow because the application is static and client-side.
+
+Important boundaries include:
+
+- User review content is not stored on an application server
+- No credentials or application accounts are handled
 - Preview input is HTML encoded before rendering
+- Generated BBCode remains visible to the user before it is copied to Steam
 
-Contributors should preserve these properties unless a future feature intentionally introduces a server component. Any cloud storage, sharing, analytics, or game-lookup integration must document what data leaves the browser and obtain appropriate user consent.
-
-Generated BBCode is intended for the user to inspect before pasting into Steam. Validation and previewing reduce mistakes but do not guarantee that Steam will render every character or future tag behavior identically.
+Validation and previewing reduce mistakes but do not guarantee that Steam will render every character or future tag behavior identically.
 
 ## Error Handling
 
 Browser storage and clipboard operations can fail because of browser permissions, privacy modes, unavailable APIs, or storage restrictions.
 
-The UI currently handles these failures without terminating the review session:
-
-- Storage failures display an unavailable status
-- Clipboard failures leave the raw BBCode available for manual selection
-- Missing drafts fall back to the default in-memory draft
-
-Service and UI changes should continue to fail gracefully when optional browser capabilities are unavailable.
+The application should continue to fail gracefully when optional browser capabilities are unavailable rather than terminating the review session.
 
 ## Deployment Model
 
-Blazor WebAssembly compiles into static files that can be hosted by a static-site provider or conventional web server.
+The application is published as static Blazor WebAssembly assets and deployed through GitHub Pages.
 
-A deployment must:
+The GitHub Actions Pages workflow:
 
-- Serve the generated `wwwroot` assets
-- Preserve the configured application base path
-- Return the application entry point for client-side routes when additional routes are introduced
-- Use HTTPS for reliable Clipboard API behavior in production
+- Publishes the Blazor project in Release configuration
+- Rewrites the application base path for `/steam-review-forge/`
+- Adds `.nojekyll`
+- Copies `index.html` to `404.html` for static-host routing fallback
+- Uploads and deploys the published `wwwroot` directory
 
-No server-side .NET runtime is required after publishing the current application.
+The production site is:
+
+`https://argyrosforge.github.io/steam-review-forge/`
+
+No server-side .NET runtime is required after publishing.
 
 ## Testing Strategy
 
-Automated tests have not yet been added. The architecture separates several deterministic services specifically so they can be tested without rendering the Blazor UI.
+A dedicated xUnit project exists under `tests/SteamReviewForge.Tests`.
 
-Recommended test layers:
+Current automated coverage begins with `ReviewValidationResult` behavior. Planned coverage includes:
 
-1. Unit tests for `SteamBbCodeGenerator`
-2. Unit tests for `ReviewDraftValidator`
-3. Unit tests for `ReviewTemplateService`
-4. Unit tests for `SteamBbCodePreviewRenderer`, including HTML encoding
-5. Serialization tests for stored drafts
-6. Blazor component tests for workflow and validation behavior
-7. Browser tests for storage, clipboard fallback, responsive behavior, and keyboard navigation
+1. `SteamBbCodeGenerator`
+2. `ReviewDraftValidator`
+3. `ReviewTemplateService`
+4. `SteamBbCodePreviewRenderer`, including HTML encoding
+5. Draft serialization and restoration
+6. Blazor component behavior
+7. Browser-level workflow, storage, clipboard, responsive, and keyboard behavior
 
-Critical output tests should use representative drafts for every template and display format.
+Tests can be run locally with:
+
+```bash
+dotnet test
+```
+
+The GitHub Actions test workflow is intentionally manual-only and uses `workflow_dispatch`. Tests do not run automatically on pushes or pull requests.
+
+Critical output tests should eventually use representative drafts for every template and display format.
 
 ## Current Architectural Constraints
 
-The current design is intentionally small, but several constraints should guide future changes:
-
-- `Home.razor` contains substantial UI orchestration and should be decomposed as features grow
+- `Home.razor` still contains substantial UI orchestration and should be decomposed as features grow
 - Only one draft can be stored at a time
 - Local storage is synchronous behind the JavaScript bridge and is not intended for large datasets
-- The preview renderer supports only the generated BBCode subset
-- No migration layer currently exists for saved draft schema changes
-- There is no server boundary for shared links, synchronization, or remote metadata
-- Core behavior does not yet have automated test coverage
+- The preview renderer supports a bounded Steam BBCode subset
+- Automated test coverage is still limited and is being expanded during `v0.2.0`
+- There is no application backend for shared links, synchronization, accounts, or remote metadata
 
 ## Extension Guidelines
 
@@ -467,15 +294,10 @@ When adding features:
 - Avoid adding server infrastructure unless the feature genuinely requires it
 - Extract focused Blazor components before the root page becomes harder to maintain
 - Document privacy changes whenever information leaves the browser
+- Expand tests deliberately; do not assume the manual GitHub workflow implies automatic CI
 
 ## Potential Future Evolution
 
-The current architecture can support several planned features without a server:
-
-- JSON import and export
-- Multiple drafts stored under separate local keys
-- Custom local templates
-- Markdown and plain-text export
-- Additional BBCode layouts
+The current architecture can support several planned features without an application server, including JSON import/export, multiple local drafts, custom local templates, Markdown/plain-text export, and additional BBCode layouts.
 
 Features such as cloud synchronization, public share links, accounts, or centrally managed community templates would introduce a backend boundary. Those changes should be treated as a separate architectural phase with explicit API, storage, authentication, privacy, and deployment decisions.
