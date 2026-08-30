@@ -12,6 +12,7 @@ public static class ReviewTemplateService
 
         draft.Template = template;
         ResetTableColumns(draft);
+        ResetStructuredLabels(draft);
 
         switch (template)
         {
@@ -120,6 +121,7 @@ public static class ReviewTemplateService
 
         draft.FinalThoughts =
             "Briefly explain the main reason for your recommendation.";
+        draft.FinalThoughtsHeading = "Why";
 
         draft.Categories.Clear();
     }
@@ -227,5 +229,16 @@ public static class ReviewTemplateService
                     ReviewTableColumnKind.Note
             }
         ];
+    }
+
+    private static void ResetStructuredLabels(
+        ReviewDraft draft)
+    {
+        draft.WhatWorksHeading = "What Works";
+        draft.WhatCouldBeBetterHeading = "What Could Be Better";
+        draft.FinalThoughtsHeading = "Final Thoughts";
+        draft.IncludeCategoryDivider = true;
+        draft.IncludeComponentDivider = true;
+        draft.IncludeWritingDivider = true;
     }
 }

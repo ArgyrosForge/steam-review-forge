@@ -322,8 +322,8 @@ public sealed class ReviewWorkflowTests
         Assert.True(layout[2] > layout[1]);
         Assert.True(layout[3] > layout[4]);
         Assert.True(layout[5] > layout[6]);
-        Assert.InRange(layout[7], 440, 460);
-        Assert.True(layout[8] > layout[7]);
+        Assert.InRange(layout[7], 590, 620);
+        Assert.InRange(layout[8], 500, 620);
         Assert.Equal(layout[9], layout[10], precision: 1);
         Assert.True(layout[11] > layout[9]);
 
@@ -432,6 +432,127 @@ public sealed class ReviewWorkflowTests
             .ToBeDisabledAsync();
     }
 
+    [Fact]
+    public async Task Chromium_FinalPreviewKeepsSteamSizingAcrossEditingModes()
+    {
+        await using var session = await BrowserSession.CreateAsync("chromium");
+        var page = session.Page;
+        await page.SetViewportSizeAsync(1600, 1000);
+
+        await OpenApplicationAsync(page);
+        await AssertSteamSizedFinalPreviewAsync(page);
+
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Unguided", Exact = true })
+            .ClickAsync();
+        await Assertions.Expect(page.Locator(".editor-mode-summary strong"))
+            .ToHaveTextAsync("Unguided Structured");
+        await AssertSteamSizedFinalPreviewAsync(page);
+
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "BBCode", Exact = true })
+            .ClickAsync();
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Start fresh" })
+            .ClickAsync();
+        await Assertions.Expect(page.Locator(".editor-mode-summary strong"))
+            .ToHaveTextAsync("Unguided BBCode");
+        await AssertSteamSizedFinalPreviewAsync(page);
+
+        await page.GetByRole(
+                AriaRole.Button,
+                new PageGetByRoleOptions { Name = "Guided", Exact = true })
+            .ClickAsync();
+        await Assertions.Expect(page.Locator(".editor-mode-summary strong"))
+            .ToHaveTextAsync("Guided BBCode");
+        await AssertSteamSizedFinalPreviewAsync(page);
+    }
+
+    [Fact]
+    public async Task Chromium_EditsTemplateHeadingsTableAndDividersInPreview()
+    {
+        await using var session = await BrowserSession.CreateAsync("chromium");
+        var page = session.Page;
+
+        await OpenApplicationAsync(page);
+        await page.GetByRole(
+                AriaRole.Radio,
+                new PageGetByRoleOptions { NameRegex = new("Yes.*Recommended") })
+            .ClickAsync();
+        await page.GetByLabel("Early Access Review").CheckAsync();
+
+        var editablePreview = page.Locator(".preview-panel");
+        var finalPreview = page.Locator(".final-preview-panel");
+
+        await AssertSteamSizedFinalPreviewAsync(page);
+
+        await editablePreview.GetByLabel("What Works heading")
+            .FillAsync("Highlights");
+        await editablePreview.GetByLabel("What Could Be Better heading")
+            .FillAsync("Rough Edges");
+        await editablePreview.GetByLabel("Final Thoughts heading")
+            .FillAsync("Verdict");
+        await editablePreview.GetByLabel("Category data column heading")
+            .FillAsync("Aspect");
+        await editablePreview.GetByLabel("Category name").First
+            .FillAsync("Combat");
+        await editablePreview.GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions { Name = "Remove category Story" })
+            .ClickAsync();
+
+        await editablePreview.GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions
+                {
+                    Name = "Remove divider before review format"
+                })
+            .ClickAsync();
+        await editablePreview.GetByRole(
+                AriaRole.Button,
+                new LocatorGetByRoleOptions
+                {
+                    Name = "Remove divider before guided writing"
+                })
+            .ClickAsync();
+
+        await Assertions.Expect(finalPreview.GetByRole(
+                AriaRole.Heading,
+                new LocatorGetByRoleOptions { Name = "Highlights" }))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(finalPreview.GetByText(
+                "Early Access Review",
+                new LocatorGetByTextOptions { Exact = true }))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(finalPreview.GetByRole(
+                AriaRole.Heading,
+                new LocatorGetByRoleOptions { Name = "Rough Edges" }))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(finalPreview.GetByRole(
+                AriaRole.Heading,
+                new LocatorGetByRoleOptions { Name = "Verdict" }))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(finalPreview.GetByRole(
+                AriaRole.Columnheader,
+                new LocatorGetByRoleOptions { Name = "Aspect" }))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(finalPreview.GetByText("Combat", new()
+            {
+                Exact = true
+            }))
+            .ToBeVisibleAsync();
+        await Assertions.Expect(finalPreview.GetByText("Story", new()
+            {
+                Exact = true
+            }))
+            .ToHaveCountAsync(0);
+        await Assertions.Expect(finalPreview.Locator("hr"))
+            .ToHaveCountAsync(0);
+    }
+
     private static async Task OpenApplicationAsync(IPage page)
     {
         await page.GotoAsync(BaseUrl, new PageGotoOptions
@@ -439,6 +560,27 @@ public sealed class ReviewWorkflowTests
             WaitUntil = WaitUntilState.DOMContentLoaded
         });
         await WaitForApplicationAsync(page);
+    }
+
+    private static async Task AssertSteamSizedFinalPreviewAsync(IPage page)
+    {
+        var finalPreview = page.Locator(".steam-sized-preview-panel");
+        await Assertions.Expect(finalPreview).ToBeVisibleAsync();
+        await Assertions.Expect(finalPreview).ToHaveCountAsync(1);
+
+        var finalPreviewWidth = await finalPreview.EvaluateAsync<double>(
+            "element => element.getBoundingClientRect().width");
+        Assert.InRange(finalPreviewWidth, 590, 620);
+
+        var finalTypography = await finalPreview
+            .Locator(".steam-review-content")
+            .EvaluateAsync<string[]>("""
+                element => {
+                    const style = getComputedStyle(element);
+                    return [style.fontSize, style.lineHeight];
+                }
+                """);
+        Assert.Equal(["13px", "18px"], finalTypography);
     }
 
     private static async Task WaitForApplicationAsync(IPage page)

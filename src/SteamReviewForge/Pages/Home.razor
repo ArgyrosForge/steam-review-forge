@@ -401,15 +401,24 @@
                                         }
                                     </div>
 
-                                    <label class="steam-checkbox full-width">
-                                        <input type="checkbox"
-                                               @bind="Draft.ReceivedProductForFree"
-                                               @bind:after="QueueDraftSaveAsync"/>
-                                        <span>
-                                            Check this box if you received this
-                                            product for free
-                                        </span>
-                                    </label>
+                                    <div class="steam-metadata-options full-width">
+                                        <label class="steam-checkbox">
+                                            <input type="checkbox"
+                                                   @bind="Draft.ReceivedProductForFree"
+                                                   @bind:after="QueueDraftSaveAsync"/>
+                                            <span>
+                                                Check this box if you received this
+                                                product for free
+                                            </span>
+                                        </label>
+
+                                        <label class="steam-checkbox">
+                                            <input type="checkbox"
+                                                   @bind="Draft.IsEarlyAccessReview"
+                                                   @bind:after="QueueDraftSaveAsync"/>
+                                            <span>Early Access Review</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -617,12 +626,21 @@
                                    @oninput="UpdatePlaytimeAsync"/>
                         </div>
 
-                        <label class="steam-checkbox">
-                            <input type="checkbox"
-                                   @bind="Draft.ReceivedProductForFree"
-                                   @bind:after="QueueDraftSaveAsync"/>
-                            <span>Product received for free</span>
-                        </label>
+                        <div class="steam-metadata-options">
+                            <label class="steam-checkbox">
+                                <input type="checkbox"
+                                       @bind="Draft.ReceivedProductForFree"
+                                       @bind:after="QueueDraftSaveAsync"/>
+                                <span>Product received for free</span>
+                            </label>
+
+                            <label class="steam-checkbox">
+                                <input type="checkbox"
+                                       @bind="Draft.IsEarlyAccessReview"
+                                       @bind:after="QueueDraftSaveAsync"/>
+                                <span>Early Access Review</span>
+                            </label>
+                        </div>
                     </section>
 
                     <section class="editor-section structured-component-section">
@@ -657,7 +675,9 @@
         </aside>
         </div>
 
-        <aside class="panel preview-panel">
+        <aside class="panel preview-panel @(IsBbCodeMode
+                                                ? "steam-sized-preview-panel"
+                                                : null)">
             <div class="panel-heading preview-panel-heading">
                 <div>
                     <h2>
@@ -762,6 +782,13 @@
                         </header>
 
                         <div class="steam-review-content">
+                            @if (Draft.IsEarlyAccessReview)
+                            {
+                                <div class="steam-early-access-review">
+                                    Early Access Review
+                                </div>
+                            }
+
                             <div class="steam-review-date">
                                 Posted: @SteamPreviewDate
                             </div>
@@ -831,9 +858,18 @@
                                 }
 
                                 @if (HasEditableIntro &&
-                                     HasEditableContentAfterIntro)
+                                     HasEditableCategories &&
+                                     Draft.IncludeCategoryDivider)
                                 {
-                                    <hr />
+                                    <div class="steam-removable-divider">
+                                        <hr />
+                                        <button type="button"
+                                                title="Remove divider before review format"
+                                                aria-label="Remove divider before review format"
+                                                @onclick="RemoveCategoryDividerAsync">
+                                            ×
+                                        </button>
+                                    </div>
                                 }
 
                                 @if (Draft.DisplayFormat ==
@@ -842,7 +878,75 @@
                                     @if (Draft.Categories.Count > 0)
                                     {
                                         <div class="steam-removable-block steam-removable-table">
-                                            @RenderedCategoriesPreview
+                                            <div class="preview-table-wrapper steam-editable-table-wrapper">
+                                                <table class="preview-table steam-editable-table">
+                                                    <thead>
+                                                        <tr>
+                                                            @foreach (var column in Draft.TableColumns)
+                                                            {
+                                                                <th class="@GetEditableTableColumnClass(column)"
+                                                                    @key="column.Id">
+                                                                    <input class="steam-inline-input steam-table-heading-input"
+                                                                           type="text"
+                                                                           data-validation-field="@($"ColumnHeading:{column.Id}")"
+                                                                           aria-label="@($"{GetColumnKindLabel(column.Kind)} column heading")"
+                                                                           aria-invalid="@HasFieldError($"ColumnHeading:{column.Id}")"
+                                                                           @bind="column.Heading"
+                                                                           @bind:event="oninput"
+                                                                           @bind:after="QueueDraftSaveAsync"/>
+
+                                                                    <button class="steam-remove-column"
+                                                                            type="button"
+                                                                            title="Remove column"
+                                                                            aria-label="@($"Remove {column.Heading} column")"
+                                                                            disabled="@(Draft.TableColumns.Count == 1)"
+                                                                            @onclick="() => RemoveColumnAsync(column)">
+                                                                        ×
+                                                                    </button>
+                                                                </th>
+                                                            }
+
+                                                            <th class="steam-table-actions-column">
+                                                                Edit
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody>
+                                                        @foreach (var category in Draft.Categories)
+                                                        {
+                                                            <tr @key="category.Id"
+                                                                @ondragover:preventDefault
+                                                                @ondrop="() => DropRowAsync(category)">
+                                                                @foreach (var column in Draft.TableColumns)
+                                                                {
+                                                                    <td class="@GetEditableTableColumnClass(column)"
+                                                                        @key="column.Id">
+                                                                        @RenderEditableTableCell(category, column)
+                                                                    </td>
+                                                                }
+
+                                                                <td class="steam-table-actions-column">
+                                                                    @RenderCategoryControls(category, true)
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td colspan="@(Draft.TableColumns.Count + 1)">
+                                                                <button class="steam-category-control add"
+                                                                        type="button"
+                                                                        aria-label="Add rating table row"
+                                                                        @onclick="AddCategoryAsync">
+                                                                    +
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
 
                                             <button class="steam-remove-block"
                                                     type="button"
@@ -951,6 +1055,22 @@
                                         <div class="steam-add-category-row">
                                             @RenderAddCategoryControl()
                                         </div>
+                                    </div>
+                                }
+
+                                @if (IsUnguidedStructured &&
+                                     Draft.Components.Count > 0 &&
+                                     (HasEditableIntro || HasEditableCategories) &&
+                                     Draft.IncludeComponentDivider)
+                                {
+                                    <div class="steam-removable-divider">
+                                        <hr />
+                                        <button type="button"
+                                                title="Remove divider before review components"
+                                                aria-label="Remove divider before review components"
+                                                @onclick="RemoveComponentDividerAsync">
+                                            ×
+                                        </button>
                                     </div>
                                 }
 
@@ -1076,23 +1196,43 @@
 
                                 @if (HasEditableWritingContent)
                                 {
-                                    <hr />
+                                    @if ((HasEditableIntro ||
+                                          HasEditableCategories ||
+                                          HasEditableComponents) &&
+                                         Draft.IncludeWritingDivider)
+                                    {
+                                        <div class="steam-removable-divider">
+                                            <hr />
+                                            <button type="button"
+                                                    title="Remove divider before guided writing"
+                                                    aria-label="Remove divider before guided writing"
+                                                    @onclick="RemoveWritingDividerAsync">
+                                                ×
+                                            </button>
+                                        </div>
+                                    }
 
                                     <div class="steam-writing-editor">
                                     @if (ShowDetailedQuestions &&
                                          Draft.IncludeWhatWorks)
                                     {
                                         <div class="steam-removable-block">
-                                        <label>
-                                            <span>What Works</span>
+                                        <div class="steam-writing-block">
+                                            <input class="steam-inline-input steam-writing-heading-input"
+                                                   type="text"
+                                                   aria-label="What Works heading"
+                                                   @bind="Draft.WhatWorksHeading"
+                                                   @bind:event="oninput"
+                                                   @bind:after="QueueDraftSaveAsync"/>
                                             <textarea class="steam-inline-input steam-writing-textarea"
                                                       rows="5"
                                                       data-validation-field="@nameof(Draft.WhatWorks)"
+                                                      aria-label="What Works content"
                                                       placeholder="Enter one strength per line"
                                                       @bind="Draft.WhatWorks"
                                                       @bind:event="oninput"
                                                       @bind:after="QueueDraftSaveAsync"></textarea>
-                                        </label>
+                                        </div>
 
                                             <button class="steam-remove-block"
                                                     type="button"
@@ -1108,16 +1248,22 @@
                                          Draft.IncludeWhatCouldBeBetter)
                                     {
                                         <div class="steam-removable-block">
-                                        <label>
-                                            <span>What Could Be Better</span>
+                                        <div class="steam-writing-block">
+                                            <input class="steam-inline-input steam-writing-heading-input"
+                                                   type="text"
+                                                   aria-label="What Could Be Better heading"
+                                                   @bind="Draft.WhatCouldBeBetterHeading"
+                                                   @bind:event="oninput"
+                                                   @bind:after="QueueDraftSaveAsync"/>
                                             <textarea class="steam-inline-input steam-writing-textarea"
                                                       rows="5"
                                                       data-validation-field="@nameof(Draft.WhatCouldBeBetter)"
+                                                      aria-label="What Could Be Better content"
                                                       placeholder="Enter one weakness per line"
                                                       @bind="Draft.WhatCouldBeBetter"
                                                       @bind:event="oninput"
                                                       @bind:after="QueueDraftSaveAsync"></textarea>
-                                        </label>
+                                        </div>
 
                                             <button class="steam-remove-block"
                                                     type="button"
@@ -1132,22 +1278,23 @@
                                     @if (Draft.IncludeFinalThoughts)
                                     {
                                     <div class="steam-removable-block">
-                                    <label>
-                                        <span>
-                                            @(Draft.DisplayFormat ==
-                                              ReviewDisplayFormat.MinimalVerdict
-                                                ? "Why?"
-                                                : "Final Thoughts")
-                                        </span>
+                                    <div class="steam-writing-block">
+                                        <input class="steam-inline-input steam-writing-heading-input"
+                                               type="text"
+                                               aria-label="Final Thoughts heading"
+                                               @bind="Draft.FinalThoughtsHeading"
+                                               @bind:event="oninput"
+                                               @bind:after="QueueDraftSaveAsync"/>
                                         <textarea class="steam-inline-input steam-writing-textarea"
                                                   rows="6"
                                                   data-validation-field="@nameof(Draft.FinalThoughts)"
+                                                  aria-label="Final Thoughts content"
                                                   aria-invalid="@HasFieldError(
                                                                     nameof(Draft.FinalThoughts))"
                                                   @bind="Draft.FinalThoughts"
                                                   @bind:event="oninput"
                                                   @bind:after="QueueDraftSaveAsync"></textarea>
-                                    </label>
+                                    </div>
 
                                         <button class="steam-remove-block"
                                                 type="button"
@@ -1174,7 +1321,7 @@
 
         @if (IsStructuredMode)
         {
-        <aside class="panel final-preview-panel">
+        <aside class="panel final-preview-panel steam-sized-preview-panel">
             <div class="panel-heading preview-panel-heading">
                 <div>
                     <h2>Final Preview</h2>
@@ -1229,6 +1376,13 @@
                         </header>
 
                         <div class="steam-review-content">
+                            @if (Draft.IsEarlyAccessReview)
+                            {
+                                <div class="steam-early-access-review">
+                                    Early Access Review
+                                </div>
+                            }
+
                             <div class="steam-review-date">
                                 Posted: @SteamPreviewDate
                             </div>
@@ -2212,12 +2366,6 @@
             SteamBbCodePreviewRenderer.Render(
                 GeneratedBbCode));
 
-    private MarkupString RenderedCategoriesPreview =>
-        new(
-            SteamBbCodePreviewRenderer.Render(
-                SteamBbCodeGenerator.GenerateCategories(
-                    Draft)));
-
     private bool ShowCategories =>
         Draft.DisplayFormat is
             ReviewDisplayFormat.RatingTable or
@@ -2237,11 +2385,13 @@
          (Draft.IncludeWhatWorks ||
           Draft.IncludeWhatCouldBeBetter));
 
-    private bool HasEditableContentAfterIntro =>
-        ShowCategories ||
-        (IsUnguidedStructured &&
-         Draft.Components.Count > 0) ||
-        HasEditableWritingContent;
+    private bool HasEditableCategories =>
+        ShowCategories &&
+        Draft.Categories.Count > 0;
+
+    private bool HasEditableComponents =>
+        IsUnguidedStructured &&
+        Draft.Components.Count > 0;
 
     private bool HasRecommendation =>
         Draft.Recommendation is not null;
@@ -2259,19 +2409,11 @@
                 ? "steam-preview finalized"
                 : "steam-preview finalized bbcode-live-preview"
             : IsUnguidedStructured
-                ? Draft.DisplayFormat ==
-                  ReviewDisplayFormat.RatingTable
-                    ? "steam-preview table-readonly"
-                    : "steam-preview"
+                ? "steam-preview"
             : CurrentStep switch
         {
             BuilderStep.Setup =>
                 "steam-preview basic",
-
-            _ when Draft.DisplayFormat ==
-                   ReviewDisplayFormat.RatingTable =>
-                "steam-preview table-readonly",
-
             _ => "steam-preview"
         };
 
@@ -3133,12 +3275,21 @@
                                    @oninput="UpdatePlaytimeAsync"/>
                         </div>
 
-                        <label class="steam-checkbox">
-                            <input type="checkbox"
-                                   @bind="Draft.ReceivedProductForFree"
-                                   @bind:after="QueueDraftSaveAsync"/>
-                            <span>Product received for free</span>
-                        </label>
+                        <div class="steam-metadata-options">
+                            <label class="steam-checkbox">
+                                <input type="checkbox"
+                                       @bind="Draft.ReceivedProductForFree"
+                                       @bind:after="QueueDraftSaveAsync"/>
+                                <span>Product received for free</span>
+                            </label>
+
+                            <label class="steam-checkbox">
+                                <input type="checkbox"
+                                       @bind="Draft.IsEarlyAccessReview"
+                                       @bind:after="QueueDraftSaveAsync"/>
+                                <span>Early Access Review</span>
+                            </label>
+                        </div>
 
                         <div class="section-heading bbcode-start-heading">
                             <h3>Choose a starting point</h3>
@@ -3499,6 +3650,64 @@
                     break;
             }
         </div>;
+
+    private RenderFragment RenderEditableTableCell(
+        ReviewCategory category,
+        ReviewTableColumn column) =>
+        @<div class="steam-table-cell-editor">
+            @switch (column.Kind)
+            {
+                case ReviewTableColumnKind.Category:
+                    <input class="steam-inline-input steam-category-name"
+                           type="text"
+                           data-validation-field="@($"CategoryName:{category.Id}")"
+                           aria-label="Category name"
+                           aria-invalid="@HasFieldError($"CategoryName:{category.Id}")"
+                           @bind="category.Name"
+                           @bind:event="oninput"
+                           @bind:after="QueueDraftSaveAsync"/>
+                    break;
+
+                case ReviewTableColumnKind.Rating:
+                    @RenderRatingEditor(category)
+                    break;
+
+                case ReviewTableColumnKind.Note:
+                    <input class="steam-inline-input"
+                           type="text"
+                           data-validation-field="@($"CategoryNote:{category.Id}")"
+                           aria-label="@($"{category.Name} note")"
+                           @bind="category.Note"
+                           @bind:event="oninput"
+                           @bind:after="QueueDraftSaveAsync"/>
+                    break;
+
+                case ReviewTableColumnKind.CustomText:
+                    <input class="steam-inline-input"
+                           type="text"
+                           aria-label="@($"{column.Heading} for {category.Name}")"
+                           value="@GetCustomCellValue(category, column)"
+                           @oninput="eventArgs =>
+                               UpdateCustomCellAsync(
+                                   category,
+                                   column,
+                                   eventArgs)"/>
+                    break;
+            }
+        </div>;
+
+    private static string GetEditableTableColumnClass(
+        ReviewTableColumn column)
+    {
+        return column.Kind switch
+        {
+            ReviewTableColumnKind.Category =>
+                "steam-category-column",
+            ReviewTableColumnKind.Rating =>
+                "steam-rating-column",
+            _ => string.Empty
+        };
+    }
 
     private RenderFragment RenderRatingEditor(
         ReviewCategory category) =>
@@ -3935,6 +4144,24 @@
     {
         Draft.IncludeFinalThoughts = false;
         Draft.FinalThoughts = string.Empty;
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task RemoveCategoryDividerAsync()
+    {
+        Draft.IncludeCategoryDivider = false;
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task RemoveComponentDividerAsync()
+    {
+        Draft.IncludeComponentDivider = false;
+        await SaveDraftImmediatelyAsync();
+    }
+
+    private async Task RemoveWritingDividerAsync()
+    {
+        Draft.IncludeWritingDivider = false;
         await SaveDraftImmediatelyAsync();
     }
 

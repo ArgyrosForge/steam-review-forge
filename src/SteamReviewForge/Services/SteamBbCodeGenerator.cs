@@ -19,18 +19,26 @@ public static class SteamBbCodeGenerator
     {
         ArgumentNullException.ThrowIfNull(draft);
 
-        string[] sections =
-        [
-            GenerateIntro(draft),
-            GenerateCategories(draft),
-            GenerateComponents(draft),
-            GenerateBody(draft)
-        ];
+        var output = new StringBuilder();
 
-        return string.Join(
-            "\n\n[hr][/hr]\n\n",
-            sections.Where(
-                section => !string.IsNullOrWhiteSpace(section)));
+        AppendGeneratedSection(
+            output,
+            GenerateIntro(draft),
+            includeDivider: false);
+        AppendGeneratedSection(
+            output,
+            GenerateCategories(draft),
+            draft.IncludeCategoryDivider);
+        AppendGeneratedSection(
+            output,
+            GenerateComponents(draft),
+            draft.IncludeComponentDivider);
+        AppendGeneratedSection(
+            output,
+            GenerateBody(draft),
+            draft.IncludeWritingDivider);
+
+        return output.ToString();
     }
 
     public static string GenerateIntro(ReviewDraft draft)
@@ -200,18 +208,21 @@ public static class SteamBbCodeGenerator
             return;
         }
 
-        AppendListSection(output, "What Works", whatWorks);
+        AppendListSection(
+            output,
+            draft.WhatWorksHeading,
+            whatWorks);
 
         AppendListSection(
             output,
-            "What Could Be Better",
+            draft.WhatCouldBeBetterHeading,
             whatCouldBeBetter);
 
         if (hasFinalThoughts)
         {
             AppendTextSection(
                 output,
-                "Final Thoughts",
+                draft.FinalThoughtsHeading,
                 draft.FinalThoughts.Trim());
         }
     }
@@ -228,7 +239,7 @@ public static class SteamBbCodeGenerator
 
         AppendTextSection(
             output,
-            "Why",
+            draft.FinalThoughtsHeading,
             draft.FinalThoughts.Trim());
     }
 
@@ -244,7 +255,10 @@ public static class SteamBbCodeGenerator
             return;
         }
 
-        output.AppendLine($"[h2]{heading}[/h2]");
+        if (!string.IsNullOrWhiteSpace(heading))
+        {
+            output.AppendLine($"[h2]{heading.Trim()}[/h2]");
+        }
 
         foreach (var item in itemList)
         {
@@ -259,9 +273,34 @@ public static class SteamBbCodeGenerator
         string heading,
         string text)
     {
-        output.AppendLine($"[h2]{heading}[/h2]");
+        if (!string.IsNullOrWhiteSpace(heading))
+        {
+            output.AppendLine($"[h2]{heading.Trim()}[/h2]");
+        }
+
         output.AppendLine(text);
         output.AppendLine();
+    }
+
+    private static void AppendGeneratedSection(
+        StringBuilder output,
+        string section,
+        bool includeDivider)
+    {
+        if (string.IsNullOrWhiteSpace(section))
+        {
+            return;
+        }
+
+        if (output.Length > 0)
+        {
+            output.Append(
+                includeDivider
+                    ? "\n\n[hr][/hr]\n\n"
+                    : "\n\n");
+        }
+
+        output.Append(section.Trim());
     }
 
     private static string[] GetLines(string value)

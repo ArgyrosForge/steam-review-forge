@@ -263,8 +263,11 @@ public sealed class ReviewDraftStorageService
         draft.Summary ??= string.Empty;
         draft.Playtime = PlaytimeFormatter.Normalize(draft.Playtime);
         draft.WhatWorks ??= string.Empty;
+        draft.WhatWorksHeading ??= "What Works";
         draft.WhatCouldBeBetter ??= string.Empty;
+        draft.WhatCouldBeBetterHeading ??= "What Could Be Better";
         draft.FinalThoughts ??= string.Empty;
+        draft.FinalThoughtsHeading ??= "Final Thoughts";
 
         draft.TextRatingOptions ??= [];
 

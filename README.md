@@ -53,7 +53,7 @@ Firefox and Chromium workflow tests live in `tests/SteamReviewForge.BrowserTests
 
 ## Roadmap
 
-See [`ROADMAP.md`](ROADMAP.md) for planned releases and future improvements.
+The roadmap focuses on improving the functionality and UX of creating one review at a time. See [`ROADMAP.md`](ROADMAP.md) for planned releases and future improvements.
 
 ## Contributing
 
