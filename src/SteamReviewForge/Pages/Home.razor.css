@@ -189,9 +189,9 @@
     padding: 1.5rem;
     display: grid;
     grid-template-columns:
-        minmax(290px, 340px)
-        minmax(520px, 1fr)
-        minmax(360px, 460px);
+        minmax(280px, 300px)
+        minmax(440px, 1fr)
+        minmax(400px, 620px);
     grid-template-areas:
         "workflow bbcode preview";
     gap: 1.25rem;
@@ -201,9 +201,9 @@
 .builder-layout.structured-layout {
     max-width: 1900px;
     grid-template-columns:
-        minmax(290px, 340px)
-        minmax(520px, 1fr)
-        minmax(360px, 460px);
+        minmax(280px, 300px)
+        minmax(440px, 1fr)
+        minmax(400px, 620px);
     grid-template-areas:
         "workflow preview final";
 }
@@ -211,9 +211,9 @@
 .builder-layout.guided-structured-layout {
     max-width: 1900px;
     grid-template-columns:
-        minmax(290px, 340px)
-        minmax(520px, 1fr)
-        minmax(360px, 460px);
+        minmax(280px, 300px)
+        minmax(440px, 1fr)
+        minmax(400px, 620px);
     grid-template-areas:
         "workflow preview final";
 }
@@ -304,9 +304,17 @@
 @media (min-width: 1201px) {
     .builder-layout.wide-workflow-layout {
         grid-template-columns:
-            minmax(360px, 420px)
-            minmax(480px, 1fr)
-            minmax(360px, 460px);
+            minmax(330px, 360px)
+            minmax(420px, 1fr)
+            minmax(400px, 620px);
+    }
+
+    .builder-layout.structured-layout.wide-workflow-layout,
+    .builder-layout.guided-structured-layout.wide-workflow-layout {
+        grid-template-columns:
+            minmax(330px, 360px)
+            minmax(420px, 1fr)
+            minmax(400px, 620px);
     }
 
     .workflow-column {
@@ -441,6 +449,7 @@
 
     .wide-workflow-layout .bbcode-workflow .editor-section >
         .field:first-of-type,
+    .wide-workflow-layout .bbcode-workflow .steam-metadata-options,
     .wide-workflow-layout .bbcode-workflow .steam-checkbox,
     .wide-workflow-layout .bbcode-workflow .bbcode-start-heading,
     .wide-workflow-layout .bbcode-workflow .bbcode-start-grid {
@@ -545,6 +554,12 @@
 
 .final-preview-panel {
     grid-area: final;
+}
+
+.steam-sized-preview-panel {
+    width: 100%;
+    max-width: 620px;
+    justify-self: center;
 }
 
 .bbcode-panel {
@@ -916,6 +931,11 @@
     color: var(--muted);
     font-size: 0.82rem;
     cursor: pointer;
+}
+
+.steam-metadata-options {
+    display: grid;
+    gap: 0.65rem;
 }
 
 .steam-checkbox input {
@@ -1524,6 +1544,7 @@ textarea:focus {
 
     .no-preview-layout .bbcode-workflow .bbcode-start-grid,
     .no-preview-layout .bbcode-workflow .bbcode-start-heading,
+    .no-preview-layout .bbcode-workflow .steam-metadata-options,
     .no-preview-layout .bbcode-workflow .steam-checkbox {
         grid-column: 1 / -1;
     }
@@ -1758,6 +1779,8 @@ textarea:focus {
     .builder-layout.wide-workflow-layout
         .bbcode-workflow
         .editor-section > .field:first-of-type,
+    .builder-layout.wide-workflow-layout
+        .bbcode-workflow .steam-metadata-options,
     .builder-layout.wide-workflow-layout
         .bbcode-workflow .steam-checkbox,
     .builder-layout.wide-workflow-layout
@@ -2204,11 +2227,28 @@ textarea:focus {
     line-height: 22px;
 }
 
+.steam-sized-preview-panel .steam-review-content {
+    font-size: 13px;
+    line-height: 18px;
+}
+
 .steam-review-date {
     margin-bottom: 16px;
     color: var(--steam-meta);
     font-size: 11px;
     line-height: 16px;
+}
+
+.steam-early-access-review {
+    width: fit-content;
+    margin-bottom: 3px;
+    padding: 1px 4px;
+    color: #b8c6d2;
+    background: #4d657b;
+    border: 1px solid #71869a;
+    font-size: 10px;
+    line-height: 13px;
+    text-transform: uppercase;
 }
 
 .steam-intro-editor {
@@ -2259,6 +2299,12 @@ textarea:focus {
     color: var(--steam-body);
     font-size: 14px;
     line-height: 22px;
+}
+
+.steam-sized-preview-panel .steam-preview ::deep p {
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 18px;
 }
 
 .steam-preview ::deep strong {
@@ -2441,6 +2487,67 @@ textarea:focus {
     width: 110px;
 }
 
+.steam-editable-table th {
+    position: relative;
+}
+
+.steam-table-heading-input {
+    padding-right: 25px;
+    color: #c7d5e0;
+    font-weight: 700;
+}
+
+.steam-remove-column {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 20px;
+    min-height: 20px;
+    padding: 0;
+    color: #e85b61;
+    background: rgba(16, 25, 35, 0.92);
+    border: 1px solid rgba(232, 91, 97, 0.4);
+    border-radius: 3px;
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+}
+
+.steam-remove-column:hover,
+.steam-remove-column:focus-visible {
+    color: #fff;
+    border-color: #e85b61;
+    outline: 1px solid rgba(232, 91, 97, 0.4);
+}
+
+.steam-remove-column:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.steam-table-cell-editor {
+    min-width: 0;
+}
+
+.steam-editable-table .steam-table-actions-column {
+    width: 78px;
+    min-width: 78px;
+    text-align: center;
+}
+
+.steam-table-actions-column > .steam-category-editor-gutter {
+    width: auto;
+    justify-items: center;
+}
+
+.steam-table-actions-column .steam-category-controls {
+    justify-content: center;
+}
+
+.steam-table-actions-column .category-gutter-validation {
+    max-width: 74px;
+}
+
 .steam-edit-control-gutter {
     position: relative;
     width: 0;
@@ -2470,6 +2577,13 @@ textarea:focus {
     left: -12px;
     transform: translateY(-50%);
     opacity: 0;
+}
+
+.steam-removable-table .steam-editable-table tfoot
+    .steam-category-control.add {
+    position: static;
+    transform: none;
+    opacity: 1;
 }
 
 .steam-editable-table tfoot tr:hover
@@ -2782,6 +2896,56 @@ div.steam-add-category-row {
 .steam-writing-editor {
     display: grid;
     gap: 12px;
+}
+
+.steam-writing-block {
+    display: grid;
+    gap: 4px;
+}
+
+.steam-inline-input.steam-writing-heading-input,
+.steam-inline-input.steam-writing-heading-input:focus {
+    padding-right: 34px;
+    color: var(--steam-bb-heading);
+    font-size: 18px;
+    line-height: 21px;
+}
+
+.steam-removable-divider {
+    position: relative;
+    padding-right: 34px;
+}
+
+.steam-removable-divider hr {
+    margin: 14px 0;
+}
+
+.steam-removable-divider button {
+    position: absolute;
+    top: 50%;
+    right: 3px;
+    width: 26px;
+    min-height: 26px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #e85b61;
+    background: rgba(16, 25, 35, 0.92);
+    border: 1px solid rgba(232, 91, 97, 0.4);
+    border-radius: 4px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.steam-removable-divider button:hover,
+.steam-removable-divider button:focus-visible {
+    color: #fff;
+    background: rgba(232, 91, 97, 0.32);
+    border-color: #e85b61;
+    outline: 2px solid rgba(232, 91, 97, 0.25);
 }
 
 .steam-removable-block {

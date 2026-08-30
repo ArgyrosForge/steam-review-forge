@@ -35,7 +35,8 @@ public sealed class ReviewTemplateServiceTests
             Summary = "My summary",
             Recommendation = ReviewRecommendation.NotRecommended,
             Playtime = "42.5",
-            ReceivedProductForFree = true
+            ReceivedProductForFree = true,
+            IsEarlyAccessReview = true
         };
 
         ReviewTemplateService.Apply(draft, ReviewTemplate.DeepDive);
@@ -45,6 +46,7 @@ public sealed class ReviewTemplateServiceTests
         Assert.Equal(ReviewRecommendation.NotRecommended, draft.Recommendation);
         Assert.Equal("42.5", draft.Playtime);
         Assert.True(draft.ReceivedProductForFree);
+        Assert.True(draft.IsEarlyAccessReview);
     }
 
     [Fact]
@@ -75,5 +77,32 @@ public sealed class ReviewTemplateServiceTests
         ReviewTemplateService.Apply(draft, ReviewTemplate.Balanced);
 
         Assert.Equal([10, 6, 8], draft.Categories.Select(category => category.Rating));
+    }
+
+    [Theory]
+    [InlineData(ReviewTemplate.Balanced, "Final Thoughts")]
+    [InlineData(ReviewTemplate.QuickTake, "Why")]
+    public void Apply_ResetsEditableHeadingsAndDividers(
+        ReviewTemplate template,
+        string expectedFinalHeading)
+    {
+        var draft = new ReviewDraft
+        {
+            WhatWorksHeading = "Changed",
+            WhatCouldBeBetterHeading = "Changed",
+            FinalThoughtsHeading = "Changed",
+            IncludeCategoryDivider = false,
+            IncludeComponentDivider = false,
+            IncludeWritingDivider = false
+        };
+
+        ReviewTemplateService.Apply(draft, template);
+
+        Assert.Equal("What Works", draft.WhatWorksHeading);
+        Assert.Equal("What Could Be Better", draft.WhatCouldBeBetterHeading);
+        Assert.Equal(expectedFinalHeading, draft.FinalThoughtsHeading);
+        Assert.True(draft.IncludeCategoryDivider);
+        Assert.True(draft.IncludeComponentDivider);
+        Assert.True(draft.IncludeWritingDivider);
     }
 }

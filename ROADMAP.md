@@ -50,22 +50,13 @@ Improve confidence in saved drafts, generated reviews, and release quality.
 - [x] Make structured template content removable and simplify the Deep Dive starter layout
 - [x] Remove Short Summary from guided Setup and BBCode workflows
 
-## v0.3.0 — Import, Export, and Sharing
+## v0.3.0 — Review Functionality and UX
 
-Make reviews easier to back up, reuse, and move between browsers.
+Improve the experience of creating one review at a time and add more control over its format.
 
-- [ ] Export a review draft as JSON
-- [ ] Import a previously exported review draft
-- [ ] Add plain-text and Markdown export options
-- [ ] Add reusable custom templates
-- [ ] Allow users to duplicate an existing draft
-- [ ] Add a printable review preview
-- [ ] Add optional shareable links without exposing private drafts by default
-
-## v0.4.0 — Expanded Review Tools
-
-Add more control for users who want advanced review formats.
-
+- [ ] Streamline navigation and reduce friction across the review workflows
+- [ ] Refine editor and preview interactions for desktop and mobile
+- [ ] Improve editing feedback and controls for mouse, keyboard, and touch input
 - [ ] Add more built-in review templates
 - [ ] Allow review sections to be enabled or disabled individually
 - [ ] Add optional pros-and-cons sections
@@ -92,9 +83,6 @@ Prepare Steam Review Forge for dependable public use.
 
 Ideas not currently assigned to a release:
 
-- Multiple locally saved reviews
-- Optional cloud synchronization
-- Community-created templates
 - Localization
 - Steam game lookup and metadata import
 - Screenshot or image-assisted review planning

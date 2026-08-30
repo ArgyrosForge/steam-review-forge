@@ -29,7 +29,10 @@ public sealed class ReviewDraftStorageServiceTests
         var draft = new ReviewDraft
         {
             Summary = "A complete summary.",
-            Recommendation = ReviewRecommendation.Recommended
+            Recommendation = ReviewRecommendation.Recommended,
+            WhatWorksHeading = "Highlights",
+            IncludeCategoryDivider = false,
+            IsEarlyAccessReview = true
         };
         var categoryId = draft.Categories[0].Id;
 
@@ -39,6 +42,9 @@ public sealed class ReviewDraftStorageServiceTests
         Assert.Equal(DraftLoadStatus.Loaded, result.Status);
         Assert.NotNull(result.Draft);
         Assert.Equal(categoryId, result.Draft.Categories[0].Id);
+        Assert.Equal("Highlights", result.Draft.WhatWorksHeading);
+        Assert.False(result.Draft.IncludeCategoryDivider);
+        Assert.True(result.Draft.IsEarlyAccessReview);
 
         using var document = JsonDocument.Parse(js.Storage[CurrentKey]);
         Assert.Equal(2, document.RootElement.GetProperty("schemaVersion").GetInt32());

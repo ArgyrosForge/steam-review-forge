@@ -19,6 +19,8 @@ public sealed class ReviewDraft
 
     public bool ReceivedProductForFree { get; set; } = false;
 
+    public bool IsEarlyAccessReview { get; set; } = false;
+
     public ReviewDisplayFormat DisplayFormat { get; set; } =
         ReviewDisplayFormat.RatingTable;
 
@@ -63,18 +65,31 @@ public sealed class ReviewDraft
         "Lots of content to discover\n" +
         "Strong visual identity";
 
+    public string WhatWorksHeading { get; set; } = "What Works";
+
     public bool IncludeWhatWorks { get; set; } = true;
 
     public string WhatCouldBeBetter { get; set; } =
         "Occasional performance issues\n" +
         "Some systems need clearer explanations";
 
+    public string WhatCouldBeBetterHeading { get; set; } =
+        "What Could Be Better";
+
     public bool IncludeWhatCouldBeBetter { get; set; } = true;
 
     public string FinalThoughts { get; set; } =
         "Despite its rough edges, the game delivers a memorable and consistently enjoyable experience.";
 
+    public string FinalThoughtsHeading { get; set; } = "Final Thoughts";
+
     public bool IncludeFinalThoughts { get; set; } = true;
+
+    public bool IncludeCategoryDivider { get; set; } = true;
+
+    public bool IncludeComponentDivider { get; set; } = true;
+
+    public bool IncludeWritingDivider { get; set; } = true;
 
     public List<ReviewContentComponent> Components { get; set; } = [];
 

@@ -19,6 +19,11 @@ public sealed class SteamBbCodeGeneratorTests
         draft.DisplayFormat = format;
         draft.Categories[0].Rating = 5;
 
+        if (format == ReviewDisplayFormat.MinimalVerdict)
+        {
+            draft.FinalThoughtsHeading = "Why";
+        }
+
         var output = SteamBbCodeGenerator.Generate(draft);
 
         Assert.Contains(expected, output);
@@ -49,12 +54,14 @@ public sealed class SteamBbCodeGeneratorTests
         var draft = CreateCompleteDraft();
         draft.Playtime = "123.4";
         draft.ReceivedProductForFree = true;
+        draft.IsEarlyAccessReview = true;
         draft.Recommendation = ReviewRecommendation.NotRecommended;
 
         var output = SteamBbCodeGenerator.Generate(draft);
 
         Assert.DoesNotContain("123.4", output);
         Assert.DoesNotContain("Product received", output);
+        Assert.DoesNotContain("Early Access Review", output);
         Assert.DoesNotContain("Not Recommended", output);
     }
 
@@ -101,6 +108,24 @@ public sealed class SteamBbCodeGeneratorTests
         var output = SteamBbCodeGenerator.Generate(draft);
 
         Assert.Empty(output);
+    }
+
+    [Fact]
+    public void Generate_UsesEditableHeadingsAndOptionalDividers()
+    {
+        var draft = CreateCompleteDraft();
+        draft.WhatWorksHeading = "Highlights";
+        draft.WhatCouldBeBetterHeading = "Rough Edges";
+        draft.FinalThoughtsHeading = "Verdict";
+        draft.IncludeCategoryDivider = false;
+        draft.IncludeWritingDivider = false;
+
+        var output = SteamBbCodeGenerator.Generate(draft);
+
+        Assert.Contains("[h2]Highlights[/h2]", output);
+        Assert.Contains("[h2]Rough Edges[/h2]", output);
+        Assert.Contains("[h2]Verdict[/h2]", output);
+        Assert.DoesNotContain("[hr][/hr]", output);
     }
 
     private static ReviewDraft CreateCompleteDraft()

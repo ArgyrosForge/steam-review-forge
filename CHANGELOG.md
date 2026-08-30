@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Made Structured template headings, dividers, rating-table headings, and rating-table cells directly editable or removable while retaining the persistent Final Preview
+- Standardized the Final Preview width and body typography across every editing mode to match Steam's full reviews, and added Early Access Review as locally saved preview metadata
+
 ## [0.2.0] - 2026-08-29
 
 This pre-release focuses on a desktop-first editing workspace, more flexible structured reviews, and stronger draft and release reliability.
