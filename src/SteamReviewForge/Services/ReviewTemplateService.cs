@@ -11,6 +11,7 @@ public static class ReviewTemplateService
         ArgumentNullException.ThrowIfNull(draft);
 
         draft.Template = template;
+        draft.TableCellWidthMode = ReviewTableCellWidthMode.Equal;
         ResetTableColumns(draft);
         ResetStructuredLabels(draft);
 
@@ -237,6 +238,9 @@ public static class ReviewTemplateService
         draft.WhatWorksHeading = "What Works";
         draft.WhatCouldBeBetterHeading = "What Could Be Better";
         draft.FinalThoughtsHeading = "Final Thoughts";
+        draft.WhatWorksFormat = ReviewTextFormat.Text;
+        draft.WhatCouldBeBetterFormat = ReviewTextFormat.Text;
+        draft.FinalThoughtsFormat = ReviewTextFormat.Text;
         draft.IncludeCategoryDivider = true;
         draft.IncludeComponentDivider = true;
         draft.IncludeWritingDivider = true;

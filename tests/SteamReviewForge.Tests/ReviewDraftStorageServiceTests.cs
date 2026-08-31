@@ -28,11 +28,11 @@ public sealed class ReviewDraftStorageServiceTests
         var service = new ReviewDraftStorageService(js);
         var draft = new ReviewDraft
         {
-            Summary = "A complete summary.",
             Recommendation = ReviewRecommendation.Recommended,
             WhatWorksHeading = "Highlights",
             IncludeCategoryDivider = false,
-            IsEarlyAccessReview = true
+            IsEarlyAccessReview = true,
+            TableCellWidthMode = ReviewTableCellWidthMode.Automatic
         };
         var categoryId = draft.Categories[0].Id;
 
@@ -45,9 +45,12 @@ public sealed class ReviewDraftStorageServiceTests
         Assert.Equal("Highlights", result.Draft.WhatWorksHeading);
         Assert.False(result.Draft.IncludeCategoryDivider);
         Assert.True(result.Draft.IsEarlyAccessReview);
+        Assert.Equal(
+            ReviewTableCellWidthMode.Automatic,
+            result.Draft.TableCellWidthMode);
 
         using var document = JsonDocument.Parse(js.Storage[CurrentKey]);
-        Assert.Equal(2, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal(3, document.RootElement.GetProperty("schemaVersion").GetInt32());
         Assert.True(document.RootElement.TryGetProperty("draft", out _));
     }
 
@@ -133,7 +136,58 @@ public sealed class ReviewDraftStorageServiceTests
         Assert.Equal(DraftLoadStatus.Migrated, result.Status);
         using var upgraded = JsonDocument.Parse(js.Storage[CurrentKey]);
         Assert.Equal(
-            2,
+            3,
+            upgraded.RootElement.GetProperty("schemaVersion").GetInt32());
+    }
+
+    [Fact]
+    public async Task LoadAsync_MigratesVersionTwoBodyFormatsWithoutChangingLegacyComponents()
+    {
+        var js = new FakeJsRuntime();
+        js.Storage[CurrentKey] = """
+            {
+              "schemaVersion": 2,
+              "draft": {
+                "whatWorks": "One\nTwo",
+                "whatCouldBeBetter": "Three\nFour",
+                "finalThoughts": "Five",
+                "components": [
+                  {
+                    "id": "c6712c87-f67b-4aaa-a402-34eb24e84e13",
+                    "kind": 1,
+                    "heading": "Legacy list",
+                    "content": "Six\nSeven",
+                    "rating": 3
+                  },
+                  {
+                    "id": "ab6b76c5-55b0-440f-8903-cd43e81554ba",
+                    "kind": 0,
+                    "heading": "Legacy rating",
+                    "content": "Notes",
+                    "rating": 3
+                  }
+                ]
+              }
+            }
+            """;
+        var service = new ReviewDraftStorageService(js);
+
+        var result = await service.LoadAsync();
+
+        Assert.Equal(DraftLoadStatus.Migrated, result.Status);
+        Assert.Equal(ReviewTextFormat.Text, result.Draft!.WhatWorksFormat);
+        Assert.Equal(ReviewTextFormat.Text, result.Draft.WhatCouldBeBetterFormat);
+        Assert.Equal(ReviewTextFormat.Text, result.Draft.FinalThoughtsFormat);
+        Assert.Equal(
+            ReviewTextFormat.BulletedList,
+            result.Draft.Components[0].ContentFormat);
+        Assert.Equal(
+            ReviewTextFormat.Text,
+            result.Draft.Components[1].ContentFormat);
+
+        using var upgraded = JsonDocument.Parse(js.Storage[CurrentKey]);
+        Assert.Equal(
+            3,
             upgraded.RootElement.GetProperty("schemaVersion").GetInt32());
     }
 

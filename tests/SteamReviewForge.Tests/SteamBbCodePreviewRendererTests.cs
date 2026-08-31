@@ -43,4 +43,16 @@ public sealed class SteamBbCodePreviewRendererTests
         Assert.DoesNotContain("href=", html);
         Assert.Contains("Unsafe", html);
     }
+
+    [Fact]
+    public void Render_DistinguishesEqualAndAutomaticTableWidths()
+    {
+        var equal = SteamBbCodePreviewRenderer.Render(
+            "[table equalcells=1]\n[tr][td]A[/td][/tr]\n[/table]");
+        var automatic = SteamBbCodePreviewRenderer.Render(
+            "[table]\n[tr][td]A[/td][/tr]\n[/table]");
+
+        Assert.Contains("preview-table-equal", equal);
+        Assert.DoesNotContain("preview-table-equal", automatic);
+    }
 }

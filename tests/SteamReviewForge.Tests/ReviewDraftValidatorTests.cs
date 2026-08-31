@@ -11,7 +11,6 @@ public sealed class ReviewDraftValidatorTests
     {
         var draft = new ReviewDraft
         {
-            Summary = string.Empty,
             Recommendation = null,
             Title = string.Empty,
             FinalThoughts = string.Empty,
@@ -22,7 +21,6 @@ public sealed class ReviewDraftValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.Recommendation));
-        Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Summary));
         Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.Title));
         Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Categories));
         Assert.Contains(result.Issues, issue => issue.Field == nameof(draft.FinalThoughts));
@@ -35,7 +33,6 @@ public sealed class ReviewDraftValidatorTests
         {
             Recommendation = ReviewRecommendation.Recommended,
             IncludeTitle = false,
-            IncludeSummary = false,
             IncludeWhatWorks = false,
             IncludeWhatCouldBeBetter = false,
             IncludeFinalThoughts = false,
@@ -47,7 +44,6 @@ public sealed class ReviewDraftValidatorTests
         Assert.True(result.IsValid);
         Assert.DoesNotContain(result.Issues, issue =>
             issue.Field is nameof(draft.Title) or
-                nameof(draft.Summary) or
                 nameof(draft.WhatWorks) or
                 nameof(draft.WhatCouldBeBetter) or
                 nameof(draft.FinalThoughts) or
@@ -60,7 +56,6 @@ public sealed class ReviewDraftValidatorTests
         var draft = new ReviewDraft
         {
             EditingMode = ReviewEditingMode.UnguidedBbCode,
-            Summary = string.Empty,
             Recommendation = null
         };
 
@@ -76,7 +71,6 @@ public sealed class ReviewDraftValidatorTests
         var draft = new ReviewDraft
         {
             EditingMode = ReviewEditingMode.GuidedBbCode,
-            Summary = string.Empty,
             Recommendation = ReviewRecommendation.Recommended,
             Title = string.Empty,
             FinalThoughts = string.Empty,
@@ -87,7 +81,6 @@ public sealed class ReviewDraftValidatorTests
 
         Assert.True(result.IsValid);
         Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Title));
-        Assert.DoesNotContain(result.Issues, issue => issue.Field == nameof(draft.Summary));
     }
 
     [Fact]
@@ -95,7 +88,6 @@ public sealed class ReviewDraftValidatorTests
     {
         var draft = new ReviewDraft
         {
-            Summary = "Summary",
             Recommendation = ReviewRecommendation.Recommended,
             RatingSystem = ReviewRatingSystem.Text,
             TextRatingOptions = ["Good", ""],

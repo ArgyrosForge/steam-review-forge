@@ -8,7 +8,7 @@ public sealed class ReviewDraftStorageService
 {
     private const string CurrentStorageKey = "steam-review-forge-draft-v2";
     private const string LegacyStorageKey = "steam-review-forge-draft-v1";
-    private const int CurrentSchemaVersion = 2;
+    private const int CurrentSchemaVersion = 3;
 
     private static readonly JsonSerializerOptions JsonOptions =
         new(JsonSerializerDefaults.Web);
@@ -169,7 +169,7 @@ public sealed class ReviewDraftStorageService
                 return Invalid(json, "The saved review data could not be read.");
             }
 
-            Normalize(draft);
+            Normalize(draft, schemaVersion);
 
             return new DraftLoadResult(
                 schemaVersion < CurrentSchemaVersion
@@ -212,7 +212,7 @@ public sealed class ReviewDraftStorageService
                 draft.TableColumns = CreateLegacyTableColumns(document.RootElement);
             }
 
-            Normalize(draft);
+            Normalize(draft, 1);
 
             return new DraftLoadResult(DraftLoadStatus.Migrated, draft);
         }
@@ -230,7 +230,7 @@ public sealed class ReviewDraftStorageService
         }
     }
 
-    private static void Normalize(ReviewDraft draft)
+    private static void Normalize(ReviewDraft draft, int sourceSchemaVersion)
     {
         if (!Enum.IsDefined(draft.EditingMode))
         {
@@ -247,6 +247,11 @@ public sealed class ReviewDraftStorageService
             draft.RatingSystem = ReviewRatingSystem.FiveStars;
         }
 
+        if (!Enum.IsDefined(draft.TableCellWidthMode))
+        {
+            draft.TableCellWidthMode = ReviewTableCellWidthMode.Equal;
+        }
+
         if (!Enum.IsDefined(draft.Template))
         {
             draft.Template = ReviewTemplate.Balanced;
@@ -260,7 +265,6 @@ public sealed class ReviewDraftStorageService
 
         draft.RawBbCode ??= string.Empty;
         draft.Title ??= string.Empty;
-        draft.Summary ??= string.Empty;
         draft.Playtime = PlaytimeFormatter.Normalize(draft.Playtime);
         draft.WhatWorks ??= string.Empty;
         draft.WhatWorksHeading ??= "What Works";
@@ -268,6 +272,21 @@ public sealed class ReviewDraftStorageService
         draft.WhatCouldBeBetterHeading ??= "What Could Be Better";
         draft.FinalThoughts ??= string.Empty;
         draft.FinalThoughtsHeading ??= "Final Thoughts";
+
+        if (sourceSchemaVersion < 3)
+        {
+            draft.WhatWorksFormat = ReviewTextFormat.Text;
+            draft.WhatCouldBeBetterFormat = ReviewTextFormat.Text;
+            draft.FinalThoughtsFormat = ReviewTextFormat.Text;
+        }
+        else
+        {
+            draft.WhatWorksFormat = NormalizeTextFormat(draft.WhatWorksFormat);
+            draft.WhatCouldBeBetterFormat = NormalizeTextFormat(
+                draft.WhatCouldBeBetterFormat);
+            draft.FinalThoughtsFormat = NormalizeTextFormat(
+                draft.FinalThoughtsFormat);
+        }
 
         draft.TextRatingOptions ??= [];
 
@@ -283,7 +302,7 @@ public sealed class ReviewDraftStorageService
 
         NormalizeTableColumns(draft);
         NormalizeCategories(draft);
-        NormalizeComponents(draft);
+        NormalizeComponents(draft, sourceSchemaVersion);
     }
 
     private static void NormalizeCategories(ReviewDraft draft)
@@ -328,7 +347,9 @@ public sealed class ReviewDraftStorageService
         }
     }
 
-    private static void NormalizeComponents(ReviewDraft draft)
+    private static void NormalizeComponents(
+        ReviewDraft draft,
+        int sourceSchemaVersion)
     {
         draft.Components ??= [];
 
@@ -353,9 +374,20 @@ public sealed class ReviewDraftStorageService
 
             component.Heading ??= "New Section";
             component.Content ??= string.Empty;
+            component.ContentFormat = sourceSchemaVersion < 3
+                ? component.Kind == ReviewContentComponentKind.BulletedList
+                    ? ReviewTextFormat.BulletedList
+                    : ReviewTextFormat.Text
+                : NormalizeTextFormat(component.ContentFormat);
             component.Rating = Math.Clamp(component.Rating, 1, maximumRating);
         }
     }
+
+    private static ReviewTextFormat NormalizeTextFormat(
+        ReviewTextFormat format) =>
+        Enum.IsDefined(format)
+            ? format
+            : ReviewTextFormat.Text;
 
     private static int GetMaximumRating(ReviewDraft draft)
     {

@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Made Structured template headings, dividers, rating-table headings, and rating-table cells directly editable or removable while retaining the persistent Final Preview
 - Standardized the Final Preview width and body typography across every editing mode to match Steam's full reviews, and added Early Access Review as locally saved preview metadata
+- Made Guided BBCode explicitly require a starting-point selection and explain why the editor remains locked during setup
+- Moved each editing mode's progress path into the header and added theme-aware, visible explanations for blocked workflow stages and actions
+- Let Structured previews stop at the end of their review content instead of stretching empty Steam-blue space to the viewport
+- Keep Structured editing controls inline with the review component they modify instead of reserving a separate side gutter or table column
+- Add a View BBCode action beside Copy BBCode with a selectable, copyable generated-code modal
+- Keep included Full Custom components present in generated BBCode and the Final Preview even while their editable content is blank
+- Make every structured body plain text by default, with inline Text, Bullets, and Numbered controls plus editable drag-and-drop list items kept in sync across both previews and BBCode
+- Upgrade saved drafts to schema version 3 while preserving explicitly bulleted version-2 custom components
+- Keep structured previews locked until the user explicitly advances from setup, with clear gate messages in guided and unguided modes
+- Separate whole-table removal from column controls and show a destructive hover/focus warning before removing the rating table
+- Place row addition, cell-width mode, and whole-table removal together inside the table footer, with Equal and Auto widths kept consistent across editors, previews, and generated BBCode
+- Blur and label the primary working preview until setup is explicitly completed in every mode except Unguided BBCode
+- Keep Guided BBCode's Final Preview clear while blurring only its setup-locked editor, and replace setup rating dropdowns with a visual four-choice grid in every mode except Unguided BBCode
+- Match Unguided Structured's setup width to Guided setup, use the same Steam palette for Editable and Final previews, and remove Short Summary from structured reviews
 
 ## [0.2.0] - 2026-08-29
 

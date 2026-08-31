@@ -49,6 +49,18 @@ public sealed class SteamBbCodeGeneratorTests
     }
 
     [Fact]
+    public void Generate_UsesSelectedTableCellWidthMode()
+    {
+        var draft = CreateCompleteDraft();
+        draft.TableCellWidthMode = ReviewTableCellWidthMode.Automatic;
+
+        var output = SteamBbCodeGenerator.Generate(draft);
+
+        Assert.Contains("[table]\n", output);
+        Assert.DoesNotContain("[table equalcells=1]", output);
+    }
+
+    [Fact]
     public void Generate_ExcludesSteamOwnedMetadata()
     {
         var draft = CreateCompleteDraft();
@@ -80,6 +92,7 @@ public sealed class SteamBbCodeGeneratorTests
             new ReviewContentComponent
             {
                 Kind = ReviewContentComponentKind.BulletedList,
+                ContentFormat = ReviewTextFormat.BulletedList,
                 Heading = "Second component",
                 Content = "One\nTwo"
             }
@@ -90,8 +103,52 @@ public sealed class SteamBbCodeGeneratorTests
         Assert.True(
             output.IndexOf("First component", StringComparison.Ordinal) <
             output.IndexOf("Second component", StringComparison.Ordinal));
-        Assert.Contains("• One", output);
-        Assert.Contains("• Two", output);
+        Assert.Contains("[list]\n[*]One\n[*]Two\n[/list]", output);
+    }
+
+    [Fact]
+    public void Generate_UsesIndependentTextAndListFormatsForEveryBody()
+    {
+        var draft = CreateCompleteDraft();
+        draft.WhatWorks = "One\nTwo";
+        draft.WhatWorksFormat = ReviewTextFormat.BulletedList;
+        draft.WhatCouldBeBetter = "Three\nFour";
+        draft.WhatCouldBeBetterFormat = ReviewTextFormat.NumberedList;
+        draft.FinalThoughts = "Plain\ntext";
+        draft.FinalThoughtsFormat = ReviewTextFormat.Text;
+        draft.Components =
+        [
+            new ReviewContentComponent
+            {
+                Kind = ReviewContentComponentKind.Rating,
+                Heading = "Combat",
+                Content = "Fast\nReadable",
+                ContentFormat = ReviewTextFormat.NumberedList,
+                Rating = 4
+            }
+        ];
+
+        var output = SteamBbCodeGenerator.Generate(draft);
+
+        Assert.Contains("[list]\n[*]One\n[*]Two\n[/list]", output);
+        Assert.Contains("[olist]\n[*]Three\n[*]Four\n[/olist]", output);
+        Assert.Contains("[h2]Final Thoughts[/h2]\nPlain\ntext", output);
+        Assert.Contains(
+            "[h2]Combat[/h2]\n★★★★☆\n[olist]\n[*]Fast\n[*]Readable\n[/olist]",
+            output);
+    }
+
+    [Fact]
+    public void Generate_DefaultStructuredBodiesArePlainText()
+    {
+        var draft = CreateCompleteDraft();
+
+        var output = SteamBbCodeGenerator.Generate(draft);
+
+        Assert.DoesNotContain("[list]", output);
+        Assert.DoesNotContain("[olist]", output);
+        Assert.DoesNotContain("• Strong systems", output);
+        Assert.Contains("[h2]What Works[/h2]\nStrong systems", output);
     }
 
     [Fact]
@@ -99,7 +156,6 @@ public sealed class SteamBbCodeGeneratorTests
     {
         var draft = CreateCompleteDraft();
         draft.IncludeTitle = false;
-        draft.IncludeSummary = false;
         draft.IncludeWhatWorks = false;
         draft.IncludeWhatCouldBeBetter = false;
         draft.IncludeFinalThoughts = false;
@@ -108,6 +164,22 @@ public sealed class SteamBbCodeGeneratorTests
         var output = SteamBbCodeGenerator.Generate(draft);
 
         Assert.Empty(output);
+    }
+
+    [Fact]
+    public void Generate_PreservesIncludedEmptyStructuredBlocks()
+    {
+        var draft = CreateCompleteDraft();
+        draft.WhatWorks = string.Empty;
+        draft.WhatCouldBeBetter = string.Empty;
+        draft.FinalThoughts = string.Empty;
+
+        var output = SteamBbCodeGenerator.Generate(draft);
+
+        Assert.DoesNotContain("[i]", output);
+        Assert.Contains("[h2]What Works[/h2]", output);
+        Assert.Contains("[h2]What Could Be Better[/h2]", output);
+        Assert.Contains("[h2]Final Thoughts[/h2]", output);
     }
 
     [Fact]
@@ -133,7 +205,6 @@ public sealed class SteamBbCodeGeneratorTests
         return new ReviewDraft
         {
             Title = "Test Review",
-            Summary = "A concise summary.",
             Recommendation = ReviewRecommendation.Recommended,
             FinalThoughts = "Final verdict.",
             WhatWorks = "Strong systems",

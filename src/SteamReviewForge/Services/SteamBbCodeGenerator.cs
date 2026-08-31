@@ -5,16 +5,6 @@ namespace SteamReviewForge.Services;
 
 public static class SteamBbCodeGenerator
 {
-    public static string GenerateSetupPreview(
-        ReviewDraft draft)
-    {
-        ArgumentNullException.ThrowIfNull(draft);
-
-        return string.IsNullOrWhiteSpace(draft.Summary)
-            ? string.Empty
-            : draft.Summary.Trim();
-    }
-
     public static string Generate(ReviewDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
@@ -56,12 +46,6 @@ public static class SteamBbCodeGenerator
             output.AppendLine($"[h1]{title}[/h1]");
         }
 
-        if (draft.IncludeSummary &&
-            !string.IsNullOrWhiteSpace(draft.Summary))
-        {
-            output.AppendLine($"[i]{draft.Summary.Trim()}[/i]");
-        }
-
         return output.ToString().Trim();
     }
 
@@ -84,6 +68,7 @@ public static class SteamBbCodeGenerator
                     output,
                     draft.Categories,
                     draft.TableColumns,
+                    draft.TableCellWidthMode,
                     draft.RatingSystem,
                     draft.TextRatingOptions);
                 break;
@@ -146,43 +131,23 @@ public static class SteamBbCodeGenerator
         var heading = string.IsNullOrWhiteSpace(component.Heading)
             ? "New Section"
             : component.Heading.Trim();
-        var content = component.Content?.Trim() ?? string.Empty;
         var output = new StringBuilder();
 
         output.AppendLine($"[h2]{heading}[/h2]");
 
-        switch (component.Kind)
+        if (component.Kind == ReviewContentComponentKind.Rating)
         {
-            case ReviewContentComponentKind.Rating:
-                output.AppendLine(
-                    FormatRating(
-                        component.Rating,
-                        draft.RatingSystem,
-                        draft.TextRatingOptions));
-
-                if (!string.IsNullOrWhiteSpace(content))
-                {
-                    output.AppendLine(content);
-                }
-
-                break;
-
-            case ReviewContentComponentKind.BulletedList:
-                foreach (var item in GetLines(content))
-                {
-                    output.AppendLine($"• {item}");
-                }
-
-                break;
-
-            case ReviewContentComponentKind.Text:
-                if (!string.IsNullOrWhiteSpace(content))
-                {
-                    output.AppendLine(content);
-                }
-
-                break;
+            output.AppendLine(
+                FormatRating(
+                    component.Rating,
+                    draft.RatingSystem,
+                    draft.TextRatingOptions));
         }
+
+        AppendFormattedContent(
+            output,
+            component.Content,
+            component.ContentFormat);
 
         return output.ToString().Trim();
     }
@@ -191,39 +156,38 @@ public static class SteamBbCodeGenerator
         StringBuilder output,
         ReviewDraft draft)
     {
-        var whatWorks = draft.IncludeWhatWorks
-            ? GetLines(draft.WhatWorks)
-            : [];
-        var whatCouldBeBetter = draft.IncludeWhatCouldBeBetter
-            ? GetLines(draft.WhatCouldBeBetter)
-            : [];
-        var hasFinalThoughts =
-            draft.IncludeFinalThoughts &&
-            !string.IsNullOrWhiteSpace(draft.FinalThoughts);
-
-        if (whatWorks.Length == 0 &&
-            whatCouldBeBetter.Length == 0 &&
-            !hasFinalThoughts)
+        if (!draft.IncludeWhatWorks &&
+            !draft.IncludeWhatCouldBeBetter &&
+            !draft.IncludeFinalThoughts)
         {
             return;
         }
 
-        AppendListSection(
-            output,
-            draft.WhatWorksHeading,
-            whatWorks);
-
-        AppendListSection(
-            output,
-            draft.WhatCouldBeBetterHeading,
-            whatCouldBeBetter);
-
-        if (hasFinalThoughts)
+        if (draft.IncludeWhatWorks)
         {
-            AppendTextSection(
+            AppendFormattedSection(
+                output,
+                draft.WhatWorksHeading,
+                draft.WhatWorks,
+                draft.WhatWorksFormat);
+        }
+
+        if (draft.IncludeWhatCouldBeBetter)
+        {
+            AppendFormattedSection(
+                output,
+                draft.WhatCouldBeBetterHeading,
+                draft.WhatCouldBeBetter,
+                draft.WhatCouldBeBetterFormat);
+        }
+
+        if (draft.IncludeFinalThoughts)
+        {
+            AppendFormattedSection(
                 output,
                 draft.FinalThoughtsHeading,
-                draft.FinalThoughts.Trim());
+                draft.FinalThoughts,
+                draft.FinalThoughtsFormat);
         }
     }
 
@@ -231,55 +195,64 @@ public static class SteamBbCodeGenerator
         StringBuilder output,
         ReviewDraft draft)
     {
-        if (!draft.IncludeFinalThoughts ||
-            string.IsNullOrWhiteSpace(draft.FinalThoughts))
+        if (!draft.IncludeFinalThoughts)
         {
             return;
         }
 
-        AppendTextSection(
+        AppendFormattedSection(
             output,
             draft.FinalThoughtsHeading,
-            draft.FinalThoughts.Trim());
+            draft.FinalThoughts,
+            draft.FinalThoughtsFormat);
     }
 
-    private static void AppendListSection(
+    private static void AppendFormattedSection(
         StringBuilder output,
         string heading,
-        IEnumerable<string> items)
+        string content,
+        ReviewTextFormat format)
     {
-        var itemList = items.ToArray();
+        if (!string.IsNullOrWhiteSpace(heading))
+        {
+            output.AppendLine($"[h2]{heading.Trim()}[/h2]");
+        }
 
-        if (itemList.Length == 0)
+        AppendFormattedContent(output, content, format);
+
+        output.AppendLine();
+    }
+
+    private static void AppendFormattedContent(
+        StringBuilder output,
+        string content,
+        ReviewTextFormat format)
+    {
+        if (string.IsNullOrWhiteSpace(content))
         {
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(heading))
+        if (format == ReviewTextFormat.Text)
         {
-            output.AppendLine($"[h2]{heading.Trim()}[/h2]");
+            output.AppendLine(content.Trim());
+            return;
         }
 
-        foreach (var item in itemList)
+        output.AppendLine(
+            format == ReviewTextFormat.NumberedList
+                ? "[olist]"
+                : "[list]");
+
+        foreach (var item in GetLines(content))
         {
-            output.AppendLine($"• {item}");
+            output.AppendLine($"[*]{item}");
         }
 
-        output.AppendLine();
-    }
-
-    private static void AppendTextSection(
-        StringBuilder output,
-        string heading,
-        string text)
-    {
-        if (!string.IsNullOrWhiteSpace(heading))
-        {
-            output.AppendLine($"[h2]{heading.Trim()}[/h2]");
-        }
-
-        output.AppendLine(text);
-        output.AppendLine();
+        output.AppendLine(
+            format == ReviewTextFormat.NumberedList
+                ? "[/olist]"
+                : "[/list]");
     }
 
     private static void AppendGeneratedSection(
@@ -320,6 +293,7 @@ public static class SteamBbCodeGenerator
         StringBuilder output,
         IEnumerable<ReviewCategory> categories,
         IReadOnlyList<ReviewTableColumn> columns,
+        ReviewTableCellWidthMode cellWidthMode,
         ReviewRatingSystem ratingSystem,
         IReadOnlyList<string> textRatingOptions)
     {
@@ -328,7 +302,10 @@ public static class SteamBbCodeGenerator
             return;
         }
 
-        output.AppendLine("[table equalcells=1]");
+        output.AppendLine(
+            cellWidthMode == ReviewTableCellWidthMode.Equal
+                ? "[table equalcells=1]"
+                : "[table]");
 
         var headings = new StringBuilder("[tr]");
 
