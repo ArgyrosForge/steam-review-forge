@@ -11,10 +11,6 @@ public sealed class ReviewDraft
 
     public bool IncludeTitle { get; set; } = true;
 
-    public string Summary { get; set; } = string.Empty;
-
-    public bool IncludeSummary { get; set; } = true;
-
     public ReviewRecommendation? Recommendation { get; set; }
 
     public bool ReceivedProductForFree { get; set; } = false;
@@ -26,6 +22,9 @@ public sealed class ReviewDraft
 
     public ReviewRatingSystem RatingSystem { get; set; } =
         ReviewRatingSystem.FiveStars;
+
+    public ReviewTableCellWidthMode TableCellWidthMode { get; set; } =
+        ReviewTableCellWidthMode.Equal;
 
     public List<ReviewTableColumn> TableColumns { get; set; } =
     [
@@ -67,6 +66,9 @@ public sealed class ReviewDraft
 
     public string WhatWorksHeading { get; set; } = "What Works";
 
+    public ReviewTextFormat WhatWorksFormat { get; set; } =
+        ReviewTextFormat.Text;
+
     public bool IncludeWhatWorks { get; set; } = true;
 
     public string WhatCouldBeBetter { get; set; } =
@@ -76,12 +78,18 @@ public sealed class ReviewDraft
     public string WhatCouldBeBetterHeading { get; set; } =
         "What Could Be Better";
 
+    public ReviewTextFormat WhatCouldBeBetterFormat { get; set; } =
+        ReviewTextFormat.Text;
+
     public bool IncludeWhatCouldBeBetter { get; set; } = true;
 
     public string FinalThoughts { get; set; } =
         "Despite its rough edges, the game delivers a memorable and consistently enjoyable experience.";
 
     public string FinalThoughtsHeading { get; set; } = "Final Thoughts";
+
+    public ReviewTextFormat FinalThoughtsFormat { get; set; } =
+        ReviewTextFormat.Text;
 
     public bool IncludeFinalThoughts { get; set; } = true;
 

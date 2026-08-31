@@ -156,11 +156,16 @@ rewrite content or prevent clipboard export.
 
 Serializes the active `ReviewDraft` as JSON and stores it through a small JavaScript local-storage bridge.
 
-The current storage key and payload schema are versioned:
+The current storage key remains stable so older envelopes can be discovered:
 
 ```text
 steam-review-forge-draft-v2
 ```
+
+The envelope currently uses schema version 3. Structured body content remains
+newline-delimited text, with an independent text/list format field. Version-2
+drafts migrate built-in writing blocks to plain text and retain explicitly
+bulleted custom components.
 
 The service supports loading, saving, migrating, recovering, and clearing one
 active draft. Existing `steam-review-forge-draft-v1` payloads are normalized,

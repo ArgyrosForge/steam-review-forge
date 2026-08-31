@@ -24,6 +24,12 @@ public sealed class ReviewTemplateServiceTests
         Assert.Equal(expectedFormat, draft.DisplayFormat);
         Assert.Equal(expectedCategoryCount, draft.Categories.Count);
         Assert.Equal(3, draft.TableColumns.Count);
+        Assert.Equal(
+            ReviewTableCellWidthMode.Equal,
+            draft.TableCellWidthMode);
+        Assert.Equal(ReviewTextFormat.Text, draft.WhatWorksFormat);
+        Assert.Equal(ReviewTextFormat.Text, draft.WhatCouldBeBetterFormat);
+        Assert.Equal(ReviewTextFormat.Text, draft.FinalThoughtsFormat);
     }
 
     [Fact]
@@ -32,7 +38,6 @@ public sealed class ReviewTemplateServiceTests
         var draft = new ReviewDraft
         {
             Title = "My title",
-            Summary = "My summary",
             Recommendation = ReviewRecommendation.NotRecommended,
             Playtime = "42.5",
             ReceivedProductForFree = true,
@@ -42,7 +47,6 @@ public sealed class ReviewTemplateServiceTests
         ReviewTemplateService.Apply(draft, ReviewTemplate.DeepDive);
 
         Assert.Equal("My title", draft.Title);
-        Assert.Equal("My summary", draft.Summary);
         Assert.Equal(ReviewRecommendation.NotRecommended, draft.Recommendation);
         Assert.Equal("42.5", draft.Playtime);
         Assert.True(draft.ReceivedProductForFree);
@@ -99,6 +103,9 @@ public sealed class ReviewTemplateServiceTests
         ReviewTemplateService.Apply(draft, template);
 
         Assert.Equal("What Works", draft.WhatWorksHeading);
+        Assert.Equal(ReviewTextFormat.Text, draft.WhatWorksFormat);
+        Assert.Equal(ReviewTextFormat.Text, draft.WhatCouldBeBetterFormat);
+        Assert.Equal(ReviewTextFormat.Text, draft.FinalThoughtsFormat);
         Assert.Equal("What Could Be Better", draft.WhatCouldBeBetterHeading);
         Assert.Equal(expectedFinalHeading, draft.FinalThoughtsHeading);
         Assert.True(draft.IncludeCategoryDivider);

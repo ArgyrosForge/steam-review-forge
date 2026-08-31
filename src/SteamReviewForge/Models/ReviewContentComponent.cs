@@ -10,6 +10,9 @@ public sealed class ReviewContentComponent
 
     public string Content { get; set; } = string.Empty;
 
+    public ReviewTextFormat ContentFormat { get; set; } =
+        ReviewTextFormat.Text;
+
     public int Rating { get; set; } = 3;
 }
 
