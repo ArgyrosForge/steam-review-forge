@@ -72,8 +72,6 @@ Prepare Steam Review Forge for dependable public use.
 
 - [ ] Finalize the supported review formats
 - [ ] Complete automated test coverage for critical workflows
-- [ ] Complete accessibility and keyboard-navigation review
-- [ ] Complete broad desktop and mobile browser compatibility testing
 - [ ] Finalize user and contributor documentation
 - [ ] Resolve all known release-blocking defects
 - [ ] Publish a stable hosted version
