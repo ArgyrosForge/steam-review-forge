@@ -15,11 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    uses: ./.github/workflows/tests.yml
-
   build:
-    needs: quality
     runs-on: ubuntu-latest
 
     steps:
