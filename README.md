@@ -41,16 +41,6 @@ Review drafts and their contents are stored locally in browser storage and are n
 
 Clearing browser storage or starting a new review removes the locally saved draft.
 
-## Testing
-
-Unit tests live in `tests/SteamReviewForge.Tests` and can be run locally with:
-
-```bash
-dotnet test tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj
-```
-
-Firefox and Chromium workflow tests live in `tests/SteamReviewForge.BrowserTests`. GitHub Actions runs the complete suite for pull requests and before every GitHub Pages deployment; it can also be started manually from the repository's **Actions** tab.
-
 ## Roadmap
 
 The roadmap focuses on improving the functionality and UX of creating one review at a time. See [`ROADMAP.md`](ROADMAP.md) for planned releases and future improvements.
