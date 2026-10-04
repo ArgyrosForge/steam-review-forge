@@ -261,4 +261,35 @@ public sealed class ReviewDraftStorageServiceTests
 
         Assert.Empty(js.Storage);
     }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("42")]
+    [InlineData("\"draft\"")]
+    public async Task LoadAsync_PreservesWrongRootJsonForRecovery(string payload)
+    {
+        var js = new FakeJsRuntime();
+        js.Storage[CurrentKey] = payload;
+        var result = await new ReviewDraftStorageService(js).LoadAsync();
+        Assert.Equal(DraftLoadStatus.Invalid, result.Status);
+        Assert.Equal(payload, result.RawBackup);
+        Assert.Equal(payload, js.Storage[CurrentKey]);
+        Assert.Null(result.Draft);
+    }
+
+    [Theory]
+    [InlineData(ReviewDisplayFormat.RatingTable)]
+    [InlineData(ReviewDisplayFormat.Sections)]
+    [InlineData(ReviewDisplayFormat.Checklist)]
+    public async Task SaveAndLoad_PreservesIntentionallyRemovedCategories(ReviewDisplayFormat format)
+    {
+        var service = new ReviewDraftStorageService(new FakeJsRuntime());
+        var draft = new ReviewDraft { DisplayFormat = format, Categories = [] };
+        var before = SteamBbCodeGenerator.Generate(draft);
+        await service.SaveAsync(draft);
+        var result = await service.LoadAsync();
+        Assert.Empty(result.Draft!.Categories);
+        Assert.Equal(before, SteamBbCodeGenerator.Generate(result.Draft));
+    }
 }

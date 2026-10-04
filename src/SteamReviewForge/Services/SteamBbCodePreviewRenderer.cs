@@ -1,540 +1,207 @@
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SteamReviewForge.Services;
 
 public static class SteamBbCodePreviewRenderer
 {
-    private static readonly Regex UrlPattern =
-        new(
-            @"\[url=(?<url>[^\]]+)\](?<text>.*?)\[/url\]",
-            RegexOptions.IgnoreCase |
-            RegexOptions.CultureInvariant);
+    private static readonly HashSet<string> Tags =
+    ["h1", "h2", "h3", "b", "i", "u", "strike", "spoiler", "url", "code",
+     "noparse", "quote", "hr", "list", "olist", "*", "table", "tr", "th", "td"];
 
     public static string Render(string bbCode)
     {
         if (string.IsNullOrWhiteSpace(bbCode))
-        {
-            return """
-                <p class="preview-empty">
-                    Start writing to see a preview.
-                </p>
-                """;
-        }
+            return "<p class=\"preview-empty\">Start writing to see a preview.</p>";
+        if (bbCode.Length > SteamBbCodeSyntax.MaximumCharacters)
+            return $"<p class=\"preview-empty\">{SteamBbCodeSyntax.SizeMessage}</p>";
 
+        var text = bbCode.Replace("\r\n", "\n").Replace('\r', '\n');
+        var root = Parse(text);
+        if (root is null)
+            return "<p class=\"preview-empty\">Formatting is nested too deeply. Showing literal BBCode.</p>" +
+                   $"<pre class=\"preview-code\">{Encode(text)}</pre>";
+        return RenderFlow(root.Children);
+    }
+
+    private static Node? Parse(string text)
+    {
+        var root = new Node("root");
+        var stack = new List<Node> { root };
+        var position = 0;
+        foreach (var token in SteamBbCodeSyntax.Scan(text))
+        {
+            if (token.Start < position) continue; // Already consumed a literal block.
+            AddText(stack[^1], text[position..token.Start]);
+            position = token.End;
+            if (!Tags.Contains(token.Name))
+            {
+                AddText(stack[^1], text[token.Start..token.End]);
+                continue;
+            }
+            if (token.Closing)
+            {
+                if (token.Name == "hr") continue;
+                var index = stack.FindLastIndex(node => node.Tag == token.Name);
+                if (index > 0) stack.RemoveRange(index, stack.Count - index);
+                else AddText(stack[^1], text[token.Start..token.End]);
+                continue;
+            }
+            if (token.Name is "code" or "noparse")
+            {
+                var closing = $"[/{token.Name}]";
+                var end = text.IndexOf(closing, position, StringComparison.OrdinalIgnoreCase);
+                if (end < 0)
+                {
+                    AddText(stack[^1], text[token.Start..]);
+                    position = text.Length;
+                    break;
+                }
+                stack[^1].Children.Add(new Node(token.Name) { Text = text[position..end] });
+                position = end + closing.Length;
+                continue;
+            }
+            if (token.Name == "*")
+            {
+                var list = stack.FindLastIndex(node => node.Tag is "list" or "olist");
+                if (list < 0)
+                {
+                    AddText(stack[^1], "[*]");
+                    continue;
+                }
+                stack.RemoveRange(list + 1, stack.Count - list - 1);
+            }
+            var node = new Node(token.Name, token.Attributes);
+            stack[^1].Children.Add(node);
+            if (token.Name == "hr") continue;
+            if (stack.Count > SteamBbCodeSyntax.MaximumNesting) return null;
+            stack.Add(node);
+        }
+        AddText(stack[^1], text[position..]);
+        return root;
+    }
+
+    private static void AddText(Node parent, string text)
+    {
+        if (text.Length > 0) parent.Children.Add(new Node("text") { Text = text });
+    }
+
+    private static bool IsBlock(Node node) => node.Tag is
+        "h1" or "h2" or "h3" or "quote" or "code" or "hr" or "list" or "olist" or "table";
+
+    private static string RenderFlow(IEnumerable<Node> children, bool insideLink = false)
+    {
         var output = new StringBuilder();
-
-        var lines = bbCode
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .Split('\n');
-
-        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+        var paragraph = new StringBuilder();
+        void Flush()
         {
-            var rawLine = lines[lineIndex];
-
-            if (TryConsumeBlock(
-                    lines,
-                    ref lineIndex,
-                    "noparse",
-                    out var unparsedText,
-                    out _))
-            {
-                output.AppendLine(
-                    $"<p class=\"preview-noparse\">" +
-                    $"{EncodeWithLineBreaks(unparsedText)}</p>");
-
-                continue;
-            }
-
-            if (TryConsumeBlock(
-                    lines,
-                    ref lineIndex,
-                    "code",
-                    out var codeText,
-                    out _))
-            {
-                output.AppendLine(
-                    $"<pre class=\"preview-code\"><code>" +
-                    $"{WebUtility.HtmlEncode(codeText)}</code></pre>");
-
-                continue;
-            }
-
-            if (TryConsumeBlock(
-                    lines,
-                    ref lineIndex,
-                    "quote",
-                    out var quoteText,
-                    out var quoteAuthor))
-            {
-                var renderedQuote = RenderInlineWithLineBreaks(quoteText);
-
-                if (string.IsNullOrWhiteSpace(quoteAuthor))
-                {
-                    output.AppendLine($"<blockquote>{renderedQuote}</blockquote>");
-                }
-                else
-                {
-                    output.AppendLine(
-                        "<blockquote class=\"preview-attributed-quote\">" +
-                        "<span class=\"preview-quote-author\">" +
-                        "Originally posted by " +
-                        $"<strong>{WebUtility.HtmlEncode(quoteAuthor)}</strong>:" +
-                        "</span>" +
-                        renderedQuote +
-                        "</blockquote>");
-                }
-
-                continue;
-            }
-
-            var line = rawLine.TrimEnd();
-
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            if (TryGetTagContent(line, "h1", out var headingOne))
-            {
-                output.AppendLine(
-                    $"<h1>{RenderInline(headingOne)}</h1>");
-
-                continue;
-            }
-
-            if (TryGetTagContent(line, "h2", out var headingTwo))
-            {
-                output.AppendLine(
-                    $"<h2>{RenderInline(headingTwo)}</h2>");
-
-                continue;
-            }
-
-            if (TryGetTagContent(line, "h3", out var headingThree))
-            {
-                output.AppendLine(
-                    $"<h3>{RenderInline(headingThree)}</h3>");
-
-                continue;
-            }
-
-            if (TryGetTagContent(line, "i", out var italicText))
-            {
-                output.AppendLine(
-                    $"<p class=\"preview-summary\">" +
-                    $"<em>{RenderInline(italicText)}</em></p>");
-
-                continue;
-            }
-
-            if (line.Equals(
-                    "[hr][/hr]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine("<hr />");
-                continue;
-            }
-
-            if (line.Equals(
-                    "[list]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine("<ul class=\"preview-bbcode-list\">");
-                continue;
-            }
-
-            if (line.Equals(
-                    "[/list]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine("</ul>");
-                continue;
-            }
-
-            if (line.Equals(
-                    "[olist]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine("<ol class=\"preview-bbcode-list\">");
-                continue;
-            }
-
-            if (line.Equals(
-                    "[/olist]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine("</ol>");
-                continue;
-            }
-
-            if (line.StartsWith(
-                    "[*]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine(
-                    $"<li>{RenderInline(line[3..].Trim())}</li>");
-                continue;
-            }
-
-            if (line.StartsWith(
-                    "[table",
-                    StringComparison.OrdinalIgnoreCase) &&
-                line.EndsWith(
-                    "]",
-                    StringComparison.Ordinal))
-            {
-                var tableClass = line.Equals(
-                    "[table noborder=1]",
-                    StringComparison.OrdinalIgnoreCase)
-                    ? "preview-table preview-table-borderless"
-                    : line.Equals(
-                        "[table equalcells=1]",
-                        StringComparison.OrdinalIgnoreCase)
-                        ? "preview-table preview-table-equal"
-                        : "preview-table";
-
-                output.AppendLine(
-                    "<div class=\"preview-table-wrapper\">" +
-                    $"<table class=\"{tableClass}\">");
-
-                continue;
-            }
-
-            if (line.Equals(
-                    "[/table]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine("</table></div>");
-                continue;
-            }
-
-            if (line.StartsWith(
-                    "[tr]",
-                    StringComparison.OrdinalIgnoreCase) &&
-                line.EndsWith(
-                    "[/tr]",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                output.AppendLine(RenderTableRow(line));
-                continue;
-            }
-
-            if (line.StartsWith(
-                    "• ",
-                    StringComparison.Ordinal))
-            {
-                output.AppendLine(
-                    $"<p class=\"preview-list-item\">" +
-                    $"<span aria-hidden=\"true\">•</span>" +
-                    $"<span>{RenderInline(line[2..])}</span>" +
-                    $"</p>");
-
-                continue;
-            }
-
-            if (line.StartsWith(
-                    "☑",
-                    StringComparison.Ordinal) ||
-                line.StartsWith(
-                    "☐",
-                    StringComparison.Ordinal))
-            {
-                var marker = line[..1];
-                var text = line[1..].TrimStart();
-
-                output.AppendLine(
-                    $"<p class=\"preview-check-item\">" +
-                    $"<span class=\"preview-check-marker\" " +
-                    $"aria-hidden=\"true\">{marker}</span>" +
-                    $"<span>{RenderInline(text)}</span>" +
-                    $"</p>");
-
-                continue;
-            }
-
-            if (TryRenderEmbed(line, out var embed))
-            {
-                output.AppendLine(embed);
-                continue;
-            }
-
-            output.AppendLine(
-                $"<p>{RenderInline(line)}</p>");
+            var content = paragraph.ToString().Trim();
+            while (content.EndsWith("<br />", StringComparison.Ordinal)) content = content[..^6].TrimEnd();
+            if (content.Length > 0) output.Append("<p>").Append(content).AppendLine("</p>");
+            paragraph.Clear();
         }
-
+        foreach (var child in children)
+        {
+            if (IsBlock(child))
+            {
+                Flush();
+                output.Append(RenderNode(child, insideLink));
+            }
+            else if (child.Tag == "text")
+            {
+                // Treat newlines as paragraph boundaries only outside inline tags.
+                var lines = child.Text.Split('\n');
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    if (i > 0) Flush();
+                    if (paragraph.Length == 0 && TryRenderEmbed(lines[i].Trim(), out var embed))
+                        output.Append(embed);
+                    else paragraph.Append(Encode(lines[i]));
+                }
+            }
+            else paragraph.Append(RenderNode(child, insideLink));
+        }
+        Flush();
         return output.ToString();
     }
 
-    private static bool TryConsumeBlock(
-        IReadOnlyList<string> lines,
-        ref int lineIndex,
-        string tag,
-        out string content,
-        out string? attribute)
+    private static string RenderInline(IEnumerable<Node> children, bool insideLink = false) =>
+        string.Concat(children.Select(child => RenderNode(child, insideLink)));
+
+    private static string RenderNode(Node node, bool insideLink)
     {
-        content = string.Empty;
-        attribute = null;
-
-        var rawLine = lines[lineIndex];
-        var trimmedLine = rawLine.TrimStart();
-        var leadingWhitespaceLength = rawLine.Length - trimmedLine.Length;
-        var openingTag = $"[{tag}]";
-        var openingLength = 0;
-
-        if (trimmedLine.StartsWith(
-                openingTag,
-                StringComparison.OrdinalIgnoreCase))
+        string Inline() => RenderInline(node.Children, insideLink);
+        string Flow() => RenderFlow(node.Children, insideLink);
+        switch (node.Tag)
         {
-            openingLength = openingTag.Length;
+            case "text": return Encode(node.Text).Replace("\n", "<br />", StringComparison.Ordinal);
+            case "code": return $"<pre class=\"preview-code\"><code>{Encode(node.Text)}</code></pre>";
+            case "noparse": return $"<span class=\"preview-noparse\">{Encode(node.Text).Replace("\n", "<br />", StringComparison.Ordinal)}</span>";
+            case "hr": return "<hr />";
+            case "b": return $"<strong>{Inline()}</strong>";
+            case "i": return $"<em>{Inline()}</em>";
+            case "u": return $"<u>{Inline()}</u>";
+            case "strike": return $"<s>{Inline()}</s>";
+            case "spoiler": return $"<span class=\"preview-spoiler\" tabindex=\"0\">{Inline()}</span>";
+            case "h1": case "h2": case "h3": return $"<{node.Tag}>{Inline()}</{node.Tag}>";
+            case "quote":
+                var author = node.Attributes.StartsWith('=') ? node.Attributes[1..] : string.Empty;
+                return string.IsNullOrWhiteSpace(author)
+                    ? $"<blockquote>{Flow()}</blockquote>"
+                    : "<blockquote class=\"preview-attributed-quote\"><span class=\"preview-quote-author\">Originally posted by " +
+                      $"<strong>{Encode(author)}</strong>:</span>{Flow()}</blockquote>";
+            case "url":
+                var target = node.Attributes.StartsWith('=') ? node.Attributes[1..] : string.Empty;
+                if (insideLink || !SteamBbCodeSyntax.TryGetLink(target, out var uri)) return Inline();
+                return $"<a href=\"{Encode(uri!.AbsoluteUri)}\" target=\"_blank\" rel=\"noopener noreferrer\">" +
+                       RenderInline(node.Children, true) + "</a>";
+            case "list": case "olist":
+                var listTag = node.Tag == "list" ? "ul" : "ol";
+                return $"<{listTag} class=\"preview-bbcode-list\">" +
+                       string.Concat(node.Children.Where(child => child.Tag != "text" || !string.IsNullOrWhiteSpace(child.Text))
+                           .Select(child => child.Tag == "*" ? $"<li>{RenderFlow(child.Children, insideLink)}</li>" : $"<li>{RenderNode(child, insideLink)}</li>")) +
+                       $"</{listTag}>";
+            case "table":
+                var tableClass = node.Attributes.Trim().ToLowerInvariant() switch
+                {
+                    "noborder=1" => "preview-table preview-table-borderless",
+                    "equalcells=1" => "preview-table preview-table-equal",
+                    _ => "preview-table"
+                };
+                return $"<div class=\"preview-table-wrapper\"><table class=\"{tableClass}\">" +
+                       string.Concat(node.Children.Where(child => child.Tag != "text" || !string.IsNullOrWhiteSpace(child.Text))
+                           .Select(child => RenderNode(child, insideLink))) + "</table></div>";
+            case "tr":
+                return "<tr>" + string.Concat(node.Children.Where(child => child.Tag != "text" || !string.IsNullOrWhiteSpace(child.Text))
+                    .Select(child => RenderNode(child, insideLink))) + "</tr>";
+            case "th": case "td": return $"<{node.Tag}>{Inline().Trim()}</{node.Tag}>";
+            default: return Inline();
         }
-        else if (tag == "quote" &&
-                 trimmedLine.StartsWith(
-                     "[quote=",
-                     StringComparison.OrdinalIgnoreCase))
-        {
-            var attributeEnd = trimmedLine.IndexOf(']');
-
-            if (attributeEnd > "[quote=".Length)
-            {
-                attribute = trimmedLine["[quote=".Length..attributeEnd];
-                openingLength = attributeEnd + 1;
-            }
-        }
-
-        if (openingLength == 0)
-        {
-            return false;
-        }
-
-        var closingTag = $"[/{tag}]";
-        var collected = new List<string>();
-        var openingRemainder = rawLine[
-            (leadingWhitespaceLength + openingLength)..];
-        var closingIndex = openingRemainder.IndexOf(
-            closingTag,
-            StringComparison.OrdinalIgnoreCase);
-
-        if (closingIndex >= 0)
-        {
-            content = openingRemainder[..closingIndex];
-            return true;
-        }
-
-        collected.Add(openingRemainder);
-
-        for (var searchIndex = lineIndex + 1;
-             searchIndex < lines.Count;
-             searchIndex++)
-        {
-            closingIndex = lines[searchIndex].IndexOf(
-                closingTag,
-                StringComparison.OrdinalIgnoreCase);
-
-            if (closingIndex < 0)
-            {
-                collected.Add(lines[searchIndex]);
-                continue;
-            }
-
-            collected.Add(lines[searchIndex][..closingIndex]);
-            content = string.Join('\n', collected);
-            lineIndex = searchIndex;
-            return true;
-        }
-
-        return false;
     }
 
-    private static string EncodeWithLineBreaks(string text)
-    {
-        return WebUtility.HtmlEncode(text)
-            .Replace("\n", "<br />", StringComparison.Ordinal);
-    }
+    private static string Encode(string text) => WebUtility.HtmlEncode(text);
 
-    private static string RenderInlineWithLineBreaks(string text)
-    {
-        return RenderInline(text)
-            .Replace("\n", "<br />", StringComparison.Ordinal);
-    }
-
-    private static bool TryGetTagContent(
-        string line,
-        string tag,
-        out string content)
-    {
-        var openingTag = $"[{tag}]";
-        var closingTag = $"[/{tag}]";
-
-        if (line.StartsWith(
-                openingTag,
-                StringComparison.OrdinalIgnoreCase) &&
-            line.EndsWith(
-                closingTag,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            content = line[openingTag.Length..^closingTag.Length];
-
-            return true;
-        }
-
-        content = string.Empty;
-        return false;
-    }
-
-    private static string RenderTableRow(string line)
-    {
-        return WebUtility.HtmlEncode(line)
-            .Replace(
-                "[tr]",
-                "<tr>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/tr]",
-                "</tr>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[th]",
-                "<th>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/th]",
-                "</th>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[td]",
-                "<td>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/td]",
-                "</td>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[b]",
-                "<strong>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/b]",
-                "</strong>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[i]",
-                "<em>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/i]",
-                "</em>",
-                StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string RenderInline(string text)
-    {
-        var encoded = WebUtility.HtmlEncode(text);
-
-        encoded = UrlPattern.Replace(
-            encoded,
-            match => RenderLink(
-                match.Groups["url"].Value,
-                match.Groups["text"].Value));
-
-        return encoded
-            .Replace(
-                "[b]",
-                "<strong>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/b]",
-                "</strong>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[i]",
-                "<em>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/i]",
-                "</em>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[u]",
-                "<u>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/u]",
-                "</u>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[strike]",
-                "<s>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/strike]",
-                "</s>",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[spoiler]",
-                "<span class=\"preview-spoiler\">",
-                StringComparison.OrdinalIgnoreCase)
-            .Replace(
-                "[/spoiler]",
-                "</span>",
-                StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool TryRenderEmbed(
-        string line,
-        out string embed)
+    private static bool TryRenderEmbed(string line, out string embed)
     {
         embed = string.Empty;
-
-        if (!Uri.TryCreate(line, UriKind.Absolute, out var uri) ||
-            uri.Scheme is not ("http" or "https"))
-        {
-            return false;
-        }
-
+        if (!Uri.TryCreate(line, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) return false;
         var host = uri.Host.ToLowerInvariant();
         var label = host is "youtube.com" or "www.youtube.com" or "youtu.be"
             ? "YouTube video"
-            : host is "store.steampowered.com"
-                ? "Steam Store page"
-                : host is "steamcommunity.com" or "www.steamcommunity.com" &&
-                  uri.AbsolutePath.StartsWith(
-                      "/sharedfiles/",
-                      StringComparison.OrdinalIgnoreCase)
-                    ? "Steam Community item"
-                    : string.Empty;
-
-        if (string.IsNullOrEmpty(label))
-        {
-            return false;
-        }
-
-        var encodedUrl = WebUtility.HtmlEncode(uri.AbsoluteUri);
-
-        embed =
-            $"<a class=\"preview-embed\" href=\"{encodedUrl}\" " +
-            "target=\"_blank\" rel=\"noopener noreferrer\">" +
-            $"<strong>{label}</strong><span>{encodedUrl}</span></a>";
-
+            : host == "store.steampowered.com" ? "Steam Store page"
+            : host is "steamcommunity.com" or "www.steamcommunity.com" && uri.AbsolutePath.StartsWith("/sharedfiles/", StringComparison.OrdinalIgnoreCase)
+                ? "Steam Community item" : string.Empty;
+        if (label.Length == 0) return false;
+        var url = Encode(uri.AbsoluteUri);
+        embed = $"<a class=\"preview-embed\" href=\"{url}\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>{label}</strong><span>{url}</span></a>";
         return true;
     }
 
-    private static string RenderLink(
-        string encodedUrl,
-        string encodedText)
+    private sealed class Node(string tag, string attributes = "")
     {
-        var url = WebUtility.HtmlDecode(encodedUrl);
-
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
-            uri.Scheme is not ("http" or "https"))
-        {
-            return encodedText;
-        }
-
-        return
-            $"<a href=\"{encodedUrl}\" target=\"_blank\" " +
-            $"rel=\"noopener noreferrer\">{encodedText}</a>";
+        public string Tag { get; } = tag;
+        public string Attributes { get; } = attributes;
+        public string Text { get; init; } = string.Empty;
+        public List<Node> Children { get; } = [];
     }
 }

@@ -2,7 +2,7 @@
 
 Steam Review Forge uses [Semantic Versioning](https://semver.org/) with version numbers in the `MAJOR.MINOR.PATCH` format.
 
-The roadmap represents the current direction of the project and may change as development continues.
+This vibe-coded personal project receives limited maintenance. This roadmap is a list of possibilities, not a promise of implementation. Stabilization targets desktop Firefox and Chromium; Safari and mobile checks are not release requirements.
 
 ## v0.1.0 — Core Review Builder
 
@@ -32,8 +32,8 @@ The first usable version of Steam Review Forge was published as a public pre-rel
 
 ### Deferred beyond v0.1.0
 
-- Perform a full accessibility and keyboard-navigation review
-- Complete broader testing across major desktop and mobile browsers
+- Complete desktop accessibility and keyboard checks
+- Focus browser verification on desktop Firefox and Chromium
 
 ## v0.2.0 — Reliability and Compatibility
 
@@ -44,7 +44,7 @@ Improve confidence in saved drafts, generated reviews, and release quality.
 - [x] Warn before leaving while a save is pending or browser storage is unavailable
 - [x] Add versioned draft migration and recovery for invalid or newer saved drafts
 - [x] Add non-destructive BBCode compatibility diagnostics and multiline preview support
-- [x] Run tests automatically for pull requests and gate GitHub Pages deployment on them
+- [x] Provide a manually triggered workflow for release verification; deployment is not gated on tests
 - [x] Rework the desktop workspace around a focused editor with persistent final preview
 - [x] Reduce setup and composer scrolling with compact, stacked workflow controls
 - [x] Make structured template content removable and simplify the Deep Dive starter layout
@@ -55,7 +55,7 @@ Improve confidence in saved drafts, generated reviews, and release quality.
 Improve the experience of creating one review at a time and add more control over its format.
 
 - [ ] Streamline navigation and reduce friction across the review workflows
-- [ ] Refine editor and preview interactions for desktop and mobile
+- [ ] Refine desktop editor and preview interactions
 - [ ] Improve editing feedback and controls for mouse, keyboard, and touch input
 - [ ] Add more built-in review templates
 - [ ] Allow review sections to be enabled or disabled individually
@@ -72,6 +72,8 @@ Prepare Steam Review Forge for dependable public use.
 
 - [ ] Finalize the supported review formats
 - [ ] Complete automated test coverage for critical workflows
+- [ ] Complete accessibility and keyboard-navigation review
+- [ ] Complete desktop Firefox and Chromium release checks
 - [ ] Finalize user and contributor documentation
 - [ ] Resolve all known release-blocking defects
 - [ ] Publish a stable hosted version

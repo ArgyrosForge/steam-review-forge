@@ -2913,7 +2913,8 @@ textarea:focus {
 }
 
 .steam-preview ::deep .preview-spoiler:hover,
-.steam-preview ::deep .preview-spoiler:focus {
+.steam-preview ::deep .preview-spoiler:focus,
+.steam-preview ::deep .preview-spoiler:focus-within {
     color: var(--steam-body);
 }
 
@@ -5159,4 +5160,13 @@ div.steam-add-category-row {
     .table-editor .table-editor-row-actions {
         min-width: 132px;
     }
+}
+
+/* Nested emphasis and links must stay concealed until the spoiler is revealed. */
+.steam-preview ::deep .preview-spoiler * {
+    color: inherit;
+}
+
+.steam-preview ::deep .preview-bbcode-list li > p {
+    margin: 0;
 }

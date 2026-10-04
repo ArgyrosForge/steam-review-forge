@@ -13,37 +13,8 @@
     <script src="js/bbcode-editor.js"></script>
     <script src="js/structured-component-drag.js"></script>
     <script src="js/draft-lifecycle.js"></script>
-    <script>
-        window.clipboardManager = {
-            copyText: async function (text) {
-                if (!navigator.clipboard) {
-                    throw new Error("Clipboard API is unavailable.");
-                }
-
-                await navigator.clipboard.writeText(text);
-            }
-        };
-    </script>
-    <script>
-        window.reviewDraftStorage = {
-            get: function (key) {
-                return localStorage.getItem(key);
-            },
-
-            set: function (key, value) {
-                localStorage.setItem(key, value);
-            },
-
-            remove: function (key) {
-                localStorage.removeItem(key);
-            }
-        };
-    </script>
-    <script
-        data-goatcounter="https://steamreviewforge.goatcounter.com/count"
-        async
-        src="https://gc.zgo.at/count.js">
-    </script>
+    <script src="js/browser-services.js"></script>
+    <script src="js/desktop-accessibility.js"></script>
     <link rel="stylesheet" href="css/themes/main-blue.css" />
     <link rel="stylesheet" href="css/themes/nord.css" />
     <link rel="stylesheet" href="css/themes/catppuccin.css" />

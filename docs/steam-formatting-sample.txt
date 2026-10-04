@@ -1,0 +1,48 @@
+[h1]Steam Review Forge formatting check[/h1]
+[h2]Text styles[/h2]
+[h3]Small heading[/h3]
+[b]Bold[/b] [i]Italic[/i] [u]Underline[/u] [strike]Strike[/strike]
+[b]Bold across
+multiple lines[/b]
+[spoiler]A hidden detail[/spoiler]
+[hr][/hr]
+[h2]Links and literal text[/h2]
+[url=store.steampowered.com]Steam store[/url]
+[url=https://steamcommunity.com]Community[/url]
+[noparse][b]This stays literal[/b][/noparse] Text after the literal block.
+[code]first line
+  indented second line[/code] Text after the code block.
+[quote=Example reviewer]A short quotation.[/quote] Text after the quote.
+[h2]Lists[/h2]
+[list]
+[*]First point
+[*]Second point
+[olist]
+[*]Nested first point
+[*]Nested second point
+[/olist]
+[/list]
+[olist]
+[*]One
+[*]Two
+[/olist]
+[h2]Table[/h2]
+[table equalcells=1]
+    [tr]
+        [th]Aspect[/th]
+        [th]Rating[/th]
+        [th]Notes[/th]
+    [/tr]
+    [tr]
+        [td][b]Controls[/b][/td]
+        [td]★★★★☆[/td]
+        [td][u]Responsive[/u] [spoiler]hidden note[/spoiler][/td]
+    [/tr]
+[/table]
+[table noborder=1]
+[tr][td]Borderless first cell[/td][td]Second cell[/td][/tr]
+[/table]
+[table]
+[tr][td]Automatic widths[/td][td]A longer note[/td][/tr]
+[/table]
+https://store.steampowered.com/app/620/

@@ -72,4 +72,21 @@ public sealed class SteamBbCodeAnalyzerTests
         Assert.Contains(result.Diagnostics, issue =>
             issue.Message.Contains(expectedMessage, StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Analyze_BoundsWorkAndReportsIncompleteChecks()
+    {
+        var malformed = SteamBbCodeAnalyzer.Analyze(string.Concat(Enumerable.Repeat("[unknown]", 4000)));
+        Assert.InRange(malformed.Diagnostics.Count, 1, SteamBbCodeSyntax.MaximumDiagnostics);
+        Assert.True(malformed.IsIncomplete);
+        var oversized = SteamBbCodeAnalyzer.Analyze(new string('x', SteamBbCodeSyntax.MaximumCharacters + 1));
+        Assert.True(oversized.IsIncomplete);
+        Assert.Contains(SteamBbCodeSyntax.SizeMessage, Assert.Single(oversized.Diagnostics).Message);
+    }
+
+    [Fact]
+    public void Analyze_AcceptsSteamDocumentedSchemeLessLink()
+    {
+        Assert.Empty(SteamBbCodeAnalyzer.Analyze("[url=store.steampowered.com]Store[/url]").Diagnostics);
+    }
 }

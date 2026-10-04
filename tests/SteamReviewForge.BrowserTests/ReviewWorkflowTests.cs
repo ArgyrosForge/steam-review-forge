@@ -1508,6 +1508,156 @@ public sealed class ReviewWorkflowTests
             .ToHaveCountAsync(0);
     }
 
+
+    [Theory]
+    [InlineData("firefox")]
+    [InlineData("chromium")]
+    public async Task Desktop_RemovedTableStaysRemovedAfterReload(string browser)
+    {
+        await using var session = await BrowserSession.CreateAsync(browser);
+        var page = session.Page;
+        await OpenApplicationAsync(page);
+        await page.GetByRole(AriaRole.Radio, new() { Name = "Yes Recommended", Exact = true }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Continue to template" }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Remove rating table", Exact = true }).ClickAsync();
+        await Assertions.Expect(page.GetByText("Saved", new() { Exact = true })).ToBeVisibleAsync();
+        await page.ReloadAsync();
+        await WaitForApplicationAsync(page);
+        await Assertions.Expect(page.GetByText("Draft restored", new() { Exact = true })).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".final-preview-panel table")).ToHaveCountAsync(0);
+        await page.GetByRole(AriaRole.Button, new() { Name = "Copy BBCode", Exact = true }).ClickAsync();
+        Assert.DoesNotContain("[table", await page.EvaluateAsync<string>("window.__copiedText"));
+    }
+
+    [Theory]
+    [InlineData("firefox")]
+    [InlineData("chromium")]
+    public async Task Desktop_ExposesSelectionsAndContainsDialogFocus(string browser)
+    {
+        await using var session = await BrowserSession.CreateAsync(browser);
+        var page = session.Page;
+        await OpenApplicationAsync(page);
+        var yes = page.GetByRole(AriaRole.Radio, new() { Name = "Yes Recommended", Exact = true });
+        await yes.ClickAsync();
+        await Assertions.Expect(yes).ToHaveAttributeAsync("aria-checked", "true");
+        await yes.PressAsync("ArrowRight");
+        await Assertions.Expect(page.GetByRole(AriaRole.Radio, new() { Name = "No Not Recommended", Exact = true }))
+            .ToHaveAttributeAsync("aria-checked", "true");
+        await Assertions.Expect(page.GetByRole(AriaRole.Button, new() { Name = "Structured", Exact = true }))
+            .ToHaveAttributeAsync("aria-pressed", "true");
+
+        var newReview = page.GetByRole(AriaRole.Button, new() { Name = "New review", Exact = true });
+        await newReview.ClickAsync();
+        var dialog = page.GetByRole(AriaRole.Dialog, new() { Name = "Start a new review?" });
+        var keep = dialog.GetByRole(AriaRole.Button, new() { Name = "Keep current review" });
+        await Assertions.Expect(keep).ToBeFocusedAsync();
+        await keep.PressAsync("Shift+Tab");
+        await Assertions.Expect(dialog.GetByRole(AriaRole.Button, new() { Name = "Start new review", Exact = true })).ToBeFocusedAsync();
+        await page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(dialog).ToHaveCountAsync(0);
+        await Assertions.Expect(newReview).ToBeFocusedAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Formatting help", Exact = true }).ClickAsync();
+        await Assertions.Expect(page.GetByRole(AriaRole.Button, new() { Name = "Close formatting help" })).ToBeFocusedAsync();
+        await page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(page.GetByRole(AriaRole.Dialog)).ToHaveCountAsync(0);
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("null")]
+    public async Task Chromium_WrongRootDraftIsProtectedByRecovery(string payload)
+    {
+        await using var session = await BrowserSession.CreateAsync("chromium",
+            $"localStorage.setItem('steam-review-forge-draft-v2', '{payload}');");
+        var page = session.Page;
+        await OpenApplicationAsync(page);
+        await Assertions.Expect(page.GetByRole(AriaRole.Dialog, new() { Name = "Saved draft needs recovery" })).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByRole(AriaRole.Textbox, new() { Name = "Saved draft backup data" })).ToHaveValueAsync(payload);
+        Assert.Equal(payload, await page.EvaluateAsync<string>("localStorage.getItem('steam-review-forge-draft-v2')"));
+        Assert.True(await page.Locator("main").EvaluateAsync<bool>("element => element.inert"));
+    }
+
+    [Theory]
+    [InlineData("firefox")]
+    [InlineData("chromium")]
+    public async Task Desktop_RendersSteamFormattingAndPreservesExport(string browser)
+    {
+        await using var session = await BrowserSession.CreateAsync(browser, """
+            localStorage.setItem('steam-review-forge-draft-v2', JSON.stringify({schemaVersion:3,draft:{editingMode:3,rawBbCode:''}}));
+            """);
+        var page = session.Page;
+        var errors = new List<string>();
+        page.PageError += (_, error) => errors.Add(error);
+        page.Console += (_, message) =>
+        {
+            if (message.Type == "error") errors.Add(message.Text);
+        };
+        await OpenApplicationAsync(page);
+        await Assertions.Expect(page.Locator("meta[http-equiv='Content-Security-Policy']"))
+            .ToHaveAttributeAsync("content", new System.Text.RegularExpressions.Regex("script-src 'self' 'wasm-unsafe-eval'"));
+        Assert.Empty(await page.Locator("script[src]").EvaluateAllAsync<string[]>("elements => elements.map(e => e.src).filter(src => new URL(src).origin !== location.origin)"));
+        const string source = """
+            [h1]Desktop formatting check[/h1]
+            [code]first[/code] KEEP THIS TEXT
+            [b]one
+            two[/b]
+            [spoiler][b]Hidden bold detail[/b][/spoiler]
+            [url=store.steampowered.com]Steam store[/url]
+            [quote=Reviewer]quoted[/quote] KEEP THIS TOO
+            [table equalcells=1]
+              [tr]
+                [th]Aspect[/th][th]Notes[/th]
+              [/tr]
+              [tr]
+                [td]Controls[/td][td][u]Precise[/u][/td]
+              [/tr]
+            [/table]
+            [list][*]First[*]Second[/list]
+            [noparse][b]literal[/b][/noparse]
+            <img src=x onerror=alert(1)>
+            [url=javascript:alert(1)]Unsafe[/url]
+            """;
+        var editor = page.GetByRole(AriaRole.Textbox, new() { Name = "Steam BBCode editor" });
+        await editor.FillAsync(source);
+        var preview = page.Locator(".steam-review-content");
+        await Assertions.Expect(preview).ToContainTextAsync("KEEP THIS TEXT");
+        await Assertions.Expect(preview).ToContainTextAsync("KEEP THIS TOO");
+        await Assertions.Expect(preview.Locator("table tr")).ToHaveCountAsync(2);
+        await Assertions.Expect(preview.Locator("table u")).ToHaveTextAsync("Precise");
+        await Assertions.Expect(preview.Locator("ul li")).ToHaveCountAsync(2);
+        await Assertions.Expect(preview.GetByRole(AriaRole.Link, new() { Name = "Steam store" }))
+            .ToHaveAttributeAsync("href", "https://store.steampowered.com/");
+        await Assertions.Expect(preview.Locator("img, script, a[href^='javascript:']")).ToHaveCountAsync(0);
+        await page.GetByRole(AriaRole.Button, new() { Name = "Copy BBCode", Exact = true }).ClickAsync();
+        Assert.Equal(source, await page.EvaluateAsync<string>("window.__copiedText"));
+        await page.Mouse.MoveAsync(0, 0);
+        var spoiler = preview.Locator(".preview-spoiler");
+        Assert.Equal("rgba(0, 0, 0, 0)", await spoiler.Locator("strong").EvaluateAsync<string>("element => getComputedStyle(element).color"));
+        await spoiler.FocusAsync();
+        Assert.NotEqual("rgba(0, 0, 0, 0)", await spoiler.Locator("strong").EvaluateAsync<string>("element => getComputedStyle(element).color"));
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public async Task Chromium_LargeDraftRemainsEditableAndFullyCopyable()
+    {
+        await using var session = await BrowserSession.CreateAsync("chromium", """
+            localStorage.setItem('steam-review-forge-draft-v2', JSON.stringify({schemaVersion:3,draft:{editingMode:3,rawBbCode:'x'.repeat(50001)}}));
+            """);
+        var page = session.Page;
+        await OpenApplicationAsync(page);
+        var editor = page.GetByRole(AriaRole.Textbox, new() { Name = "Steam BBCode editor" });
+        await Assertions.Expect(page.Locator(".steam-review-content")).ToContainTextAsync("paused above 50,000");
+        await page.GetByRole(AriaRole.Button, new() { Name = "Copy BBCode", Exact = true }).ClickAsync();
+        Assert.Equal(50001, (await page.EvaluateAsync<string>("window.__copiedText")).Length);
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        await editor.FillAsync(string.Concat(Enumerable.Repeat("[url=https://example.com]", 1000)));
+        await Assertions.Expect(page.Locator(".steam-review-content")).ToContainTextAsync("nested too deeply");
+        Assert.True(timer.Elapsed < TimeSpan.FromSeconds(5), $"Large edit took {timer.Elapsed}.");
+        await editor.FillAsync("[b]Recovered[/b]");
+        await Assertions.Expect(page.Locator(".steam-review-content strong")).ToHaveTextAsync("Recovered");
+    }
+
     private static async Task OpenApplicationAsync(IPage page)
     {
         await page.GotoAsync(BaseUrl, new PageGotoOptions
