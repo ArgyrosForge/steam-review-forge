@@ -1,9 +1,8 @@
-using System.Text.RegularExpressions;
 using SteamReviewForge.Models;
 
 namespace SteamReviewForge.Services;
 
-public static partial class SteamBbCodeAnalyzer
+public static class SteamBbCodeAnalyzer
 {
     private static readonly HashSet<string> SupportedTags =
         new(StringComparer.OrdinalIgnoreCase)
@@ -28,6 +27,13 @@ public static partial class SteamBbCodeAnalyzer
             return result;
         }
 
+        if (bbCode.Length > SteamBbCodeSyntax.MaximumCharacters)
+        {
+            Add(result, 1, 1, SteamBbCodeSyntax.SizeMessage);
+            result.IsIncomplete = true;
+            return result;
+        }
+
         var stack = new List<OpenTag>();
         var lines = bbCode
             .Replace("\r\n", "\n", StringComparison.Ordinal)
@@ -37,7 +43,12 @@ public static partial class SteamBbCodeAnalyzer
         for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
         {
             AnalyzeLine(lines[lineIndex], lineIndex + 1, stack, result);
+            if (result.IsIncomplete) break;
         }
+
+        // If scanning stopped early, later closing tags have not been read.
+        // Do not report those still-open tags as definitively unclosed.
+        if (result.IsIncomplete) return result;
 
         foreach (var openTag in stack.AsEnumerable().Reverse())
         {
@@ -57,12 +68,13 @@ public static partial class SteamBbCodeAnalyzer
         List<OpenTag> stack,
         BbCodeAnalysisResult result)
     {
-        foreach (Match match in TagPattern().Matches(line))
+        foreach (var token in SteamBbCodeSyntax.Scan(line))
         {
-            var isClosing = match.Groups["closing"].Success;
-            var name = match.Groups["name"].Value.ToLowerInvariant();
-            var attributes = match.Groups["attributes"].Value;
-            var column = match.Index + 1;
+            if (result.IsIncomplete) return;
+            var isClosing = token.Closing;
+            var name = token.Name;
+            var attributes = token.Attributes;
+            var column = token.Start + 1;
 
             if (stack.Count > 0 &&
                 SpecialContentTags.Contains(stack[^1].Name) &&
@@ -103,6 +115,12 @@ public static partial class SteamBbCodeAnalyzer
             }
 
             ValidateOpeningTag(name, attributes, lineNumber, column, stack, result);
+            if (stack.Count >= SteamBbCodeSyntax.MaximumNesting)
+            {
+                Add(result, lineNumber, column, "Formatting is nested too deeply; simplify the markup to resume full checks.");
+                result.IsIncomplete = true;
+                return;
+            }
             stack.Add(new OpenTag(name, lineNumber, column));
         }
     }
@@ -190,18 +208,7 @@ public static partial class SteamBbCodeAnalyzer
 
     private static bool IsSafeLinkTarget(string target)
     {
-        if (string.IsNullOrWhiteSpace(target))
-        {
-            return false;
-        }
-
-        var candidate = target.Contains("://", StringComparison.Ordinal)
-            ? target
-            : $"https://{target}";
-
-        return Uri.TryCreate(candidate, UriKind.Absolute, out var uri) &&
-               uri.Scheme is "http" or "https" &&
-               !string.IsNullOrWhiteSpace(uri.Host);
+        return SteamBbCodeSyntax.TryGetLink(target, out _);
     }
 
     private static void Add(
@@ -210,13 +217,11 @@ public static partial class SteamBbCodeAnalyzer
         int column,
         string message)
     {
-        result.Diagnostics.Add(new BbCodeDiagnostic(line, column, message));
+        if (result.Diagnostics.Count < SteamBbCodeSyntax.MaximumDiagnostics)
+            result.Diagnostics.Add(new BbCodeDiagnostic(line, column, message));
+        else
+            result.IsIncomplete = true;
     }
-
-    [GeneratedRegex(
-        @"\[(?<closing>/)?(?<name>\*|[A-Za-z][A-Za-z0-9]*)(?<attributes>(?:=| )[^\]]*)?\]",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex TagPattern();
 
     private sealed record OpenTag(string Name, int Line, int Column);
 }

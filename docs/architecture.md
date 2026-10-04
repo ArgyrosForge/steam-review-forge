@@ -16,7 +16,7 @@ The repository currently contains:
 - Browser local storage for draft and theme persistence
 - JavaScript interoperability for browser-only capabilities
 - Static hosting through GitHub Pages
-- GoatCounter for aggregate page-view analytics
+- No analytics or third-party runtime scripts
 
 The application remains deployable as static web assets and does not require a server-side .NET runtime in production.
 
@@ -38,12 +38,10 @@ Blazor WebAssembly application
   |      +--> localStorage
   |      +--> Clipboard API
   |      +--> Preferred color scheme
-  |
-  +--> GoatCounter
-         +--> Aggregate page-view analytics
+
 ```
 
-Review draft content remains in the browser unless the user manually copies or exports it. GoatCounter receives page-view analytics, not review draft content.
+Review draft content remains in the browser unless the user manually copies or exports it. The application includes no analytics.
 
 ## Project Structure
 
@@ -145,7 +143,7 @@ Transforms a `ReviewDraft` into deterministic Steam-compatible BBCode. It is bro
 
 Converts the supported Steam BBCode subset into HTML for the in-application preview. User-provided text is HTML encoded before supported formatting is rendered.
 
-The preview is intentionally an approximation of Steam rendering rather than a general-purpose BBCode parser.
+The preview is an approximation of Steam rendering. A shared linear scanner tokenizes markup. The renderer builds a tree with a 64-level nesting bound, encodes all user text and attributes, and renders balanced inline formatting, lists, and multiline tables. Preview and diagnostics pause above 50,000 characters without truncating stored or copied content. Diagnostics are capped at 50, with an explicit incomplete-check notice. Rendered output is cached until the BBCode changes.
 
 `SteamBbCodeAnalyzer` checks generated and freeform BBCode against the tags
 documented by Steam. It reports unsupported, unclosed, misnested, unsafe-link,
@@ -168,7 +166,7 @@ drafts migrate built-in writing blocks to plain text and retain explicitly
 bulleted custom components.
 
 The service supports loading, saving, migrating, recovering, and clearing one
-active draft. Existing `steam-review-forge-draft-v1` payloads are normalized,
+active draft. Wrong-root JSON enters recovery without being overwritten, and intentionally empty category lists remain empty after reload. Existing `steam-review-forge-draft-v1` payloads are normalized,
 saved in the current envelope, and removed only after migration succeeds.
 Malformed or newer-schema data is returned as a recovery result with the raw
 payload intact instead of being overwritten.
@@ -215,6 +213,8 @@ Theme palettes live under `wwwroot/css/themes` and expose a shared semantic toke
 
 Additional JavaScript modules provide table drag behavior, validation navigation, BBCode editor helpers, and structured component drag-and-drop behavior where direct browser APIs are more practical than Blazor-only handling.
 
+The `desktopAccessibility` helper synchronizes modal focus containment/restoration and background inertness, handles Escape for dismissable dialogs, and supplies keyboard navigation for custom radio groups. Recovery dialogs stay open until their data is explicitly handled.
+
 JavaScript should remain limited to browser-facing capabilities rather than core review logic.
 
 ## Data and Persistence Boundaries
@@ -234,7 +234,7 @@ The current application has no account system, remote review database, or applic
 
 Review draft content is stored locally in the browser and is not sent to an application server.
 
-The hosted GitHub Pages site loads GoatCounter to collect aggregate page-view analytics. Review draft content is not intentionally included in GoatCounter analytics.
+The application does not load analytics or third-party scripts. GitHub Pages may process normal hosting request logs.
 
 Contributors should document any future feature that sends user-entered content or additional data outside the browser, including cloud storage, sharing, game lookup, or other external integrations.
 
@@ -264,9 +264,8 @@ The application is published as static Blazor WebAssembly assets and deployed th
 The GitHub Actions Pages workflow:
 
 - Publishes the Blazor project in Release configuration
-- Rewrites the application base path for `/steam-review-forge/`
-- Adds `.nojekyll`
-- Copies `index.html` to `404.html` for static-host routing fallback
+- Runs `scripts/prepare-pages.py` to set `/steam-review-forge/`, add `.nojekyll`, and create `404.html`
+- Adds a Content Security Policy with hashes for the generated inline import map; only same-origin application code and WebAssembly are allowed
 - Uploads and deploys the published `wwwroot` directory
 
 The production site is:
@@ -282,9 +281,7 @@ rendering, BBCode diagnostics, and draft persistence and migration. Playwright
 tests cover the primary Firefox workflow, recovery and storage failures,
 compatibility warnings, and a Chromium smoke path.
 
-The GitHub Actions test workflow runs for pull requests and can also be started
-manually. The Pages workflow calls the same test workflow and does not publish
-until it succeeds.
+The GitHub Actions test workflow runs manually only. It tests a published static build after applying the production security policy. The Pages workflow does not run or gate on tests. Release verification is a manual maintainer responsibility; see `manual-release-checklist.md`.
 
 ## Current Architectural Constraints
 
@@ -292,7 +289,7 @@ until it succeeds.
 - Only one draft can be stored at a time
 - Local storage is synchronous behind the JavaScript bridge and is not intended for large datasets
 - The preview renderer supports a bounded Steam BBCode subset
-- Browser coverage currently targets Firefox and Chromium; broader desktop and mobile coverage remains planned
+- Browser support targets desktop Firefox and Chromium; Safari and mobile are outside the release target
 - There is no application backend for shared links, synchronization, accounts, or remote metadata
 
 ## Extension Guidelines
@@ -308,7 +305,7 @@ When adding features:
 - Avoid adding server infrastructure unless the feature genuinely requires it
 - Extract focused Blazor components before the root page becomes harder to maintain
 - Document privacy changes whenever information leaves the browser
-- Expand tests deliberately and keep deployment gated on the shared CI workflow
+- Expand desktop regression tests deliberately and run the manual test workflow before release
 
 ## Potential Future Evolution
 

@@ -8,7 +8,13 @@ Try Steam Review Forge at [argyrosforge.github.io/steam-review-forge](https://ar
 
 ## Project Status
 
-`v0.2.0` is the current pre-release line. The project remains under active development and has not reached stable `1.0.0` status.
+`v0.2.0` is the current pre-release line. It has not reached stable `1.0.0` status.
+
+## Development and Maintenance
+
+This project was **vibe coded with AI assistance**. It is a personal, best-effort tool and will receive **limited maintenance**. Bug fixes, new features, security updates, and responses to issues are not guaranteed. The source is available for anyone who wants to inspect, adapt, or maintain it under its license.
+
+The supported focus is current **desktop Firefox and Chromium-based browsers**. Safari and mobile devices are not release targets. The preview approximates Steam's renderer: check the copied review in Steam before posting. Keep a separate copy of important drafts; browser storage is not a backup.
 
 ## Features
 
@@ -37,13 +43,23 @@ Drafts are stored locally in the browser; no account or server-side review stora
 
 ## Privacy
 
-Review drafts and their contents are stored locally in browser storage and are not sent to an application server. The hosted site uses GoatCounter for aggregate page-view analytics; review draft content is not included in those analytics.
+Review drafts and their contents are stored locally in browser storage and are not sent to an application server. The application includes no analytics or third-party scripts. GitHub Pages still serves the site and may process ordinary hosting request logs.
 
 Clearing browser storage or starting a new review removes the locally saved draft.
 
+## Testing
+
+Unit tests live in `tests/SteamReviewForge.Tests` and can be run locally with:
+
+```bash
+dotnet test tests/SteamReviewForge.Tests/SteamReviewForge.Tests.csproj
+```
+
+Firefox and Chromium workflow tests live in `tests/SteamReviewForge.BrowserTests`. Run the **Run Tests** workflow manually from the repository's **Actions** tab before releasing. Tests do not run automatically for pull requests or block deployment. The manual workflow checks a published build with its production security policy. See [the manual release checklist](docs/manual-release-checklist.md) for local commands and Steam formatting checks.
+
 ## Roadmap
 
-The roadmap focuses on improving the functionality and UX of creating one review at a time. See [`ROADMAP.md`](ROADMAP.md) for planned releases and future improvements.
+The roadmap records possible improvements, not commitments or a delivery schedule. See [`ROADMAP.md`](ROADMAP.md) for planned releases and future improvements.
 
 ## Contributing
 

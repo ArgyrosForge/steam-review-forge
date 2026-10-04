@@ -6,7 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve intentionally removed rating tables and categories after saving and reloading
+- Route non-object saved JSON to recovery without overwriting the original payload
+- Preserve text before and after BBCode blocks, multiline emphasis, multiline tables, and Steam's scheme-less links in the preview
+- Bound malformed markup parsing, nesting, and diagnostic counts; pause preview above 50,000 characters without truncating the draft or clipboard export
+- Correct selected ARIA states and add dialog focus containment, Escape dismissal, focus restoration, and radio-group keyboard controls
+
+### Security
+
+- Pin GitHub Actions to immutable commit IDs while retaining manual test execution
+- Remove GoatCounter and all third-party runtime scripts
+- Add a publish-time Content Security Policy with hashes for Blazor's generated import map
+- Update .NET SDK to 10.0.112 and Blazor packages to 10.0.12
+
 ### Changed
+
+- Document in the GitHub README that the project was vibe coded with AI assistance and is maintained on a limited, best-effort basis; keep this disclaimer off the website
+- Keep release tests manually triggered, test the published static build, and document desktop/Steam-focused release checks
 
 - Made Structured template headings, dividers, rating-table headings, and rating-table cells directly editable or removable while retaining the persistent Final Preview
 - Standardized the Final Preview width and body typography across every editing mode to match Steam's full reviews, and added Early Access Review as locally saved preview metadata

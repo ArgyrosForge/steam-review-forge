@@ -15,5 +15,7 @@ public sealed class BbCodeAnalysisResult
 {
     public List<BbCodeDiagnostic> Diagnostics { get; } = [];
 
+    public bool IsIncomplete { get; set; }
+
     public bool HasWarnings => Diagnostics.Count > 0;
 }

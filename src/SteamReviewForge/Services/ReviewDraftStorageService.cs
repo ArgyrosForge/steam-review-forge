@@ -138,6 +138,11 @@ public sealed class ReviewDraftStorageService
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
 
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return Invalid(json, "The saved draft must be a JSON object.");
+            }
+
             if (!root.TryGetProperty("schemaVersion", out var versionProperty) ||
                 versionProperty.ValueKind != JsonValueKind.Number ||
                 !versionProperty.TryGetInt32(out var schemaVersion) ||
@@ -340,11 +345,8 @@ public sealed class ReviewDraftStorageService
             category.Rating = Math.Clamp(category.Rating, 1, maximumRating);
         }
 
-        if (draft.Categories.Count == 0 &&
-            draft.DisplayFormat != ReviewDisplayFormat.MinimalVerdict)
-        {
-            draft.Categories.Add(new ReviewCategory());
-        }
+        // An empty list is intentional when the user removes the last category.
+        // Missing legacy fields retain the model's defaults during deserialization.
     }
 
     private static void NormalizeComponents(
